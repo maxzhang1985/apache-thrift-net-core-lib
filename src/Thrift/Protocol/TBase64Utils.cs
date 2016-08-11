@@ -17,48 +17,46 @@
  * under the License.
  */
 
-using System;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     internal static class TBase64Utils
     {
-        internal const string ENCODE_TABLE =
+        internal const string EncodeTable =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-        internal static void encode(byte[] src, int srcOff, int len, byte[] dst,
+        internal static void Encode(byte[] src, int srcOff, int len, byte[] dst,
             int dstOff)
         {
-            dst[dstOff] = (byte) ENCODE_TABLE[(src[srcOff] >> 2) & 0x3F];
+            dst[dstOff] = (byte) EncodeTable[(src[srcOff] >> 2) & 0x3F];
             if (len == 3)
             {
                 dst[dstOff + 1] =
-                    (byte) ENCODE_TABLE[
+                    (byte) EncodeTable[
                         ((src[srcOff] << 4) & 0x30) | ((src[srcOff + 1] >> 4) & 0x0F)];
                 dst[dstOff + 2] =
-                    (byte) ENCODE_TABLE[
+                    (byte) EncodeTable[
                         ((src[srcOff + 1] << 2) & 0x3C) | ((src[srcOff + 2] >> 6) & 0x03)];
                 dst[dstOff + 3] =
-                    (byte) ENCODE_TABLE[src[srcOff + 2] & 0x3F];
+                    (byte) EncodeTable[src[srcOff + 2] & 0x3F];
             }
             else if (len == 2)
             {
                 dst[dstOff + 1] =
-                    (byte) ENCODE_TABLE[
+                    (byte) EncodeTable[
                         ((src[srcOff] << 4) & 0x30) | ((src[srcOff + 1] >> 4) & 0x0F)];
                 dst[dstOff + 2] =
-                    (byte) ENCODE_TABLE[(src[srcOff + 1] << 2) & 0x3C];
+                    (byte) EncodeTable[(src[srcOff + 1] << 2) & 0x3C];
             }
             else
             {
                 // len == 1) {
                 dst[dstOff + 1] =
-                    (byte) ENCODE_TABLE[(src[srcOff] << 4) & 0x30];
+                    (byte) EncodeTable[(src[srcOff] << 4) & 0x30];
             }
         }
 
-        private static int[] DECODE_TABLE =
+        private static readonly int[] DecodeTable =
         {
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -75,25 +73,25 @@ namespace Thrift.Protocol
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
         };
 
-        internal static void decode(byte[] src, int srcOff, int len, byte[] dst,
+        internal static void Decode(byte[] src, int srcOff, int len, byte[] dst,
             int dstOff)
         {
             dst[dstOff] = (byte)
-            ((DECODE_TABLE[src[srcOff] & 0x0FF] << 2) |
-             (DECODE_TABLE[src[srcOff + 1] & 0x0FF] >> 4));
+            ((DecodeTable[src[srcOff] & 0x0FF] << 2) |
+             (DecodeTable[src[srcOff + 1] & 0x0FF] >> 4));
             if (len > 2)
             {
                 dst[dstOff + 1] = (byte)
-                (((DECODE_TABLE[src[srcOff + 1] & 0x0FF] << 4) & 0xF0) |
-                 (DECODE_TABLE[src[srcOff + 2] & 0x0FF] >> 2));
+                (((DecodeTable[src[srcOff + 1] & 0x0FF] << 4) & 0xF0) |
+                 (DecodeTable[src[srcOff + 2] & 0x0FF] >> 2));
                 if (len > 3)
                 {
                     dst[dstOff + 2] = (byte)
-                    (((DECODE_TABLE[src[srcOff + 2] & 0x0FF] << 6) & 0xC0) |
-                     DECODE_TABLE[src[srcOff + 3] & 0x0FF]);
+                    (((DecodeTable[src[srcOff + 2] & 0x0FF] << 6) & 0xC0) |
+                     DecodeTable[src[srcOff + 3] & 0x0FF]);
                 }
             }
         }

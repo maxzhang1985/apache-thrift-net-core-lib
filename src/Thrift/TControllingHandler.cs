@@ -17,7 +17,6 @@
  * under the License.
  */
 
-using System;
 using Thrift.Server;
 
 namespace Thrift
@@ -25,6 +24,6 @@ namespace Thrift
     // ReSharper disable once InconsistentNaming
     public interface TControllingHandler
     {
-        TServer server { get; set; }
+        TServer Server { get; set; }
     }
 }

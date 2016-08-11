@@ -24,7 +24,6 @@
 using System;
 using Thrift.Protocol;
 using Thrift.Transport;
-using System.IO;
 
 namespace Thrift.Server
 {
@@ -38,7 +37,7 @@ namespace Thrift.Server
         protected TTransportFactory outputTransportFactory;
         protected TProtocolFactory inputProtocolFactory;
         protected TProtocolFactory outputProtocolFactory;
-        protected TServerEventHandler serverEventHandler = null;
+        protected TServerEventHandler serverEventHandler;
 
         //Methods
         public void setEventHandler(TServerEventHandler seh)
@@ -59,7 +58,7 @@ namespace Thrift.Server
         protected LogDelegate logDelegate
         {
             get { return _logDelegate; }
-            set { _logDelegate = (value != null) ? value : DefaultLogDelegate; }
+            set { _logDelegate = value ?? DefaultLogDelegate; }
         }
 
         protected static void DefaultLogDelegate(string s)
@@ -68,7 +67,7 @@ namespace Thrift.Server
         }
 
         //Construction
-        public TServer(TProcessor processor,
+        protected TServer(TProcessor processor,
             TServerTransport serverTransport)
             : this(processor, serverTransport,
                 new TTransportFactory(),
@@ -79,7 +78,7 @@ namespace Thrift.Server
         {
         }
 
-        public TServer(TProcessor processor,
+        protected TServer(TProcessor processor,
             TServerTransport serverTransport,
             LogDelegate logDelegate)
             : this(processor,
@@ -92,7 +91,7 @@ namespace Thrift.Server
         {
         }
 
-        public TServer(TProcessor processor,
+        protected TServer(TProcessor processor,
             TServerTransport serverTransport,
             TTransportFactory transportFactory)
             : this(processor,
@@ -105,7 +104,7 @@ namespace Thrift.Server
         {
         }
 
-        public TServer(TProcessor processor,
+        protected TServer(TProcessor processor,
             TServerTransport serverTransport,
             TTransportFactory transportFactory,
             TProtocolFactory protocolFactory)
@@ -119,7 +118,7 @@ namespace Thrift.Server
         {
         }
 
-        public TServer(TProcessor processor,
+        protected TServer(TProcessor processor,
             TServerTransport serverTransport,
             TTransportFactory inputTransportFactory,
             TTransportFactory outputTransportFactory,
@@ -133,10 +132,10 @@ namespace Thrift.Server
             this.outputTransportFactory = outputTransportFactory;
             this.inputProtocolFactory = inputProtocolFactory;
             this.outputProtocolFactory = outputProtocolFactory;
-            this.logDelegate = (logDelegate != null) ? logDelegate : DefaultLogDelegate;
+            this.logDelegate = logDelegate ?? DefaultLogDelegate;
         }
 
-        public TServer(TProcessorFactory processorFactory,
+        protected TServer(TProcessorFactory processorFactory,
             TServerTransport serverTransport,
             TTransportFactory inputTransportFactory,
             TTransportFactory outputTransportFactory,
@@ -150,7 +149,7 @@ namespace Thrift.Server
             this.outputTransportFactory = outputTransportFactory;
             this.inputProtocolFactory = inputProtocolFactory;
             this.outputProtocolFactory = outputProtocolFactory;
-            this.logDelegate = (logDelegate != null) ? logDelegate : DefaultLogDelegate;
+            this.logDelegate = logDelegate ?? DefaultLogDelegate;
         }
 
         //Abstract Interface

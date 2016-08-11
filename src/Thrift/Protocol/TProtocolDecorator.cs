@@ -21,11 +21,6 @@
  * details.
  */
 
-using System;
-using System.Text;
-using Thrift.Transport;
-using System.Collections.Generic;
-
 namespace Thrift.Protocol
 {
 /**
@@ -40,222 +35,222 @@ namespace Thrift.Protocol
     // ReSharper disable once InconsistentNaming
     public abstract class TProtocolDecorator : TProtocol
     {
-        private TProtocol WrappedProtocol;
+        private readonly TProtocol _wrappedProtocol;
 
         /**
          * Encloses the specified protocol.
          * @param protocol All operations will be forward to this protocol.  Must be non-null.
          */
 
-        public TProtocolDecorator(TProtocol protocol)
+        protected TProtocolDecorator(TProtocol protocol)
             : base(protocol.Transport)
         {
-            WrappedProtocol = protocol;
+            _wrappedProtocol = protocol;
         }
 
         public override void WriteMessageBegin(TMessage tMessage)
         {
-            WrappedProtocol.WriteMessageBegin(tMessage);
+            _wrappedProtocol.WriteMessageBegin(tMessage);
         }
 
         public override void WriteMessageEnd()
         {
-            WrappedProtocol.WriteMessageEnd();
+            _wrappedProtocol.WriteMessageEnd();
         }
 
         public override void WriteStructBegin(TStruct tStruct)
         {
-            WrappedProtocol.WriteStructBegin(tStruct);
+            _wrappedProtocol.WriteStructBegin(tStruct);
         }
 
         public override void WriteStructEnd()
         {
-            WrappedProtocol.WriteStructEnd();
+            _wrappedProtocol.WriteStructEnd();
         }
 
         public override void WriteFieldBegin(TField tField)
         {
-            WrappedProtocol.WriteFieldBegin(tField);
+            _wrappedProtocol.WriteFieldBegin(tField);
         }
 
         public override void WriteFieldEnd()
         {
-            WrappedProtocol.WriteFieldEnd();
+            _wrappedProtocol.WriteFieldEnd();
         }
 
         public override void WriteFieldStop()
         {
-            WrappedProtocol.WriteFieldStop();
+            _wrappedProtocol.WriteFieldStop();
         }
 
         public override void WriteMapBegin(TMap tMap)
         {
-            WrappedProtocol.WriteMapBegin(tMap);
+            _wrappedProtocol.WriteMapBegin(tMap);
         }
 
         public override void WriteMapEnd()
         {
-            WrappedProtocol.WriteMapEnd();
+            _wrappedProtocol.WriteMapEnd();
         }
 
         public override void WriteListBegin(TList tList)
         {
-            WrappedProtocol.WriteListBegin(tList);
+            _wrappedProtocol.WriteListBegin(tList);
         }
 
         public override void WriteListEnd()
         {
-            WrappedProtocol.WriteListEnd();
+            _wrappedProtocol.WriteListEnd();
         }
 
         public override void WriteSetBegin(TSet tSet)
         {
-            WrappedProtocol.WriteSetBegin(tSet);
+            _wrappedProtocol.WriteSetBegin(tSet);
         }
 
         public override void WriteSetEnd()
         {
-            WrappedProtocol.WriteSetEnd();
+            _wrappedProtocol.WriteSetEnd();
         }
 
         public override void WriteBool(bool b)
         {
-            WrappedProtocol.WriteBool(b);
+            _wrappedProtocol.WriteBool(b);
         }
 
         public override void WriteByte(sbyte b)
         {
-            WrappedProtocol.WriteByte(b);
+            _wrappedProtocol.WriteByte(b);
         }
 
         public override void WriteI16(short i)
         {
-            WrappedProtocol.WriteI16(i);
+            _wrappedProtocol.WriteI16(i);
         }
 
         public override void WriteI32(int i)
         {
-            WrappedProtocol.WriteI32(i);
+            _wrappedProtocol.WriteI32(i);
         }
 
         public override void WriteI64(long l)
         {
-            WrappedProtocol.WriteI64(l);
+            _wrappedProtocol.WriteI64(l);
         }
 
         public override void WriteDouble(double v)
         {
-            WrappedProtocol.WriteDouble(v);
+            _wrappedProtocol.WriteDouble(v);
         }
 
         public override void WriteString(string s)
         {
-            WrappedProtocol.WriteString(s);
+            _wrappedProtocol.WriteString(s);
         }
 
         public override void WriteBinary(byte[] bytes)
         {
-            WrappedProtocol.WriteBinary(bytes);
+            _wrappedProtocol.WriteBinary(bytes);
         }
 
         public override TMessage ReadMessageBegin()
         {
-            return WrappedProtocol.ReadMessageBegin();
+            return _wrappedProtocol.ReadMessageBegin();
         }
 
         public override void ReadMessageEnd()
         {
-            WrappedProtocol.ReadMessageEnd();
+            _wrappedProtocol.ReadMessageEnd();
         }
 
         public override TStruct ReadStructBegin()
         {
-            return WrappedProtocol.ReadStructBegin();
+            return _wrappedProtocol.ReadStructBegin();
         }
 
         public override void ReadStructEnd()
         {
-            WrappedProtocol.ReadStructEnd();
+            _wrappedProtocol.ReadStructEnd();
         }
 
         public override TField ReadFieldBegin()
         {
-            return WrappedProtocol.ReadFieldBegin();
+            return _wrappedProtocol.ReadFieldBegin();
         }
 
         public override void ReadFieldEnd()
         {
-            WrappedProtocol.ReadFieldEnd();
+            _wrappedProtocol.ReadFieldEnd();
         }
 
         public override TMap ReadMapBegin()
         {
-            return WrappedProtocol.ReadMapBegin();
+            return _wrappedProtocol.ReadMapBegin();
         }
 
         public override void ReadMapEnd()
         {
-            WrappedProtocol.ReadMapEnd();
+            _wrappedProtocol.ReadMapEnd();
         }
 
         public override TList ReadListBegin()
         {
-            return WrappedProtocol.ReadListBegin();
+            return _wrappedProtocol.ReadListBegin();
         }
 
         public override void ReadListEnd()
         {
-            WrappedProtocol.ReadListEnd();
+            _wrappedProtocol.ReadListEnd();
         }
 
         public override TSet ReadSetBegin()
         {
-            return WrappedProtocol.ReadSetBegin();
+            return _wrappedProtocol.ReadSetBegin();
         }
 
         public override void ReadSetEnd()
         {
-            WrappedProtocol.ReadSetEnd();
+            _wrappedProtocol.ReadSetEnd();
         }
 
         public override bool ReadBool()
         {
-            return WrappedProtocol.ReadBool();
+            return _wrappedProtocol.ReadBool();
         }
 
         public override sbyte ReadByte()
         {
-            return WrappedProtocol.ReadByte();
+            return _wrappedProtocol.ReadByte();
         }
 
         public override short ReadI16()
         {
-            return WrappedProtocol.ReadI16();
+            return _wrappedProtocol.ReadI16();
         }
 
         public override int ReadI32()
         {
-            return WrappedProtocol.ReadI32();
+            return _wrappedProtocol.ReadI32();
         }
 
         public override long ReadI64()
         {
-            return WrappedProtocol.ReadI64();
+            return _wrappedProtocol.ReadI64();
         }
 
         public override double ReadDouble()
         {
-            return WrappedProtocol.ReadDouble();
+            return _wrappedProtocol.ReadDouble();
         }
 
         public override string ReadString()
         {
-            return WrappedProtocol.ReadString();
+            return _wrappedProtocol.ReadString();
         }
 
         public override byte[] ReadBinary()
         {
-            return WrappedProtocol.ReadBinary();
+            return _wrappedProtocol.ReadBinary();
         }
     }
 }

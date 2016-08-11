@@ -6,9 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Thrift", "Thrift\Thrift.xproj", "{6850CF46-5467-4C65-BD78-871581C539FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{B869A741-4549-42B7-BA3C-7C09C402F3F5}"
-	ProjectSection(SolutionItems) = preProject
-		Samples\thrift-0.9.3.exe = Samples\thrift-0.9.3.exe
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Basic", "Basic", "{50918A72-B68F-472F-917F-A42D69C4B762}"
 EndProject
@@ -21,7 +18,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F043FC17-16B7-4497-B975-ABC12180F351}"
 	ProjectSection(SolutionItems) = preProject
 		global.json = global.json
+		thrift-0.9.3.exe = thrift-0.9.3.exe
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{F51FC4DA-CAC0-48B1-A069-B1712BCAA5BE}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Thrift.PublicInterfaces.Compile.Tests", "Tests\Thrift.PublicInterfaces.Compile.Tests\Thrift.PublicInterfaces.Compile.Tests.xproj", "{D0D3706B-FED5-4CF5-B984-04F448DE9D7B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{6814ACB8-5AA5-448B-A9DB-6C47F1466739}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6814ACB8-5AA5-448B-A9DB-6C47F1466739}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6814ACB8-5AA5-448B-A9DB-6C47F1466739}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0D3706B-FED5-4CF5-B984-04F448DE9D7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0D3706B-FED5-4CF5-B984-04F448DE9D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0D3706B-FED5-4CF5-B984-04F448DE9D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0D3706B-FED5-4CF5-B984-04F448DE9D7B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,5 +60,6 @@ Global
 		{C12E63CD-640E-4D45-BFAF-972CCD4D0B06} = {50918A72-B68F-472F-917F-A42D69C4B762}
 		{7956521F-9433-48BE-915F-213A91325BE2} = {50918A72-B68F-472F-917F-A42D69C4B762}
 		{6814ACB8-5AA5-448B-A9DB-6C47F1466739} = {50918A72-B68F-472F-917F-A42D69C4B762}
+		{D0D3706B-FED5-4CF5-B984-04F448DE9D7B} = {F51FC4DA-CAC0-48B1-A069-B1712BCAA5BE}
 	EndGlobalSection
 EndGlobal

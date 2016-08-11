@@ -11,7 +11,7 @@ using System.Text;
 using System.IO;
 using Thrift;
 using Thrift.Collections;
-//using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
 

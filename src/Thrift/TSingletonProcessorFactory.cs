@@ -17,10 +17,6 @@
  * under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Thrift.Server;
 using Thrift.Transport;
 
@@ -29,16 +25,16 @@ namespace Thrift
     // ReSharper disable once InconsistentNaming
     public class TSingletonProcessorFactory : TProcessorFactory
     {
-        private readonly TProcessor processor_;
+        private readonly TProcessor _processor;
 
         public TSingletonProcessorFactory(TProcessor processor)
         {
-            processor_ = processor;
+            _processor = processor;
         }
 
         public TProcessor GetProcessor(TTransport trans, TServer server = null)
         {
-            return processor_;
+            return _processor;
         }
     }
 }

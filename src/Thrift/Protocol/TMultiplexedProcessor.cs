@@ -22,8 +22,6 @@
  */
 
 using System;
-using System.Text;
-using Thrift.Transport;
 using System.Collections.Generic;
 using System.IO;
 
@@ -52,7 +50,7 @@ namespace Thrift.Protocol
     // ReSharper disable once InconsistentNaming
     public class TMultiplexedProcessor : TProcessor
     {
-        private Dictionary<string, TProcessor> ServiceProcessorMap = new Dictionary<string, TProcessor>();
+        private readonly Dictionary<string, TProcessor> _serviceProcessorMap = new Dictionary<string, TProcessor>();
 
         /**
          * 'Register' a service with this TMultiplexedProcessor. This allows us to broker
@@ -67,7 +65,7 @@ namespace Thrift.Protocol
 
         public void RegisterProcessor(string serviceName, TProcessor processor)
         {
-            ServiceProcessorMap.Add(serviceName, processor);
+            _serviceProcessorMap.Add(serviceName, processor);
         }
 
 
@@ -94,7 +92,7 @@ namespace Thrift.Protocol
          *    that allows readMessageBegin() to return the original TMessage.
          *
          * Throws an exception if
-         * - the message type is not CALL or ONEWAY,
+         * - the message exType is not CALL or ONEWAY,
          * - the service name was not found in the message, or
          * - the service name has not been RegisterProcessor()ed.
          */
@@ -113,12 +111,12 @@ namespace Thrift.Protocol
                 {
                     Fail(oprot, message,
                         TApplicationException.ExceptionType.InvalidMessageType,
-                        "Message type CALL or ONEWAY expected");
+                        "Message exType CALL or ONEWAY expected");
                     return false;
                 }
 
                 // Extract the service name
-                var index = message.Name.IndexOf(TMultiplexedProtocol.SEPARATOR);
+                var index = message.Name.IndexOf(TMultiplexedProtocol.Separator, StringComparison.Ordinal);
                 if (index < 0)
                 {
                     Fail(oprot, message,
@@ -131,7 +129,7 @@ namespace Thrift.Protocol
                 // Create a new TMessage, something that can be consumed by any TProtocol
                 var serviceName = message.Name.Substring(0, index);
                 TProcessor actualProcessor;
-                if (!ServiceProcessorMap.TryGetValue(serviceName, out actualProcessor))
+                if (!_serviceProcessorMap.TryGetValue(serviceName, out actualProcessor))
                 {
                     Fail(oprot, message,
                         TApplicationException.ExceptionType.InternalError,
@@ -142,7 +140,7 @@ namespace Thrift.Protocol
 
                 // Create a new TMessage, removing the service name
                 var newMessage = new TMessage(
-                    message.Name.Substring(serviceName.Length + TMultiplexedProtocol.SEPARATOR.Length),
+                    message.Name.Substring(serviceName.Length + TMultiplexedProtocol.Separator.Length),
                     message.Type,
                     message.SeqID);
 
@@ -163,17 +161,17 @@ namespace Thrift.Protocol
 
         private class StoredMessageProtocol : TProtocolDecorator
         {
-            TMessage MsgBegin;
+            readonly TMessage _msgBegin;
 
             public StoredMessageProtocol(TProtocol protocol, TMessage messageBegin)
                 : base(protocol)
             {
-                MsgBegin = messageBegin;
+                _msgBegin = messageBegin;
             }
 
             public override TMessage ReadMessageBegin()
             {
-                return MsgBegin;
+                return _msgBegin;
             }
         }
     }

@@ -34,15 +34,15 @@ namespace Thrift.Server
     // ReSharper disable once InconsistentNaming
     public class TThreadPoolServer : TServer
     {
-        private const int DEFAULT_MIN_THREADS = 10;
-        private const int DEFAULT_MAX_THREADS = 100;
-        private volatile bool stop = false;
+        private const int DefaultMinThreads = 10;
+        private const int DefaultMaxThreads = 100;
+        private volatile bool _stop;
 
         public TThreadPoolServer(TProcessor processor, TServerTransport serverTransport)
             : this(new TSingletonProcessorFactory(processor), serverTransport,
                 new TTransportFactory(), new TTransportFactory(),
                 new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(),
-                DEFAULT_MIN_THREADS, DEFAULT_MAX_THREADS, DefaultLogDelegate)
+                DefaultMinThreads, DefaultMaxThreads, DefaultLogDelegate)
         {
         }
 
@@ -50,7 +50,7 @@ namespace Thrift.Server
             : this(new TSingletonProcessorFactory(processor), serverTransport,
                 new TTransportFactory(), new TTransportFactory(),
                 new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(),
-                DEFAULT_MIN_THREADS, DEFAULT_MAX_THREADS, logDelegate)
+                DefaultMinThreads, DefaultMaxThreads, logDelegate)
         {
         }
 
@@ -61,7 +61,7 @@ namespace Thrift.Server
             : this(new TSingletonProcessorFactory(processor), serverTransport,
                 transportFactory, transportFactory,
                 protocolFactory, protocolFactory,
-                DEFAULT_MIN_THREADS, DEFAULT_MAX_THREADS, DefaultLogDelegate)
+                DefaultMinThreads, DefaultMaxThreads, DefaultLogDelegate)
         {
         }
 
@@ -72,7 +72,7 @@ namespace Thrift.Server
             : this(processorFactory, serverTransport,
                 transportFactory, transportFactory,
                 protocolFactory, protocolFactory,
-                DEFAULT_MIN_THREADS, DEFAULT_MAX_THREADS, DefaultLogDelegate)
+                DefaultMinThreads, DefaultMaxThreads, DefaultLogDelegate)
         {
         }
 
@@ -117,9 +117,9 @@ namespace Thrift.Server
 
             //Fire the preServe server event when server is up but before any client connections
             if (serverEventHandler != null)
-                serverEventHandler.preServe();
+                serverEventHandler.PreServe();
 
-            while (!stop)
+            while (!_stop)
             {
                 var failureCount = 0;
                 try
@@ -129,7 +129,7 @@ namespace Thrift.Server
                 }
                 catch (TTransportException ttx)
                 {
-                    if (!stop || ttx.Type != TTransportException.ExceptionType.Interrupted)
+                    if (!_stop || ttx.Type != TTransportException.ExceptionType.Interrupted)
                     {
                         ++failureCount;
                         logDelegate(ttx.ToString());
@@ -137,7 +137,7 @@ namespace Thrift.Server
                 }
             }
 
-            if (stop)
+            if (_stop)
             {
                 try
                 {
@@ -147,7 +147,7 @@ namespace Thrift.Server
                 {
                     logDelegate("TServerTransport failed on close: " + ttx.Message);
                 }
-                stop = false;
+                _stop = false;
             }
         }
 
@@ -174,10 +174,10 @@ namespace Thrift.Server
 
                 //Recover event handler (if any) and fire createContext server event when a client connects
                 if (serverEventHandler != null)
-                    connectionContext = serverEventHandler.createContext(inputProtocol, outputProtocol);
+                    connectionContext = serverEventHandler.CreateContext(inputProtocol, outputProtocol);
 
                 //Process client requests until client disconnects
-                while (!stop)
+                while (!_stop)
                 {
                     if (!inputTransport.Peek())
                         break;
@@ -187,7 +187,7 @@ namespace Thrift.Server
                     //That is to say it may be many minutes between the event firing and the client request
                     //actually arriving or the client may hang up without ever makeing a request.
                     if (serverEventHandler != null)
-                        serverEventHandler.processContext(connectionContext, inputTransport);
+                        serverEventHandler.ProcessContext(connectionContext, inputTransport);
                     //Process client request (blocks until transport is readable)
                     if (!processor.Process(inputProtocol, outputProtocol))
                         break;
@@ -205,18 +205,16 @@ namespace Thrift.Server
 
             //Fire deleteContext server event after client disconnects
             if (serverEventHandler != null)
-                serverEventHandler.deleteContext(connectionContext, inputProtocol, outputProtocol);
+                serverEventHandler.DeleteContext(connectionContext, inputProtocol, outputProtocol);
 
             //Close transports
-            if (inputTransport != null)
-                inputTransport.Close();
-            if (outputTransport != null)
-                outputTransport.Close();
+            inputTransport?.Close();
+            outputTransport?.Close();
         }
 
         public override void Stop()
         {
-            stop = true;
+            _stop = true;
             serverTransport.Close();
         }
     }

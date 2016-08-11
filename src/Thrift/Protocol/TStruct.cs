@@ -21,27 +21,17 @@
  * details.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public struct TStruct
     {
-        private string name;
-
         public TStruct(string name)
             : this()
         {
-            this.name = name;
+            Name = name;
         }
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
+        public string Name { get; set; }
     }
 }

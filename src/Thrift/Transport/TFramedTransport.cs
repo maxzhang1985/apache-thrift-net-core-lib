@@ -23,14 +23,14 @@ using System.IO;
 namespace Thrift.Transport
 {
     // ReSharper disable once InconsistentNaming
-    public class TFramedTransport : TTransport, IDisposable
+    public class TFramedTransport : TTransport
     {
-        private readonly TTransport transport;
-        private readonly MemoryStream writeBuffer = new MemoryStream(1024);
-        private readonly MemoryStream readBuffer = new MemoryStream(1024);
+        private readonly TTransport _transport;
+        private readonly MemoryStream _writeBuffer = new MemoryStream(1024);
+        private readonly MemoryStream _readBuffer = new MemoryStream(1024);
 
         private const int HeaderSize = 4;
-        private readonly byte[] headerBuf = new byte[HeaderSize];
+        private readonly byte[] _headerBuf = new byte[HeaderSize];
 
         public class Factory : TTransportFactory
         {
@@ -43,31 +43,23 @@ namespace Thrift.Transport
         public TFramedTransport(TTransport transport)
         {
             if (transport == null)
-                throw new ArgumentNullException("transport");
-            this.transport = transport;
+                throw new ArgumentNullException(nameof(transport));
+            _transport = transport;
             InitWriteBuffer();
         }
 
         public override void Open()
         {
             CheckNotDisposed();
-            transport.Open();
+            _transport.Open();
         }
 
-        public override bool IsOpen
-        {
-            get
-            {
-                // We can legitimately throw here but be nice a bit.
-                // CheckNotDisposed();
-                return !_IsDisposed && transport.IsOpen;
-            }
-        }
+        public override bool IsOpen => !_isDisposed && _transport.IsOpen;
 
-        public override void Close()
+      public override void Close()
         {
             CheckNotDisposed();
-            transport.Close();
+            _transport.Close();
         }
 
         public override int Read(byte[] buf, int off, int len)
@@ -76,7 +68,7 @@ namespace Thrift.Transport
             ValidateBufferArgs(buf, off, len);
             if (!IsOpen)
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            var got = readBuffer.Read(buf, off, len);
+            var got = _readBuffer.Read(buf, off, len);
             if (got > 0)
             {
                 return got;
@@ -85,22 +77,22 @@ namespace Thrift.Transport
             // Read another frame of data
             ReadFrame();
 
-            return readBuffer.Read(buf, off, len);
+            return _readBuffer.Read(buf, off, len);
         }
 
         private void ReadFrame()
         {
-            transport.ReadAll(headerBuf, 0, HeaderSize);
-            var size = DecodeFrameSize(headerBuf);
+            _transport.ReadAll(_headerBuf, 0, HeaderSize);
+            var size = DecodeFrameSize(_headerBuf);
 
-            readBuffer.SetLength(size);
-            readBuffer.Seek(0, SeekOrigin.Begin);
-            var bufSegment = new ArraySegment<byte>();
-            readBuffer.TryGetBuffer(out bufSegment);
+            _readBuffer.SetLength(size);
+            _readBuffer.Seek(0, SeekOrigin.Begin);
+            ArraySegment<byte> bufSegment;
+            _readBuffer.TryGetBuffer(out bufSegment);
             byte[] buff = bufSegment.Array;
 
             //byte[] buff = readBuffer.GetBuffer();
-            transport.ReadAll(buff, 0, size);
+            _transport.ReadAll(buff, 0, size);
         }
 
         public override void Write(byte[] buf, int off, int len)
@@ -109,9 +101,9 @@ namespace Thrift.Transport
             ValidateBufferArgs(buf, off, len);
             if (!IsOpen)
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            if (writeBuffer.Length + (long) len > (long) int.MaxValue)
+            if (_writeBuffer.Length + len > int.MaxValue)
                 Flush();
-            writeBuffer.Write(buf, off, len);
+            _writeBuffer.Write(buf, off, len);
         }
 
         public override void Flush()
@@ -119,32 +111,32 @@ namespace Thrift.Transport
             CheckNotDisposed();
             if (!IsOpen)
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            var bufSegment = new ArraySegment<byte>();
-            writeBuffer.TryGetBuffer(out bufSegment);
+            ArraySegment<byte> bufSegment;
+            _writeBuffer.TryGetBuffer(out bufSegment);
             byte[] buf = bufSegment.Array;
 
             //byte[] buf = writeBuffer.GetBuffer();
-            var len = (int) writeBuffer.Length;
-            var data_len = len - HeaderSize;
-            if (data_len < 0)
+            var len = (int) _writeBuffer.Length;
+            var dataLen = len - HeaderSize;
+            if (dataLen < 0)
                 throw new InvalidOperationException(); // logic error actually
 
             // Inject message header into the reserved buffer space
-            EncodeFrameSize(data_len, buf);
+            EncodeFrameSize(dataLen, buf);
 
             // Send the entire message at once
-            transport.Write(buf, 0, len);
+            _transport.Write(buf, 0, len);
 
             InitWriteBuffer();
 
-            transport.Flush();
+            _transport.Flush();
         }
 
         private void InitWriteBuffer()
         {
             // Reserve space for message header to be put right before sending it out
-            writeBuffer.SetLength(HeaderSize);
-            writeBuffer.Seek(0, SeekOrigin.End);
+            _writeBuffer.SetLength(HeaderSize);
+            _writeBuffer.Seek(0, SeekOrigin.End);
         }
 
         private static void EncodeFrameSize(int frameSize, byte[] buf)
@@ -167,24 +159,24 @@ namespace Thrift.Transport
 
         private void CheckNotDisposed()
         {
-            if (_IsDisposed)
+            if (_isDisposed)
                 throw new ObjectDisposedException("TFramedTransport");
         }
 
-        private bool _IsDisposed;
+        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if (!_IsDisposed)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
-                    readBuffer.Dispose();
-                    writeBuffer.Dispose();
+                    _readBuffer.Dispose();
+                    _writeBuffer.Dispose();
                 }
             }
-            _IsDisposed = true;
+            _isDisposed = true;
         }
     }
 }

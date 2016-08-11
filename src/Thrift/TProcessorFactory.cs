@@ -17,7 +17,6 @@
  * under the License.
  */
 
-using System;
 using Thrift.Server;
 using Thrift.Transport;
 

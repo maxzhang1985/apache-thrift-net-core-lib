@@ -31,7 +31,7 @@ namespace Thrift.Transport
     {
         public abstract bool IsOpen { get; }
 
-        private byte[] _peekBuffer = new byte[1];
+        private readonly byte[] _peekBuffer = new byte[1];
         private bool _hasPeekByte;
 
         public bool Peek()
@@ -67,13 +67,21 @@ namespace Thrift.Transport
         protected static void ValidateBufferArgs(byte[] buf, int off, int len)
         {
             if (buf == null)
-                throw new ArgumentNullException("buf");
+            {
+                throw new ArgumentNullException(nameof(buf));
+            }
             if (off < 0)
-                throw new ArgumentOutOfRangeException("Buffer offset is smaller than zero.");
+            {
+                throw new ArgumentOutOfRangeException(nameof(off),"Buffer offset is smaller than zero.");
+            }
             if (len < 0)
-                throw new ArgumentOutOfRangeException("Buffer length is smaller than zero.");
+            {
+                throw new ArgumentOutOfRangeException(nameof(len), "Buffer length is smaller than zero.");
+            }
             if (off + len > buf.Length)
-                throw new ArgumentOutOfRangeException("Not enough data.");
+            {
+                throw new ArgumentOutOfRangeException(nameof(buf), "Not enough data.");
+            }
         }
 
         public abstract int Read(byte[] buf, int off, int len);

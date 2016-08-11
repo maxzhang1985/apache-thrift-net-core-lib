@@ -22,8 +22,8 @@
  */
 
 using System;
+using System.Net;
 using System.Net.Sockets;
-
 
 namespace Thrift.Transport
 {
@@ -33,22 +33,22 @@ namespace Thrift.Transport
         /**
         * Underlying server with socket
         */
-        private TcpListener server = null;
+        private TcpListener _server;
 
         /**
          * Port to listen on
          */
-        private int port = 0;
+        private readonly int _port;
 
         /**
          * Timeout for client sockets from accept
          */
-        private int clientTimeout = 0;
+        private readonly int _clientTimeout;
 
         /**
          * Whether or not to wrap new TSocket connections in buffers
          */
-        private bool useBufferedSockets = false;
+        private readonly bool _useBufferedSockets;
 
         /**
          * Creates a server socket from underlying socket object
@@ -65,8 +65,8 @@ namespace Thrift.Transport
 
         public TServerSocket(TcpListener listener, int clientTimeout)
         {
-            server = listener;
-            this.clientTimeout = clientTimeout;
+            _server = listener;
+            _clientTimeout = clientTimeout;
         }
 
         /**
@@ -89,18 +89,18 @@ namespace Thrift.Transport
 
         public TServerSocket(int port, int clientTimeout, bool useBufferedSockets)
         {
-            this.port = port;
-            this.clientTimeout = clientTimeout;
-            this.useBufferedSockets = useBufferedSockets;
+            _port = port;
+            _clientTimeout = clientTimeout;
+            _useBufferedSockets = useBufferedSockets;
             try
             {
                 // Make server socket
-                server = new TcpListener(System.Net.IPAddress.Any, this.port);
-                server.Server.NoDelay = true;
+                _server = new TcpListener(IPAddress.Any, _port);
+                _server.Server.NoDelay = true;
             }
             catch (Exception)
             {
-                server = null;
+                _server = null;
                 throw new TTransportException("Could not create ServerSocket on port " + port + ".");
             }
         }
@@ -108,11 +108,11 @@ namespace Thrift.Transport
         public override void Listen()
         {
             // Make sure not to block on accept
-            if (server != null)
+            if (_server != null)
             {
                 try
                 {
-                    server.Start();
+                    _server.Start();
                 }
                 catch (SocketException sx)
                 {
@@ -123,7 +123,7 @@ namespace Thrift.Transport
 
         protected override TTransport AcceptImpl()
         {
-            if (server == null)
+            if (_server == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
             }
@@ -131,20 +131,17 @@ namespace Thrift.Transport
             {
                 TSocket result2 = null;
                 //TODO: Async
-                TcpClient result = server.AcceptTcpClientAsync().Result;
+                TcpClient result = _server.AcceptTcpClientAsync().Result;
                 try
                 {
                     result2 = new TSocket(result);
-                    result2.Timeout = clientTimeout;
-                    if (useBufferedSockets)
+                    result2.Timeout = _clientTimeout;
+                    if (_useBufferedSockets)
                     {
                         var result3 = new TBufferedTransport(result2);
                         return result3;
                     }
-                    else
-                    {
-                        return result2;
-                    }
+                    return result2;
                 }
                 catch (Exception)
                 {
@@ -165,17 +162,17 @@ namespace Thrift.Transport
 
         public override void Close()
         {
-            if (server != null)
+            if (_server != null)
             {
                 try
                 {
-                    server.Stop();
+                    _server.Stop();
                 }
                 catch (Exception ex)
                 {
                     throw new TTransportException("WARNING: Could not close server socket: " + ex);
                 }
-                server = null;
+                _server = null;
             }
         }
     }

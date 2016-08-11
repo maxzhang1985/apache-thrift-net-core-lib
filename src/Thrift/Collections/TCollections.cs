@@ -17,7 +17,6 @@
  * under the License.
  */
 
-using System;
 using System.Collections;
 
 namespace Thrift.Collections

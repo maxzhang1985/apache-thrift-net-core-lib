@@ -18,7 +18,6 @@
  */
 
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
@@ -36,8 +35,8 @@ using System.Runtime.InteropServices;
 //@TODO where to put License information?
 
 // Setting ComVisible to false makes the types in this assembly not visible
-// to COM components.  If you need to access a type in this assembly from
-// COM, set the ComVisible attribute to true on that type.
+// to COM components.  If you need to access a exType in this assembly from
+// COM, set the ComVisible attribute to true on that exType.
 
 [assembly: ComVisible(false)]
 

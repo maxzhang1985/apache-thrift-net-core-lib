@@ -21,35 +21,20 @@
  * details.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public struct TList
     {
-        private TType elementType;
-        private int count;
-
         public TList(TType elementType, int count)
             : this()
         {
-            this.elementType = elementType;
-            this.count = count;
+            ElementType = elementType;
+            Count = count;
         }
 
-        public TType ElementType
-        {
-            get { return elementType; }
-            set { elementType = value; }
-        }
+        public TType ElementType { get; set; }
 
-        public int Count
-        {
-            get { return count; }
-            set { count = value; }
-        }
+        public int Count { get; set; }
     }
 }

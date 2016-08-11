@@ -34,53 +34,53 @@ namespace Thrift.Transport
         /// <summary>
         /// Internal TCP Client
         /// </summary>
-        private TcpClient client;
+        private TcpClient _client;
 
         /// <summary>
         /// The host
         /// </summary>
-        private string host;
+        private readonly string _host;
 
         /// <summary>
         /// The port
         /// </summary>
-        private int port;
+        private readonly int _port;
 
         /// <summary>
         /// The timeout for the connection
         /// </summary>
-        private int timeout;
+        private int _timeout;
 
         /// <summary>
         /// Internal SSL Stream for IO
         /// </summary>
-        private SslStream secureStream;
+        private SslStream _secureStream;
 
         /// <summary>
         /// Defines wheter or not this socket is a server socket<br/>
         /// This is used for the TLS-authentication
         /// </summary>
-        private bool isServer;
+        private readonly bool _isServer;
 
         /// <summary>
         /// The certificate
         /// </summary>
-        private X509Certificate certificate;
+        private readonly X509Certificate _certificate;
 
         /// <summary>
         /// User defined certificate validator.
         /// </summary>
-        private RemoteCertificateValidationCallback certValidator;
+        private readonly RemoteCertificateValidationCallback _certValidator;
 
         /// <summary>
         /// The function to determine which certificate to use.
         /// </summary>
-        private LocalCertificateSelectionCallback localCertificateSelectionCallback;
+        private readonly LocalCertificateSelectionCallback _localCertificateSelectionCallback;
 
         /// <summary>
         /// The SslProtocols value that represents the protocol used for authentication.SSL protocols to be used.
         /// </summary>
-        private readonly SslProtocols sslProtocols;
+        private readonly SslProtocols _sslProtocols;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TTLSSocket"/> class.
@@ -100,12 +100,12 @@ namespace Thrift.Transport
             // TODO: Enable Tls11 and Tls12 (TLS 1.1 and 1.2) by default once we start using .NET 4.5+.
             SslProtocols sslProtocols = SslProtocols.Tls)
         {
-            this.client = client;
-            this.certificate = certificate;
-            this.certValidator = certValidator;
-            this.localCertificateSelectionCallback = localCertificateSelectionCallback;
-            this.sslProtocols = sslProtocols;
-            this.isServer = isServer;
+            _client = client;
+            _certificate = certificate;
+            _certValidator = certValidator;
+            _localCertificateSelectionCallback = localCertificateSelectionCallback;
+            _sslProtocols = sslProtocols;
+            _isServer = isServer;
             if (isServer && certificate == null)
             {
                 throw new ArgumentException("TTLSSocket needs certificate to be used for server", "certificate");
@@ -179,13 +179,13 @@ namespace Thrift.Transport
             LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
             SslProtocols sslProtocols = SslProtocols.Tls)
         {
-            this.host = host;
-            this.port = port;
-            this.timeout = timeout;
-            this.certificate = certificate;
-            this.certValidator = certValidator;
-            this.localCertificateSelectionCallback = localCertificateSelectionCallback;
-            this.sslProtocols = sslProtocols;
+            _host = host;
+            _port = port;
+            _timeout = timeout;
+            _certificate = certificate;
+            _certValidator = certValidator;
+            _localCertificateSelectionCallback = localCertificateSelectionCallback;
+            _sslProtocols = sslProtocols;
 
             InitSocket();
         }
@@ -195,9 +195,9 @@ namespace Thrift.Transport
         /// </summary>
         private void InitSocket()
         {
-            client = new TcpClient();
-            client.ReceiveTimeout = client.SendTimeout = timeout;
-            client.Client.NoDelay = true;
+            _client = new TcpClient();
+            _client.ReceiveTimeout = _client.SendTimeout = _timeout;
+            _client.Client.NoDelay = true;
         }
 
         /// <summary>
@@ -205,46 +205,37 @@ namespace Thrift.Transport
         /// </summary>
         public int Timeout
         {
-            set { client.ReceiveTimeout = client.SendTimeout = timeout = value; }
+            set { _client.ReceiveTimeout = _client.SendTimeout = _timeout = value; }
         }
 
         /// <summary>
         /// Gets the TCP client.
         /// </summary>
-        public TcpClient TcpClient
-        {
-            get { return client; }
-        }
+        public TcpClient TcpClient => _client;
 
-        /// <summary>
+      /// <summary>
         /// Gets the host.
         /// </summary>
-        public string Host
-        {
-            get { return host; }
-        }
+        public string Host => _host;
 
-        /// <summary>
+      /// <summary>
         /// Gets the port.
         /// </summary>
-        public int Port
-        {
-            get { return port; }
-        }
+        public int Port => _port;
 
-        /// <summary>
+      /// <summary>
         /// Gets a value indicating whether TCP Client is Cpen
         /// </summary>
         public override bool IsOpen
         {
             get
             {
-                if (client == null)
+                if (_client == null)
                 {
                     return false;
                 }
 
-                return client.Connected;
+                return _client.Connected;
             }
         }
 
@@ -254,7 +245,7 @@ namespace Thrift.Transport
         /// <param name="sender">The sender-object.</param>
         /// <param name="certificate">The used certificate.</param>
         /// <param name="chain">The certificate chain.</param>
-        /// <param name="sslPolicyErrors">An enum, which lists all the errors from the .NET certificate check.</param>
+        /// <param name="sslValidationErrors">An enum, which lists all the errors from the .NET certificate check.</param>
         /// <returns></returns>
         private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain,
             SslPolicyErrors sslValidationErrors)
@@ -272,47 +263,47 @@ namespace Thrift.Transport
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
             }
 
-            if (string.IsNullOrEmpty(host))
+            if (string.IsNullOrEmpty(_host))
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open null host");
             }
 
-            if (port <= 0)
+            if (_port <= 0)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
             }
 
-            if (client == null)
+            if (_client == null)
             {
                 InitSocket();
             }
 
             //TODO: Async
-            client.ConnectAsync(host, port).Wait();
+            _client?.ConnectAsync(_host, _port).Wait();
 
-            setupTLS();
+            SetupTls();
         }
 
         /// <summary>
         /// Creates a TLS-stream and lays it over the existing socket
         /// </summary>
-        public void setupTLS()
+        public void SetupTls()
         {
-            var validator = certValidator ?? DefaultCertificateValidator;
+            var validator = _certValidator ?? DefaultCertificateValidator;
 
-            if (localCertificateSelectionCallback != null)
+            if (_localCertificateSelectionCallback != null)
             {
-                secureStream = new SslStream(
-                    client.GetStream(),
+                _secureStream = new SslStream(
+                    _client.GetStream(),
                     false,
                     validator,
-                    localCertificateSelectionCallback
+                    _localCertificateSelectionCallback
                 );
             }
             else
             {
-                secureStream = new SslStream(
-                    client.GetStream(),
+                _secureStream = new SslStream(
+                    _client.GetStream(),
                     false,
                     validator
                 );
@@ -320,21 +311,21 @@ namespace Thrift.Transport
 
             try
             {
-                if (isServer)
+                if (_isServer)
                 {
                     //TODO: Async
                     // Server authentication
-                    secureStream.AuthenticateAsServerAsync(certificate, certValidator != null, sslProtocols, true)
+                    _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols, true)
                         .Wait();
                 }
                 else
                 {
                     //TODO: Async
                     // Client authentication
-                    var certs = certificate != null
-                        ? new X509CertificateCollection {certificate}
+                    var certs = _certificate != null
+                        ? new X509CertificateCollection {_certificate}
                         : new X509CertificateCollection();
-                    secureStream.AuthenticateAsClientAsync(host, certs, sslProtocols, true).Wait();
+                    _secureStream.AuthenticateAsClientAsync(_host, certs, _sslProtocols, true).Wait();
                 }
             }
             catch (Exception)
@@ -343,8 +334,8 @@ namespace Thrift.Transport
                 throw;
             }
 
-            inputStream = secureStream;
-            outputStream = secureStream;
+            inputStream = _secureStream;
+            outputStream = _secureStream;
         }
 
         /// <summary>
@@ -353,16 +344,16 @@ namespace Thrift.Transport
         public override void Close()
         {
             base.Close();
-            if (client != null)
+            if (_client != null)
             {
-                client.Dispose();
-                client = null;
+                _client.Dispose();
+                _client = null;
             }
 
-            if (secureStream != null)
+            if (_secureStream != null)
             {
-                secureStream.Dispose();
-                secureStream = null;
+                _secureStream.Dispose();
+                _secureStream = null;
             }
         }
     }

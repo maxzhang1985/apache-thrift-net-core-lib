@@ -21,13 +21,12 @@
  * details.
  */
 
-using System;
-
+// ReSharper disable InconsistentNaming - do not rename public constants 
 namespace Thrift.Protocol
 {
-    // ReSharper disable once InconsistentNaming
     public class TProtocolException : TException
     {
+        // do not rename public contants - they used in generated files
         public const int UNKNOWN = 0;
         public const int INVALID_DATA = 1;
         public const int NEGATIVE_SIZE = 2;
@@ -36,23 +35,21 @@ namespace Thrift.Protocol
         public const int NOT_IMPLEMENTED = 5;
         public const int DEPTH_LIMIT = 6;
 
-        protected int type_ = UNKNOWN;
+        protected int Type = UNKNOWN;
 
         public TProtocolException()
-            : base()
         {
         }
 
         public TProtocolException(int type)
-            : base()
         {
-            type_ = type;
+            Type = type;
         }
 
         public TProtocolException(int type, string message)
             : base(message)
         {
-            type_ = type;
+            Type = type;
         }
 
         public TProtocolException(string message)
@@ -62,7 +59,7 @@ namespace Thrift.Protocol
 
         public int getType()
         {
-            return type_;
+            return Type;
         }
     }
 }

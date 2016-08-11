@@ -21,11 +21,6 @@
  * details.
  */
 
-using System;
-using System.Text;
-using Thrift.Transport;
-using System.Collections.Generic;
-
 namespace Thrift.Protocol
 {
 /**
@@ -57,9 +52,9 @@ namespace Thrift.Protocol
     public class TMultiplexedProtocol : TProtocolDecorator
     {
         /** Used to delimit the service name from the function name */
-        public static string SEPARATOR = ":";
+        public static string Separator = ":";
 
-        private string ServiceName;
+        private readonly string _serviceName;
 
         /**
          * Wrap the specified protocol, allowing it to be used to communicate with a
@@ -75,7 +70,7 @@ namespace Thrift.Protocol
         public TMultiplexedProtocol(TProtocol protocol, string serviceName)
             : base(protocol)
         {
-            ServiceName = serviceName;
+            _serviceName = serviceName;
         }
 
         /**
@@ -91,7 +86,7 @@ namespace Thrift.Protocol
                 case TMessageType.Call:
                 case TMessageType.Oneway:
                     base.WriteMessageBegin(new TMessage(
-                        ServiceName + SEPARATOR + tMessage.Name,
+                        _serviceName + Separator + tMessage.Name,
                         tMessage.Type,
                         tMessage.SeqID));
                     break;

@@ -21,7 +21,6 @@
  * details.
  */
 
-using System;
 using Thrift.Protocol;
 
 namespace Thrift
@@ -29,7 +28,7 @@ namespace Thrift
     // ReSharper disable once InconsistentNaming
     public class TApplicationException : TException
     {
-        protected ExceptionType type;
+        protected ExceptionType Type;
 
         public TApplicationException()
         {
@@ -37,26 +36,24 @@ namespace Thrift
 
         public TApplicationException(ExceptionType type)
         {
-            this.type = type;
+            Type = type;
         }
 
         public TApplicationException(ExceptionType type, string message)
             : base(message)
         {
-            this.type = type;
+            Type = type;
         }
 
         public static TApplicationException Read(TProtocol iprot)
         {
-            TField field;
-
             string message = null;
             var type = ExceptionType.Unknown;
 
             iprot.ReadStructBegin();
             while (true)
             {
-                field = iprot.ReadFieldBegin();
+                var field = iprot.ReadFieldBegin();
                 if (field.Type == TType.Stop)
                 {
                     break;
@@ -114,11 +111,11 @@ namespace Thrift
                 oprot.WriteFieldEnd();
             }
 
-            field.Name = "type";
+            field.Name = "exType";
             field.Type = TType.I32;
             field.ID = 2;
             oprot.WriteFieldBegin(field);
-            oprot.WriteI32((int) type);
+            oprot.WriteI32((int) Type);
             oprot.WriteFieldEnd();
             oprot.WriteFieldStop();
             oprot.WriteStructEnd();
@@ -130,7 +127,7 @@ namespace Thrift
             UnknownMethod,
             InvalidMessageType,
             WrongMethodName,
-            BadSequenceID,
+            BadSequenceId,
             MissingResult,
             InternalError,
             ProtocolError,

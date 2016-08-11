@@ -21,8 +21,6 @@
  * details.
  */
 
-using System;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming

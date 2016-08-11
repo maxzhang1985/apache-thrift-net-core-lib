@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -34,42 +35,42 @@ namespace Thrift.Transport
         /// <summary>
         /// Underlying tcp server
         /// </summary>
-        private TcpListener server = null;
+        private TcpListener _server;
 
         /// <summary>
         /// The port where the socket listen
         /// </summary>
-        private int port = 0;
+        private readonly int _port;
 
         /// <summary>
         /// Timeout for the created server socket
         /// </summary>
-        private int clientTimeout = 0;
+        private readonly int _clientTimeout = 0;
 
         /// <summary>
         /// Whether or not to wrap new TSocket connections in buffers
         /// </summary>
-        private bool useBufferedSockets = false;
+        private readonly bool _useBufferedSockets;
 
         /// <summary>
         /// The servercertificate with the private- and public-key
         /// </summary>
-        private X509Certificate serverCertificate;
+        private readonly X509Certificate _serverCertificate;
 
         /// <summary>
         /// The function to validate the client certificate.
         /// </summary>
-        private RemoteCertificateValidationCallback clientCertValidator;
+        private readonly RemoteCertificateValidationCallback _clientCertValidator;
 
         /// <summary>
         /// The function to determine which certificate to use.
         /// </summary>
-        private LocalCertificateSelectionCallback localCertificateSelectionCallback;
+        private readonly LocalCertificateSelectionCallback _localCertificateSelectionCallback;
 
         /// <summary>
         /// The SslProtocols value that represents the protocol used for authentication.
         /// </summary>
-        private readonly SslProtocols sslProtocols;
+        private readonly SslProtocols _sslProtocols;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TTLSServerSocket" /> class.
@@ -118,21 +119,21 @@ namespace Thrift.Transport
                     "Your server-certificate needs to have a private key");
             }
 
-            this.port = port;
-            serverCertificate = certificate;
-            this.useBufferedSockets = useBufferedSockets;
-            this.clientCertValidator = clientCertValidator;
-            this.localCertificateSelectionCallback = localCertificateSelectionCallback;
-            this.sslProtocols = sslProtocols;
+            _port = port;
+            _serverCertificate = certificate;
+            _useBufferedSockets = useBufferedSockets;
+            _clientCertValidator = clientCertValidator;
+            _localCertificateSelectionCallback = localCertificateSelectionCallback;
+            _sslProtocols = sslProtocols;
             try
             {
                 // Create server socket
-                server = new TcpListener(System.Net.IPAddress.Any, this.port);
-                server.Server.NoDelay = true;
+                _server = new TcpListener(IPAddress.Any, _port);
+                _server.Server.NoDelay = true;
             }
             catch (Exception)
             {
-                server = null;
+                _server = null;
                 throw new TTransportException("Could not create ServerSocket on port " + port + ".");
             }
         }
@@ -143,11 +144,11 @@ namespace Thrift.Transport
         public override void Listen()
         {
             // Make sure accept is not blocking
-            if (server != null)
+            if (_server != null)
             {
                 try
                 {
-                    server.Start();
+                    _server.Start();
                 }
                 catch (SocketException sx)
                 {
@@ -164,7 +165,7 @@ namespace Thrift.Transport
         /// </returns>
         protected override TTransport AcceptImpl()
         {
-            if (server == null)
+            if (_server == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
             }
@@ -172,29 +173,26 @@ namespace Thrift.Transport
             try
             {
                 //TODO: Async
-                TcpClient client = server.AcceptTcpClientAsync().Result;
-                client.SendTimeout = client.ReceiveTimeout = clientTimeout;
+                TcpClient client = _server.AcceptTcpClientAsync().Result;
+                client.SendTimeout = client.ReceiveTimeout = _clientTimeout;
 
                 //wrap the client in an SSL Socket passing in the SSL cert
                 var socket = new TTLSSocket(
                     client,
-                    serverCertificate,
+                    _serverCertificate,
                     true,
-                    clientCertValidator,
-                    localCertificateSelectionCallback,
-                    sslProtocols);
+                    _clientCertValidator,
+                    _localCertificateSelectionCallback,
+                    _sslProtocols);
 
-                socket.setupTLS();
+                socket.SetupTls();
 
-                if (useBufferedSockets)
+                if (_useBufferedSockets)
                 {
                     var trans = new TBufferedTransport(socket);
                     return trans;
                 }
-                else
-                {
-                    return socket;
-                }
+                return socket;
             }
             catch (Exception ex)
             {
@@ -207,17 +205,17 @@ namespace Thrift.Transport
         /// </summary>
         public override void Close()
         {
-            if (server != null)
+            if (_server != null)
             {
                 try
                 {
-                    server.Stop();
+                    _server.Stop();
                 }
                 catch (Exception ex)
                 {
                     throw new TTransportException("WARNING: Could not close server socket: " + ex);
                 }
-                server = null;
+                _server = null;
             }
         }
     }

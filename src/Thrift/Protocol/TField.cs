@@ -21,43 +21,24 @@
  * details.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public struct TField
     {
-        private string name;
-        private TType type;
-        private short id;
-
         public TField(string name, TType type, short id)
             : this()
         {
-            this.name = name;
-            this.type = type;
-            this.id = id;
+            Name = name;
+            Type = type;
+            ID = id;
         }
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
+        public string Name { get; set; }
 
-        public TType Type
-        {
-            get { return type; }
-            set { type = value; }
-        }
+        public TType Type { get; set; }
 
-        public short ID
-        {
-            get { return id; }
-            set { id = value; }
-        }
+        // ReSharper disable once InconsistentNaming - do not rename - it used for generation 
+        public short ID { get; set; }
     }
 }

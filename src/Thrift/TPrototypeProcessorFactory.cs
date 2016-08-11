@@ -18,17 +18,15 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Thrift.Server;
 using Thrift.Transport;
 
 namespace Thrift
 {
-    public class TPrototypeProcessorFactory<P, H> : TProcessorFactory where P : TProcessor
+    // ReSharper disable once InconsistentNaming
+    public class TPrototypeProcessorFactory<TP, TH> : TProcessorFactory where TP : TProcessor
     {
-        object[] _handlerArgs = null;
+        private readonly object[] _handlerArgs;
 
         public TPrototypeProcessorFactory()
         {
@@ -42,14 +40,14 @@ namespace Thrift
 
         public TProcessor GetProcessor(TTransport trans, TServer server = null)
         {
-            var handler = (H) Activator.CreateInstance(typeof(H), _handlerArgs);
+            var handler = (TH) Activator.CreateInstance(typeof(TH), _handlerArgs);
 
             var handlerServerRef = handler as TControllingHandler;
             if (handlerServerRef != null)
             {
-                handlerServerRef.server = server;
+                handlerServerRef.Server = server;
             }
-            return Activator.CreateInstance(typeof(P), new object[] {handler}) as TProcessor;
+            return Activator.CreateInstance(typeof(TP), handler) as TProcessor;
         }
     }
 }

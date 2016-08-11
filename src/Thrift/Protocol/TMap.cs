@@ -21,43 +21,23 @@
  * details.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public struct TMap
     {
-        private TType keyType;
-        private TType valueType;
-        private int count;
-
         public TMap(TType keyType, TType valueType, int count)
             : this()
         {
-            this.keyType = keyType;
-            this.valueType = valueType;
-            this.count = count;
+            KeyType = keyType;
+            ValueType = valueType;
+            Count = count;
         }
 
-        public TType KeyType
-        {
-            get { return keyType; }
-            set { keyType = value; }
-        }
+        public TType KeyType { get; set; }
 
-        public TType ValueType
-        {
-            get { return valueType; }
-            set { valueType = value; }
-        }
+        public TType ValueType { get; set; }
 
-        public int Count
-        {
-            get { return count; }
-            set { count = value; }
-        }
+        public int Count { get; set; }
     }
 }

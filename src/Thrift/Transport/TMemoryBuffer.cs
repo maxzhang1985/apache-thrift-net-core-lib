@@ -27,16 +27,16 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TMemoryBuffer : TTransport
     {
-        private readonly MemoryStream byteStream;
+        private readonly MemoryStream _byteStream;
 
         public TMemoryBuffer()
         {
-            byteStream = new MemoryStream();
+            _byteStream = new MemoryStream();
         }
 
         public TMemoryBuffer(byte[] buf)
         {
-            byteStream = new MemoryStream(buf);
+            _byteStream = new MemoryStream(buf);
         }
 
         public override void Open()
@@ -51,26 +51,23 @@ namespace Thrift.Transport
 
         public override int Read(byte[] buf, int off, int len)
         {
-            return byteStream.Read(buf, off, len);
+            return _byteStream.Read(buf, off, len);
         }
 
         public override void Write(byte[] buf, int off, int len)
         {
-            byteStream.Write(buf, off, len);
+            _byteStream.Write(buf, off, len);
         }
 
         public byte[] GetBuffer()
         {
-            return byteStream.ToArray();
+            return _byteStream.ToArray();
         }
 
 
-        public override bool IsOpen
-        {
-            get { return true; }
-        }
+        public override bool IsOpen => true;
 
-        public static byte[] Serialize(TAbstractBase s)
+      public static byte[] Serialize(TAbstractBase s)
         {
             var t = new TMemoryBuffer();
             var p = new TBinaryProtocol(t);
@@ -98,20 +95,19 @@ namespace Thrift.Transport
             }
         }
 
-        private bool _IsDisposed;
+        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if (!_IsDisposed)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
-                    if (byteStream != null)
-                        byteStream.Dispose();
+                    _byteStream?.Dispose();
                 }
             }
-            _IsDisposed = true;
+            _isDisposed = true;
         }
     }
 }

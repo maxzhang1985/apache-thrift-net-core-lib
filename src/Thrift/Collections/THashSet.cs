@@ -17,9 +17,9 @@
  * under the License.
  */
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Thrift.Collections
 {
@@ -27,51 +27,45 @@ namespace Thrift.Collections
     // ReSharper disable once InconsistentNaming
     public class THashSet<T> : ICollection<T>
     {
-        HashSet<T> set = new HashSet<T>();
+        private readonly HashSet<T> _set = new HashSet<T>();
 
-        public int Count
-        {
-            get { return set.Count; }
-        }
+        public int Count => _set.Count;
 
-        public bool IsReadOnly
-        {
-            get { return false; }
-        }
+      public bool IsReadOnly => false;
 
-        public void Add(T item)
+      public void Add(T item)
         {
-            set.Add(item);
+            _set.Add(item);
         }
 
         public void Clear()
         {
-            set.Clear();
+            _set.Clear();
         }
 
         public bool Contains(T item)
         {
-            return set.Contains(item);
+            return _set.Contains(item);
         }
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            set.CopyTo(array, arrayIndex);
+            _set.CopyTo(array, arrayIndex);
         }
 
         public IEnumerator GetEnumerator()
         {
-            return set.GetEnumerator();
+            return _set.GetEnumerator();
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return ((IEnumerable<T>) set).GetEnumerator();
+            return ((IEnumerable<T>) _set).GetEnumerator();
         }
 
         public bool Remove(T item)
         {
-            return set.Remove(item);
+            return _set.Remove(item);
         }
     }
 }

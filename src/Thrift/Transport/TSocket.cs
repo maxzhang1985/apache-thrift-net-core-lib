@@ -29,14 +29,11 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TSocket : TStreamTransport
     {
-        private TcpClient client = null;
-        private string host = null;
-        private int port = 0;
-        private int timeout = 0;
+        private int _timeout;
 
         public TSocket(TcpClient client)
         {
-            this.client = client;
+            TcpClient = client;
 
             if (IsOpen)
             {
@@ -52,50 +49,41 @@ namespace Thrift.Transport
 
         public TSocket(string host, int port, int timeout)
         {
-            this.host = host;
-            this.port = port;
-            this.timeout = timeout;
+            Host = host;
+            Port = port;
+            _timeout = timeout;
 
             InitSocket();
         }
 
         private void InitSocket()
         {
-            client = new TcpClient();
-            client.ReceiveTimeout = client.SendTimeout = timeout;
-            client.Client.NoDelay = true;
+            TcpClient = new TcpClient();
+            TcpClient.ReceiveTimeout = TcpClient.SendTimeout = _timeout;
+            TcpClient.Client.NoDelay = true;
         }
 
         public int Timeout
         {
-            set { client.ReceiveTimeout = client.SendTimeout = timeout = value; }
+            set { TcpClient.ReceiveTimeout = TcpClient.SendTimeout = _timeout = value; }
         }
 
-        public TcpClient TcpClient
-        {
-            get { return client; }
-        }
+        public TcpClient TcpClient { get; private set; }
 
-        public string Host
-        {
-            get { return host; }
-        }
+        public string Host { get; }
 
-        public int Port
-        {
-            get { return port; }
-        }
+        public int Port { get; }
 
         public override bool IsOpen
         {
             get
             {
-                if (client == null)
+                if (TcpClient == null)
                 {
                     return false;
                 }
 
-                return client.Connected;
+                return TcpClient.Connected;
             }
         }
 
@@ -106,25 +94,25 @@ namespace Thrift.Transport
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
             }
 
-            if (string.IsNullOrEmpty(host))
+            if (string.IsNullOrEmpty(Host))
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open null host");
             }
 
-            if (port <= 0)
+            if (Port <= 0)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
             }
 
-            if (client == null)
+            if (TcpClient == null)
             {
                 InitSocket();
             }
 
-            if (timeout == 0) // no timeout -> infinite
+            if (_timeout == 0) // no timeout -> infinite
             {
                 //TODO: Async - and errors
-                client.ConnectAsync(host, port).Wait();
+                TcpClient?.ConnectAsync(Host, Port).Wait();
             }
             //else                        // we have a timeout -> use it
             //{
@@ -150,8 +138,8 @@ namespace Thrift.Transport
             //    }
             //}
 
-            inputStream = client.GetStream();
-            outputStream = client.GetStream();
+            inputStream = TcpClient?.GetStream();
+            outputStream = TcpClient?.GetStream();
         }
 
 
@@ -202,28 +190,28 @@ namespace Thrift.Transport
         public override void Close()
         {
             base.Close();
-            if (client != null)
+            if (TcpClient != null)
             {
-                client.Dispose();
-                client = null;
+                TcpClient.Dispose();
+                TcpClient = null;
             }
         }
 
-        private bool _IsDisposed;
+        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if (!_IsDisposed)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
-                    if (client != null)
-                        ((IDisposable) client).Dispose();
+                    ((IDisposable) TcpClient)?.Dispose();
+
                     base.Dispose(disposing);
                 }
             }
-            _IsDisposed = true;
+            _isDisposed = true;
         }
     }
 }

@@ -21,30 +21,27 @@
  * details.
  */
 
-using System;
-
 namespace Thrift.Transport
 {
     // ReSharper disable once InconsistentNaming
     public class TTransportException : TException
     {
-        protected ExceptionType type;
+        protected ExceptionType ExType;
 
         public TTransportException()
-            : base()
         {
         }
 
-        public TTransportException(ExceptionType type)
+        public TTransportException(ExceptionType exType)
             : this()
         {
-            this.type = type;
+            ExType = exType;
         }
 
-        public TTransportException(ExceptionType type, string message)
+        public TTransportException(ExceptionType exType, string message)
             : base(message)
         {
-            this.type = type;
+            ExType = exType;
         }
 
         public TTransportException(string message)
@@ -52,10 +49,7 @@ namespace Thrift.Transport
         {
         }
 
-        public ExceptionType Type
-        {
-            get { return type; }
-        }
+        public ExceptionType Type => ExType;
 
         public enum ExceptionType
         {

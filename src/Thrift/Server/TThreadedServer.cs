@@ -32,25 +32,22 @@ namespace Thrift.Server
     // ReSharper disable once InconsistentNaming
     public class TThreadedServer : TServer
     {
-        private const int DEFAULT_MAX_THREADS = 100;
-        private volatile bool stop = false;
-        private readonly int maxThreads;
+        private const int DefaultMaxThreads = 100;
+        private volatile bool _stop;
+        private readonly int _maxThreads;
 
-        private Queue<TTransport> clientQueue;
-        private THashSet<Thread> clientThreads;
-        private object clientLock;
-        private Thread workerThread;
+        private readonly Queue<TTransport> _clientQueue;
+        private readonly THashSet<Thread> _clientThreads;
+        private readonly object _clientLock;
+        private Thread _workerThread;
 
-        public int ClientThreadsCount
-        {
-            get { return clientThreads.Count; }
-        }
+        public int ClientThreadsCount => _clientThreads.Count;
 
-        public TThreadedServer(TProcessor processor, TServerTransport serverTransport)
+      public TThreadedServer(TProcessor processor, TServerTransport serverTransport)
             : this(new TSingletonProcessorFactory(processor), serverTransport,
                 new TTransportFactory(), new TTransportFactory(),
                 new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(),
-                DEFAULT_MAX_THREADS, DefaultLogDelegate)
+                DefaultMaxThreads, DefaultLogDelegate)
         {
         }
 
@@ -58,7 +55,7 @@ namespace Thrift.Server
             : this(new TSingletonProcessorFactory(processor), serverTransport,
                 new TTransportFactory(), new TTransportFactory(),
                 new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(),
-                DEFAULT_MAX_THREADS, logDelegate)
+                DefaultMaxThreads, logDelegate)
         {
         }
 
@@ -70,7 +67,7 @@ namespace Thrift.Server
             : this(new TSingletonProcessorFactory(processor), serverTransport,
                 transportFactory, transportFactory,
                 protocolFactory, protocolFactory,
-                DEFAULT_MAX_THREADS, DefaultLogDelegate)
+                DefaultMaxThreads, DefaultLogDelegate)
         {
         }
 
@@ -81,7 +78,7 @@ namespace Thrift.Server
             : this(processorFactory, serverTransport,
                 transportFactory, transportFactory,
                 protocolFactory, protocolFactory,
-                DEFAULT_MAX_THREADS, DefaultLogDelegate)
+                DefaultMaxThreads, DefaultLogDelegate)
         {
         }
 
@@ -95,22 +92,22 @@ namespace Thrift.Server
             : base(processorFactory, serverTransport, inputTransportFactory, outputTransportFactory,
                 inputProtocolFactory, outputProtocolFactory, logDel)
         {
-            this.maxThreads = maxThreads;
-            clientQueue = new Queue<TTransport>();
-            clientLock = new object();
-            clientThreads = new THashSet<Thread>();
+            _maxThreads = maxThreads;
+            _clientQueue = new Queue<TTransport>();
+            _clientLock = new object();
+            _clientThreads = new THashSet<Thread>();
         }
 
         /// <summary>
-        /// Use new Thread for each new client connection. block until numConnections < maxThreads
+        /// Use new Thread for each new client connection. block until numConnections less maxThreads
         /// </summary>
         public override void Serve()
         {
             try
             {
                 //start worker thread
-                workerThread = new Thread(new ThreadStart(Execute));
-                workerThread.Start();
+                _workerThread = new Thread(Execute);
+                _workerThread.Start();
                 serverTransport.Listen();
             }
             catch (TTransportException ttx)
@@ -121,23 +118,23 @@ namespace Thrift.Server
 
             //Fire the preServe server event when server is up but before any client connections
             if (serverEventHandler != null)
-                serverEventHandler.preServe();
+                serverEventHandler.PreServe();
 
-            while (!stop)
+            while (!_stop)
             {
                 var failureCount = 0;
                 try
                 {
                     var client = serverTransport.Accept();
-                    lock (clientLock)
+                    lock (_clientLock)
                     {
-                        clientQueue.Enqueue(client);
-                        Monitor.Pulse(clientLock);
+                        _clientQueue.Enqueue(client);
+                        Monitor.Pulse(_clientLock);
                     }
                 }
                 catch (TTransportException ttx)
                 {
-                    if (!stop || ttx.Type != TTransportException.ExceptionType.Interrupted)
+                    if (!_stop || ttx.Type != TTransportException.ExceptionType.Interrupted)
                     {
                         ++failureCount;
                         logDelegate(ttx.ToString());
@@ -145,7 +142,7 @@ namespace Thrift.Server
                 }
             }
 
-            if (stop)
+            if (_stop)
             {
                 try
                 {
@@ -155,7 +152,7 @@ namespace Thrift.Server
                 {
                     logDelegate("TServeTransport failed on close: " + ttx.Message);
                 }
-                stop = false;
+                _stop = false;
             }
         }
 
@@ -163,29 +160,28 @@ namespace Thrift.Server
         /// Loops on processing a client forever
         /// threadContext will be a TTransport instance
         /// </summary>
-        /// <param name="threadContext"></param>
         private void Execute()
         {
-            while (!stop)
+            while (!_stop)
             {
                 TTransport client;
                 Thread t;
-                lock (clientLock)
+                lock (_clientLock)
                 {
                     //don't dequeue if too many connections
-                    while (clientThreads.Count >= maxThreads)
+                    while (_clientThreads.Count >= _maxThreads)
                     {
-                        Monitor.Wait(clientLock);
+                        Monitor.Wait(_clientLock);
                     }
 
-                    while (clientQueue.Count == 0)
+                    while (_clientQueue.Count == 0)
                     {
-                        Monitor.Wait(clientLock);
+                        Monitor.Wait(_clientLock);
                     }
 
-                    client = clientQueue.Dequeue();
-                    t = new Thread(new ParameterizedThreadStart(ClientWorker));
-                    clientThreads.Add(t);
+                    client = _clientQueue.Dequeue();
+                    t = new Thread(ClientWorker);
+                    _clientThreads.Add(t);
                 }
                 //start processing requests from client on new thread
                 t.Start(client);
@@ -196,15 +192,15 @@ namespace Thrift.Server
         {
             var client = (TTransport) context;
             var processor = processorFactory.GetProcessor(client);
-            TTransport inputTransport = null;
-            TTransport outputTransport = null;
             TProtocol inputProtocol = null;
             TProtocol outputProtocol = null;
             object connectionContext = null;
             try
             {
+                TTransport inputTransport = null;
                 using (inputTransport = inputTransportFactory.GetTransport(client))
                 {
+                    TTransport outputTransport = null;
                     using (outputTransport = outputTransportFactory.GetTransport(client))
                     {
                         inputProtocol = inputProtocolFactory.GetProtocol(inputTransport);
@@ -212,10 +208,10 @@ namespace Thrift.Server
 
                         //Recover event handler (if any) and fire createContext server event when a client connects
                         if (serverEventHandler != null)
-                            connectionContext = serverEventHandler.createContext(inputProtocol, outputProtocol);
+                            connectionContext = serverEventHandler.CreateContext(inputProtocol, outputProtocol);
 
                         //Process client requests until client disconnects
-                        while (!stop)
+                        while (!_stop)
                         {
                             if (!inputTransport.Peek())
                                 break;
@@ -224,8 +220,7 @@ namespace Thrift.Server
                             //N.B. This is the pattern implemented in C++ and the event fires provisionally.
                             //That is to say it may be many minutes between the event firing and the client request
                             //actually arriving or the client may hang up without ever makeing a request.
-                            if (serverEventHandler != null)
-                                serverEventHandler.processContext(connectionContext, inputTransport);
+                            serverEventHandler?.ProcessContext(connectionContext, inputTransport);
                             //Process client request (blocks until transport is readable)
                             if (!processor.Process(inputProtocol, outputProtocol))
                                 break;
@@ -244,25 +239,23 @@ namespace Thrift.Server
             }
 
             //Fire deleteContext server event after client disconnects
-            if (serverEventHandler != null)
-                serverEventHandler.deleteContext(connectionContext, inputProtocol, outputProtocol);
+            serverEventHandler?.DeleteContext(connectionContext, inputProtocol, outputProtocol);
 
-            lock (clientLock)
+            lock (_clientLock)
             {
-                clientThreads.Remove(Thread.CurrentThread);
-                Monitor.Pulse(clientLock);
+                _clientThreads.Remove(Thread.CurrentThread);
+                Monitor.Pulse(_clientLock);
             }
-            return;
         }
 
         //TODO: Thread Abort
         public override void Stop()
         {
-            stop = true;
+            _stop = true;
             serverTransport.Close();
             //clean up all the threads myself
-            workerThread.Join(); //Abort();
-            foreach (Thread t in clientThreads)
+            _workerThread.Join(); //Abort();
+            foreach (Thread t in _clientThreads)
             {
                 t.Join(); //Abort();
             }

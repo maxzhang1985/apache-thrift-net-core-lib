@@ -23,21 +23,21 @@ using System.IO;
 namespace Thrift.Transport
 {
     // ReSharper disable once InconsistentNaming
-    public class TBufferedTransport : TTransport, IDisposable
+    public class TBufferedTransport : TTransport
     {
-        private readonly int bufSize;
-        private readonly MemoryStream inputBuffer = new MemoryStream(0);
-        private readonly MemoryStream outputBuffer = new MemoryStream(0);
-        private readonly TTransport transport;
+        private readonly int _bufSize;
+        private readonly MemoryStream _inputBuffer = new MemoryStream(0);
+        private readonly MemoryStream _outputBuffer = new MemoryStream(0);
+        private readonly TTransport _transport;
 
         public TBufferedTransport(TTransport transport, int bufSize = 1024)
         {
             if (transport == null)
-                throw new ArgumentNullException("transport");
+                throw new ArgumentNullException(nameof(transport));
             if (bufSize <= 0)
-                throw new ArgumentException("bufSize", "Buffer size must be a positive number.");
-            this.transport = transport;
-            this.bufSize = bufSize;
+                throw new ArgumentOutOfRangeException(nameof(bufSize), "Buffer size must be a positive number.");
+            _transport = transport;
+            _bufSize = bufSize;
         }
 
         public TTransport UnderlyingTransport
@@ -45,30 +45,22 @@ namespace Thrift.Transport
             get
             {
                 CheckNotDisposed();
-                return transport;
+                return _transport;
             }
         }
 
-        public override bool IsOpen
-        {
-            get
-            {
-                // We can legitimately throw here but be nice a bit.
-                // CheckNotDisposed();
-                return !_IsDisposed && transport.IsOpen;
-            }
-        }
+        public override bool IsOpen => !_isDisposed && _transport.IsOpen;
 
-        public override void Open()
+      public override void Open()
         {
             CheckNotDisposed();
-            transport.Open();
+            _transport.Open();
         }
 
         public override void Close()
         {
             CheckNotDisposed();
-            transport.Close();
+            _transport.Close();
         }
 
         public override int Read(byte[] buf, int off, int len)
@@ -77,20 +69,20 @@ namespace Thrift.Transport
             ValidateBufferArgs(buf, off, len);
             if (!IsOpen)
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            if (inputBuffer.Capacity < bufSize)
-                inputBuffer.Capacity = bufSize;
-            var got = inputBuffer.Read(buf, off, len);
+            if (_inputBuffer.Capacity < _bufSize)
+                _inputBuffer.Capacity = _bufSize;
+            var got = _inputBuffer.Read(buf, off, len);
             if (got > 0)
                 return got;
 
-            inputBuffer.Seek(0, SeekOrigin.Begin);
-            inputBuffer.SetLength(inputBuffer.Capacity);
+            _inputBuffer.Seek(0, SeekOrigin.Begin);
+            _inputBuffer.SetLength(_inputBuffer.Capacity);
 
-            var bufSegment = new ArraySegment<byte>();
-            inputBuffer.TryGetBuffer(out bufSegment);
+            ArraySegment<byte> bufSegment;
+            _inputBuffer.TryGetBuffer(out bufSegment);
 
-            var filled = transport.Read(bufSegment.Array, 0, (int) inputBuffer.Length);
-            inputBuffer.SetLength(filled);
+            var filled = _transport.Read(bufSegment.Array, 0, (int) _inputBuffer.Length);
+            _inputBuffer.SetLength(filled);
             if (filled == 0)
                 return 0;
             return Read(buf, off, len);
@@ -104,32 +96,32 @@ namespace Thrift.Transport
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             // Relative offset from "off" argument
             var offset = 0;
-            if (outputBuffer.Length > 0)
+            if (_outputBuffer.Length > 0)
             {
-                var capa = (int) (outputBuffer.Capacity - outputBuffer.Length);
+                var capa = (int) (_outputBuffer.Capacity - _outputBuffer.Length);
                 var writeSize = capa <= len ? capa : len;
-                outputBuffer.Write(buf, off, writeSize);
+                _outputBuffer.Write(buf, off, writeSize);
                 offset += writeSize;
                 if (writeSize == capa)
                 {
-                    var bufSegment = new ArraySegment<byte>();
-                    outputBuffer.TryGetBuffer(out bufSegment);
+                    ArraySegment<byte> bufSegment;
+                    _outputBuffer.TryGetBuffer(out bufSegment);
 
-                    transport.Write(bufSegment.Array, 0, (int) outputBuffer.Length);
-                    outputBuffer.SetLength(0);
+                    _transport.Write(bufSegment.Array, 0, (int) _outputBuffer.Length);
+                    _outputBuffer.SetLength(0);
                 }
             }
-            while (len - offset >= bufSize)
+            while (len - offset >= _bufSize)
             {
-                transport.Write(buf, off + offset, bufSize);
-                offset += bufSize;
+                _transport.Write(buf, off + offset, _bufSize);
+                offset += _bufSize;
             }
             var remain = len - offset;
             if (remain > 0)
             {
-                if (outputBuffer.Capacity < bufSize)
-                    outputBuffer.Capacity = bufSize;
-                outputBuffer.Write(buf, off + offset, remain);
+                if (_outputBuffer.Capacity < _bufSize)
+                    _outputBuffer.Capacity = _bufSize;
+                _outputBuffer.Write(buf, off + offset, remain);
             }
         }
 
@@ -138,36 +130,36 @@ namespace Thrift.Transport
             CheckNotDisposed();
             if (!IsOpen)
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            if (outputBuffer.Length > 0)
+            if (_outputBuffer.Length > 0)
             {
-                var bufSegment = new ArraySegment<byte>();
-                outputBuffer.TryGetBuffer(out bufSegment);
-                transport.Write(bufSegment.Array, 0, (int) outputBuffer.Length);
-                outputBuffer.SetLength(0);
+                ArraySegment<byte> bufSegment;
+                _outputBuffer.TryGetBuffer(out bufSegment);
+                _transport.Write(bufSegment.Array, 0, (int) _outputBuffer.Length);
+                _outputBuffer.SetLength(0);
             }
-            transport.Flush();
+            _transport.Flush();
         }
 
         private void CheckNotDisposed()
         {
-            if (_IsDisposed)
+            if (_isDisposed)
                 throw new ObjectDisposedException("TBufferedTransport");
         }
 
-        private bool _IsDisposed;
+        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if (!_IsDisposed)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
-                    inputBuffer.Dispose();
-                    outputBuffer.Dispose();
+                    _inputBuffer.Dispose();
+                    _outputBuffer.Dispose();
                 }
             }
-            _IsDisposed = true;
+            _isDisposed = true;
         }
     }
 }

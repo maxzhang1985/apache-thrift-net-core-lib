@@ -30,20 +30,20 @@ namespace Thrift.Protocol
     // ReSharper disable once InconsistentNaming
     public abstract class TProtocol : IDisposable
     {
-        private const int DEFAULT_RECURSION_DEPTH = 64;
+        private const int DefaultRecursionDepth = 64;
 
-        protected TTransport trans;
+        protected TTransport Trans;
         protected int recursionLimit;
-        protected int recursionDepth;
+        protected int RecursionDepth;
 
         protected TProtocol(TTransport trans)
         {
-            this.trans = trans;
-            recursionLimit = DEFAULT_RECURSION_DEPTH;
-            recursionDepth = 0;
+            Trans = trans;
+            recursionLimit = DefaultRecursionDepth;
+            RecursionDepth = 0;
         }
 
-        public TTransport Transport => trans;
+        public TTransport Transport => Trans;
 
         public int RecursionLimit
         {
@@ -53,15 +53,15 @@ namespace Thrift.Protocol
 
         public void IncrementRecursionDepth()
         {
-            if (recursionDepth < recursionLimit)
-                ++recursionDepth;
+            if (RecursionDepth < recursionLimit)
+                ++RecursionDepth;
             else
                 throw new TProtocolException(TProtocolException.DEPTH_LIMIT, "Depth limit exceeded");
         }
 
         public void DecrementRecursionDepth()
         {
-            --recursionDepth;
+            --RecursionDepth;
         }
 
         private bool _isDisposed;
@@ -78,8 +78,8 @@ namespace Thrift.Protocol
             {
                 if (disposing)
                 {
-                    if (trans is IDisposable)
-                        (trans as IDisposable).Dispose();
+                    if (Trans is IDisposable)
+                        (Trans as IDisposable).Dispose();
                 }
             }
             _isDisposed = true;

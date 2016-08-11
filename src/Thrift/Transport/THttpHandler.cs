@@ -19,9 +19,7 @@
  *
  */
 
-using System;
-using System.Net;
-using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Http;
@@ -34,35 +32,36 @@ namespace Thrift.Transport
     {
         private readonly RequestDelegate _next;
 
-        protected TAsyncProcessor processor;
+        protected TAsyncProcessor Processor;
 
-        protected TProtocolFactory inputProtocolFactory;
-        protected TProtocolFactory outputProtocolFactory;
+        protected TProtocolFactory InputProtocolFactory;
+        protected TProtocolFactory OutputProtocolFactory;
 
-        protected const string contentType = "application/x-thrift";
-        protected System.Text.Encoding encoding = System.Text.Encoding.UTF8;
+        protected const string ContentType = "application/x-thrift";
+        protected Encoding Encoding = Encoding.UTF8;
 
-        public THttpHandler(TAsyncProcessor processor)
-            : this(processor, new TBinaryProtocol.Factory())
+        public THttpHandler(TAsyncProcessor processor, RequestDelegate next)
+            : this(processor, new TBinaryProtocol.Factory(), next)
         {
         }
 
-        public THttpHandler(TAsyncProcessor processor, TProtocolFactory protocolFactory)
-            : this(processor, protocolFactory, protocolFactory)
+        public THttpHandler(TAsyncProcessor processor, TProtocolFactory protocolFactory, RequestDelegate next)
+            : this(processor, protocolFactory, protocolFactory, next)
         {
         }
 
         public THttpHandler(TAsyncProcessor processor, TProtocolFactory inputProtocolFactory,
-            TProtocolFactory outputProtocolFactory)
+            TProtocolFactory outputProtocolFactory, RequestDelegate next)
         {
-            this.processor = processor;
-            this.inputProtocolFactory = inputProtocolFactory;
-            this.outputProtocolFactory = outputProtocolFactory;
+            Processor = processor;
+            InputProtocolFactory = inputProtocolFactory;
+            OutputProtocolFactory = outputProtocolFactory;
+            _next = next;
         }
 
         public async Task Invoke(HttpContext context)
         {
-            context.Response.ContentType = contentType;
+            context.Response.ContentType = ContentType;
             //context.Response.ContentEncoding = encoding;
             //ProcessRequest(context.Request.Body, context.Response.Body);
             await ProcessRequestAsync(context);
@@ -75,10 +74,10 @@ namespace Thrift.Transport
 
             try
             {
-                var input = inputProtocolFactory.GetProtocol(transport);
-                var output = outputProtocolFactory.GetProtocol(transport);
+                var input = InputProtocolFactory.GetProtocol(transport);
+                var output = OutputProtocolFactory.GetProtocol(transport);
 
-                while (await processor.ProcessAsync(input, output))
+                while (await Processor.ProcessAsync(input, output))
                 {
                 }
             }

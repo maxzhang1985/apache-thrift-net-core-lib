@@ -30,11 +30,11 @@ namespace Thrift.Protocol
     // ReSharper disable once InconsistentNaming
     public class TBinaryProtocol : TProtocol
     {
-        protected const uint VERSION_MASK = 0xffff0000;
-        protected const uint VERSION_1 = 0x80010000;
+        protected const uint VersionMask = 0xffff0000;
+        protected const uint Version1 = 0x80010000;
 
-        protected bool strictRead_ = false;
-        protected bool strictWrite_ = true;
+        protected bool StrictRead;
+        protected bool StrictWrite = true;
 
         /**
           * Factory
@@ -42,8 +42,8 @@ namespace Thrift.Protocol
 
         public class Factory : TProtocolFactory
         {
-            protected bool strictRead_ = false;
-            protected bool strictWrite_ = true;
+            protected bool StrictRead;
+            protected bool StrictWrite = true;
 
             public Factory()
                 : this(false, true)
@@ -52,13 +52,13 @@ namespace Thrift.Protocol
 
             public Factory(bool strictRead, bool strictWrite)
             {
-                strictRead_ = strictRead;
-                strictWrite_ = strictWrite;
+                StrictRead = strictRead;
+                StrictWrite = strictWrite;
             }
 
             public TProtocol GetProtocol(TTransport trans)
             {
-                return new TBinaryProtocol(trans, strictRead_, strictWrite_);
+                return new TBinaryProtocol(trans, StrictRead, StrictWrite);
             }
         }
 
@@ -70,15 +70,15 @@ namespace Thrift.Protocol
         public TBinaryProtocol(TTransport trans, bool strictRead, bool strictWrite)
             : base(trans)
         {
-            strictRead_ = strictRead;
-            strictWrite_ = strictWrite;
+            StrictRead = strictRead;
+            StrictWrite = strictWrite;
         }
 
         public override void WriteMessageBegin(TMessage message)
         {
-            if (strictWrite_)
+            if (StrictWrite)
             {
-                var version = VERSION_1 | (uint) (message.Type);
+                var version = Version1 | (uint) (message.Type);
                 WriteI32((int) version);
                 WriteString(message.Name);
                 WriteI32(message.SeqID);
@@ -154,47 +154,47 @@ namespace Thrift.Protocol
             WriteByte(b ? (sbyte) 1 : (sbyte) 0);
         }
 
-        private byte[] bout = new byte[1];
+        private readonly byte[] _bout = new byte[1];
 
         public override void WriteByte(sbyte b)
         {
-            bout[0] = (byte) b;
-            trans.Write(bout, 0, 1);
+            _bout[0] = (byte) b;
+            Trans.Write(_bout, 0, 1);
         }
 
-        private byte[] i16out = new byte[2];
+        private readonly byte[] _i16Out = new byte[2];
 
         public override void WriteI16(short s)
         {
-            i16out[0] = (byte) (0xff & (s >> 8));
-            i16out[1] = (byte) (0xff & s);
-            trans.Write(i16out, 0, 2);
+            _i16Out[0] = (byte) (0xff & (s >> 8));
+            _i16Out[1] = (byte) (0xff & s);
+            Trans.Write(_i16Out, 0, 2);
         }
 
-        private byte[] i32out = new byte[4];
+        private readonly byte[] _i32Out = new byte[4];
 
         public override void WriteI32(int i32)
         {
-            i32out[0] = (byte) (0xff & (i32 >> 24));
-            i32out[1] = (byte) (0xff & (i32 >> 16));
-            i32out[2] = (byte) (0xff & (i32 >> 8));
-            i32out[3] = (byte) (0xff & i32);
-            trans.Write(i32out, 0, 4);
+            _i32Out[0] = (byte) (0xff & (i32 >> 24));
+            _i32Out[1] = (byte) (0xff & (i32 >> 16));
+            _i32Out[2] = (byte) (0xff & (i32 >> 8));
+            _i32Out[3] = (byte) (0xff & i32);
+            Trans.Write(_i32Out, 0, 4);
         }
 
-        private byte[] i64out = new byte[8];
+        private readonly byte[] _i64Out = new byte[8];
 
         public override void WriteI64(long i64)
         {
-            i64out[0] = (byte) (0xff & (i64 >> 56));
-            i64out[1] = (byte) (0xff & (i64 >> 48));
-            i64out[2] = (byte) (0xff & (i64 >> 40));
-            i64out[3] = (byte) (0xff & (i64 >> 32));
-            i64out[4] = (byte) (0xff & (i64 >> 24));
-            i64out[5] = (byte) (0xff & (i64 >> 16));
-            i64out[6] = (byte) (0xff & (i64 >> 8));
-            i64out[7] = (byte) (0xff & i64);
-            trans.Write(i64out, 0, 8);
+            _i64Out[0] = (byte) (0xff & (i64 >> 56));
+            _i64Out[1] = (byte) (0xff & (i64 >> 48));
+            _i64Out[2] = (byte) (0xff & (i64 >> 40));
+            _i64Out[3] = (byte) (0xff & (i64 >> 32));
+            _i64Out[4] = (byte) (0xff & (i64 >> 24));
+            _i64Out[5] = (byte) (0xff & (i64 >> 16));
+            _i64Out[6] = (byte) (0xff & (i64 >> 8));
+            _i64Out[7] = (byte) (0xff & i64);
+            Trans.Write(_i64Out, 0, 8);
         }
 
         public override void WriteDouble(double d)
@@ -205,7 +205,7 @@ namespace Thrift.Protocol
         public override void WriteBinary(byte[] b)
         {
             WriteI32(b.Length);
-            trans.Write(b, 0, b.Length);
+            Trans.Write(b, 0, b.Length);
         }
 
         public override TMessage ReadMessageBegin()
@@ -214,8 +214,8 @@ namespace Thrift.Protocol
             var size = ReadI32();
             if (size < 0)
             {
-                var version = (uint) size & VERSION_MASK;
-                if (version != VERSION_1)
+                var version = (uint) size & VersionMask;
+                if (version != Version1)
                 {
                     throw new TProtocolException(TProtocolException.BAD_VERSION,
                         "Bad version in ReadMessageBegin: " + version);
@@ -226,7 +226,7 @@ namespace Thrift.Protocol
             }
             else
             {
-                if (strictRead_)
+                if (StrictRead)
                 {
                     throw new TProtocolException(TProtocolException.BAD_VERSION,
                         "Missing version in readMessageBegin, old client?");
@@ -313,51 +313,46 @@ namespace Thrift.Protocol
             return ReadByte() == 1;
         }
 
-        private byte[] bin = new byte[1];
+        private readonly byte[] _bin = new byte[1];
 
         public override sbyte ReadByte()
         {
-            ReadAll(bin, 0, 1);
-            return (sbyte) bin[0];
+            ReadAll(_bin, 0, 1);
+            return (sbyte) _bin[0];
         }
 
-        private byte[] i16in = new byte[2];
+        private readonly byte[] _i16In = new byte[2];
 
         public override short ReadI16()
         {
-            ReadAll(i16in, 0, 2);
-            return (short) (((i16in[0] & 0xff) << 8) | ((i16in[1] & 0xff)));
+            ReadAll(_i16In, 0, 2);
+            return (short) (((_i16In[0] & 0xff) << 8) | ((_i16In[1] & 0xff)));
         }
 
-        private byte[] i32in = new byte[4];
+        private readonly byte[] _i32In = new byte[4];
 
         public override int ReadI32()
         {
-            ReadAll(i32in, 0, 4);
+            ReadAll(_i32In, 0, 4);
             return
-                (int)
-                (((i32in[0] & 0xff) << 24) | ((i32in[1] & 0xff) << 16) | ((i32in[2] & 0xff) << 8) | ((i32in[3] & 0xff)));
+                ((_i32In[0] & 0xff) << 24) | ((_i32In[1] & 0xff) << 16) | ((_i32In[2] & 0xff) << 8) | ((_i32In[3] & 0xff));
         }
 
 #pragma warning disable 675
 
-        private byte[] i64in = new byte[8];
+        private readonly byte[] _i64In = new byte[8];
 
         public override long ReadI64()
         {
-            ReadAll(i64in, 0, 8);
-            unchecked
-            {
-                return (long) (
-                    ((long) (i64in[0] & 0xff) << 56) |
-                    ((long) (i64in[1] & 0xff) << 48) |
-                    ((long) (i64in[2] & 0xff) << 40) |
-                    ((long) (i64in[3] & 0xff) << 32) |
-                    ((long) (i64in[4] & 0xff) << 24) |
-                    ((long) (i64in[5] & 0xff) << 16) |
-                    ((long) (i64in[6] & 0xff) << 8) |
-                    ((long) (i64in[7] & 0xff)));
-            }
+            ReadAll(_i64In, 0, 8);
+            return ((long) (_i64In[0] & 0xff) << 56) |
+                   ((long) (_i64In[1] & 0xff) << 48) |
+                   ((long) (_i64In[2] & 0xff) << 40) |
+                   ((long) (_i64In[3] & 0xff) << 32) |
+                   ((long) (_i64In[4] & 0xff) << 24) |
+                   ((long) (_i64In[5] & 0xff) << 16) |
+                   ((long) (_i64In[6] & 0xff) << 8) |
+                   _i64In[7] & 0xff;
         }
 
 #pragma warning restore 675
@@ -371,20 +366,20 @@ namespace Thrift.Protocol
         {
             var size = ReadI32();
             var buf = new byte[size];
-            trans.ReadAll(buf, 0, size);
+            Trans.ReadAll(buf, 0, size);
             return buf;
         }
 
         private string ReadStringBody(int size)
         {
             var buf = new byte[size];
-            trans.ReadAll(buf, 0, size);
+            Trans.ReadAll(buf, 0, size);
             return Encoding.UTF8.GetString(buf, 0, buf.Length);
         }
 
         private int ReadAll(byte[] buf, int off, int len)
         {
-            return trans.ReadAll(buf, off, len);
+            return Trans.ReadAll(buf, off, len);
         }
     }
 }

@@ -23,29 +23,26 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Threading;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 
 namespace Thrift.Transport
 {
     // ReSharper disable once InconsistentNaming
-    public class THttpClient : TTransport, IDisposable
+    public class THttpClient : TTransport
     {
-        private readonly Uri uri;
-        private readonly X509Certificate[] certificates;
-        private Stream inputStream;
-        private MemoryStream outputStream = new MemoryStream();
+        private readonly Uri _uri;
+        private readonly X509Certificate[] _certificates;
+        private Stream _inputStream;
+        private MemoryStream _outputStream = new MemoryStream();
 
         // Timeouts in milliseconds
-        private int connectTimeout = 30000;
+        private int _connectTimeout = 30000;
 
-        private int readTimeout = 30000;
-
-        private IDictionary<string, string> customHeaders = new ConcurrentDictionary<string, string>();
+        private int _readTimeout = 30000;
 
         public THttpClient(Uri u)
             : this(u, Enumerable.Empty<X509Certificate>())
@@ -54,58 +51,52 @@ namespace Thrift.Transport
 
         public THttpClient(Uri u, IEnumerable<X509Certificate> certificates)
         {
-            uri = u;
-            this.certificates = (certificates ?? Enumerable.Empty<X509Certificate>()).ToArray();
+            _uri = u;
+            _certificates = (certificates ?? Enumerable.Empty<X509Certificate>()).ToArray();
         }
 
         public int ConnectTimeout
         {
-            set { connectTimeout = value; }
+            set { _connectTimeout = value; }
         }
 
         public int ReadTimeout
         {
-            set { readTimeout = value; }
+            set { _readTimeout = value; }
         }
 
-        public IDictionary<string, string> CustomHeaders
-        {
-            get { return customHeaders; }
-        }
+        public IDictionary<string, string> CustomHeaders { get; } = new ConcurrentDictionary<string, string>();
 
-        public override bool IsOpen
-        {
-            get { return true; }
-        }
+        public override bool IsOpen => true;
 
-        public override void Open()
+      public override void Open()
         {
         }
 
         public override void Close()
         {
-            if (inputStream != null)
+            if (_inputStream != null)
             {
-                inputStream.Dispose();
-                inputStream = null;
+                _inputStream.Dispose();
+                _inputStream = null;
             }
-            if (outputStream != null)
+            if (_outputStream != null)
             {
-                outputStream.Dispose();
-                outputStream = null;
+                _outputStream.Dispose();
+                _outputStream = null;
             }
         }
 
         public override int Read(byte[] buf, int off, int len)
         {
-            if (inputStream == null)
+            if (_inputStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No request has been sent");
             }
 
             try
             {
-                var ret = inputStream.Read(buf, off, len);
+                var ret = _inputStream.Read(buf, off, len);
 
                 if (ret == -1)
                 {
@@ -122,7 +113,7 @@ namespace Thrift.Transport
 
         public override void Write(byte[] buf, int off, int len)
         {
-            outputStream.Write(buf, off, len);
+            _outputStream.Write(buf, off, len);
         }
 
         public override void Flush()
@@ -133,7 +124,7 @@ namespace Thrift.Transport
             }
             finally
             {
-                outputStream = new MemoryStream();
+                _outputStream = new MemoryStream();
             }
         }
 
@@ -146,15 +137,15 @@ namespace Thrift.Transport
                 //var data = outputStream.ToArray();
                 //connection.ContentLength = data.Length;
 
-                using (var outStream = new StreamContent(outputStream))
+                using (var outStream = new StreamContent(_outputStream))
                 {
-                    var msg = httpClient.PostAsync(uri, outStream).Result;
+                    var msg = httpClient.PostAsync(_uri, outStream).Result;
                     msg.EnsureSuccessStatusCode();
 
                     //TODO: clean stream
-                    inputStream.Dispose();
-                    inputStream = msg.Content.ReadAsStreamAsync().Result;
-                    if (inputStream.CanSeek) inputStream.Seek(0, SeekOrigin.Begin);
+                    _inputStream.Dispose();
+                    _inputStream = msg.Content.ReadAsStreamAsync().Result;
+                    if (_inputStream.CanSeek) _inputStream.Seek(0, SeekOrigin.Begin);
                 }
 
                 //using (Stream requestStream = connection.GetRequestStream())
@@ -200,13 +191,13 @@ namespace Thrift.Transport
         private HttpClient CreateClient()
         {
             var handler = new HttpClientHandler();
-            handler.ClientCertificates.AddRange(certificates);
+            handler.ClientCertificates.AddRange(_certificates);
 
             var httpClient = new HttpClient(handler);
 
-            if (connectTimeout > 0)
+            if (_connectTimeout > 0)
             {
-                httpClient.Timeout = TimeSpan.FromSeconds(connectTimeout);
+                httpClient.Timeout = TimeSpan.FromSeconds(_connectTimeout);
             }
 
             //TODO: HttpClient ReadWriteTimeout
@@ -229,7 +220,7 @@ namespace Thrift.Transport
             //connection.ProtocolVersion = HttpVersion.Version10;
 
             //add custom headers here
-            foreach (var item in customHeaders)
+            foreach (var item in CustomHeaders)
             {
                 //TODO: check for existing
                 httpClient.DefaultRequestHeaders.Add(item.Key, item.Value);
@@ -287,7 +278,7 @@ namespace Thrift.Transport
             }
             finally
             {
-                outputStream = new MemoryStream();
+                _outputStream = new MemoryStream();
             }
         }
 
@@ -333,39 +324,26 @@ namespace Thrift.Transport
             private volatile bool _isCompleted;
             private ManualResetEvent _evt;
             private readonly AsyncCallback _cbMethod;
-            private readonly object _state;
 
             public FlushAsyncResult(AsyncCallback cbMethod, object state)
             {
                 _cbMethod = cbMethod;
-                _state = state;
+                AsyncState = state;
             }
 
             internal byte[] Data { get; set; }
             internal HttpClient Connection { get; set; }
             internal TTransportException AsyncException { get; set; }
 
-            public object AsyncState
-            {
-                get { return _state; }
-            }
+            public object AsyncState { get; }
 
-            public WaitHandle AsyncWaitHandle
-            {
-                get { return GetEvtHandle(); }
-            }
+            public WaitHandle AsyncWaitHandle => GetEvtHandle();
 
-            public bool CompletedSynchronously
-            {
-                get { return false; }
-            }
+          public bool CompletedSynchronously => false;
 
-            public bool IsCompleted
-            {
-                get { return _isCompleted; }
-            }
+          public bool IsCompleted => _isCompleted;
 
-            private readonly object _locker = new object();
+          private readonly object _locker = new object();
 
             private ManualResetEvent GetEvtHandle()
             {
@@ -404,20 +382,20 @@ namespace Thrift.Transport
             }
         }
 
-        private bool _IsDisposed;
+        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if (!_IsDisposed)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
-                    inputStream?.Dispose();
-                    outputStream?.Dispose();
+                    _inputStream?.Dispose();
+                    _outputStream?.Dispose();
                 }
             }
-            _IsDisposed = true;
+            _isDisposed = true;
         }
     }
 }

@@ -21,7 +21,8 @@
  * details.
  */
 
-using System;
+using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Thrift.Server
 {
@@ -34,21 +35,21 @@ namespace Thrift.Server
         /// <summary>
         /// Called before the server begins */
         /// </summary>
-        void preServe();
+        void PreServe();
 
         /// <summary>
         /// Called when a new client has connected and is about to being processing */
         /// </summary>
-        object createContext(Protocol.TProtocol input, Protocol.TProtocol output);
+        object CreateContext(TProtocol input, TProtocol output);
 
         /// <summary>
         /// Called when a client has finished request-handling to delete server context */
         /// </summary>
-        void deleteContext(object serverContext, Protocol.TProtocol input, Protocol.TProtocol output);
+        void DeleteContext(object serverContext, TProtocol input, TProtocol output);
 
         /// <summary>
         /// Called when a client is about to call the processor */
         /// </summary>
-        void processContext(object serverContext, Transport.TTransport transport);
-    };
+        void ProcessContext(object serverContext, TTransport transport);
+    }
 }

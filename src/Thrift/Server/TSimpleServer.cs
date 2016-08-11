@@ -22,8 +22,8 @@
  */
 
 using System;
-using Thrift.Transport;
 using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace Thrift.Server
 {
@@ -33,7 +33,7 @@ namespace Thrift.Server
     // ReSharper disable once InconsistentNaming
     public class TSimpleServer : TServer
     {
-        private bool stop = false;
+        private bool _stop;
 
         public TSimpleServer(TProcessor processor,
             TServerTransport serverTransport)
@@ -107,26 +107,25 @@ namespace Thrift.Server
 
             //Fire the preServe server event when server is up but before any client connections
             if (serverEventHandler != null)
-                serverEventHandler.preServe();
+                serverEventHandler.PreServe();
 
-            while (!stop)
+            while (!_stop)
             {
-                TProcessor processor = null;
-                TTransport client = null;
-                TTransport inputTransport = null;
-                TTransport outputTransport = null;
                 TProtocol inputProtocol = null;
                 TProtocol outputProtocol = null;
                 object connectionContext = null;
                 try
                 {
+                    TTransport client = null;
                     using (client = serverTransport.Accept())
                     {
-                        processor = processorFactory.GetProcessor(client);
+                        var processor = processorFactory.GetProcessor(client);
                         if (client != null)
                         {
+                            TTransport inputTransport = null;
                             using (inputTransport = inputTransportFactory.GetTransport(client))
                             {
+                                TTransport outputTransport = null;
                                 using (outputTransport = outputTransportFactory.GetTransport(client))
                                 {
                                     inputProtocol = inputProtocolFactory.GetProtocol(inputTransport);
@@ -134,11 +133,11 @@ namespace Thrift.Server
 
                                     //Recover event handler (if any) and fire createContext server event when a client connects
                                     if (serverEventHandler != null)
-                                        connectionContext = serverEventHandler.createContext(inputProtocol,
+                                        connectionContext = serverEventHandler.CreateContext(inputProtocol,
                                             outputProtocol);
 
                                     //Process client requests until client disconnects
-                                    while (!stop)
+                                    while (!_stop)
                                     {
                                         if (!inputTransport.Peek())
                                             break;
@@ -147,8 +146,7 @@ namespace Thrift.Server
                                         //N.B. This is the pattern implemented in C++ and the event fires provisionally.
                                         //That is to say it may be many minutes between the event firing and the client request
                                         //actually arriving or the client may hang up without ever makeing a request.
-                                        if (serverEventHandler != null)
-                                            serverEventHandler.processContext(connectionContext, inputTransport);
+                                        serverEventHandler?.ProcessContext(connectionContext, inputTransport);
                                         //Process client request (blocks until transport is readable)
                                         if (!processor.Process(inputProtocol, outputProtocol))
                                             break;
@@ -160,7 +158,7 @@ namespace Thrift.Server
                 }
                 catch (TTransportException ttx)
                 {
-                    if (!stop || ttx.Type != TTransportException.ExceptionType.Interrupted)
+                    if (!_stop || ttx.Type != TTransportException.ExceptionType.Interrupted)
                     {
                         logDelegate(ttx.ToString());
                     }
@@ -172,14 +170,13 @@ namespace Thrift.Server
                 }
 
                 //Fire deleteContext server event after client disconnects
-                if (serverEventHandler != null)
-                    serverEventHandler.deleteContext(connectionContext, inputProtocol, outputProtocol);
+                serverEventHandler?.DeleteContext(connectionContext, inputProtocol, outputProtocol);
             }
         }
 
         public override void Stop()
         {
-            stop = true;
+            _stop = true;
             serverTransport.Close();
         }
     }

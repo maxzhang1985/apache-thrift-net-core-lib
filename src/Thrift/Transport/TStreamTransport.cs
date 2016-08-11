@@ -21,7 +21,6 @@
  * details.
  */
 
-using System;
 using System.IO;
 
 namespace Thrift.Transport
@@ -42,20 +41,11 @@ namespace Thrift.Transport
             this.outputStream = outputStream;
         }
 
-        public Stream OutputStream
-        {
-            get { return outputStream; }
-        }
+        public Stream OutputStream => outputStream;
 
-        public Stream InputStream
-        {
-            get { return inputStream; }
-        }
+        public Stream InputStream => inputStream;
 
-        public override bool IsOpen
-        {
-            get { return true; }
-        }
+        public override bool IsOpen => true;
 
         public override void Open()
         {
@@ -109,12 +99,12 @@ namespace Thrift.Transport
         }
 
 
-        private bool _IsDisposed;
+        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if (!_IsDisposed)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
@@ -122,7 +112,7 @@ namespace Thrift.Transport
                     OutputStream?.Dispose();
                 }
             }
-            _IsDisposed = true;
+            _isDisposed = true;
         }
     }
 }

@@ -21,43 +21,24 @@
  * details.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public struct TMessage
     {
-        private string name;
-        private TMessageType type;
-        private int seqID;
-
         public TMessage(string name, TMessageType type, int seqid)
             : this()
         {
-            this.name = name;
-            this.type = type;
-            seqID = seqid;
+            Name = name;
+            Type = type;
+            SeqID = seqid;
         }
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
+        public string Name { get; set; }
 
-        public TMessageType Type
-        {
-            get { return type; }
-            set { type = value; }
-        }
+        public TMessageType Type { get; set; }
 
-        public int SeqID
-        {
-            get { return seqID; }
-            set { seqID = value; }
-        }
+        // ReSharper disable once InconsistentNaming - do not rename - it used for generation 
+        public int SeqID { get; set; }
     }
 }
