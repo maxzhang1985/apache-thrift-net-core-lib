@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using Thrift;
 using Thrift.Protocol;
 using Thrift.Samples;
@@ -12,7 +13,8 @@ namespace Client
         {
             try
             {
-                TTransport transport = new TSocket("localhost", 9090);
+                var address = IPAddress.Loopback;
+                TTransport transport = new TSocket(address, 9090);
                 TProtocol protocol = new TBinaryProtocol(transport);
                 var client = new Calculator.Client(protocol);
 

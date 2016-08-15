@@ -22,6 +22,7 @@
  */
 
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,12 +45,12 @@ namespace Thrift.Transport
             }
         }
 
-        public TSocket(string host, int port)
+        public TSocket(IPAddress host, int port)
             : this(host, port, 0)
         {
         }
 
-        public TSocket(string host, int port, int timeout)
+        public TSocket(IPAddress host, int port, int timeout)
         {
             Host = host;
             Port = port;
@@ -72,7 +73,7 @@ namespace Thrift.Transport
 
         public TcpClient TcpClient { get; private set; }
 
-        public string Host { get; }
+        public IPAddress Host { get; }
 
         public int Port { get; }
 
@@ -94,11 +95,6 @@ namespace Thrift.Transport
             if (IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
-            }
-
-            if (string.IsNullOrEmpty(Host))
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open null host");
             }
 
             if (Port <= 0)
