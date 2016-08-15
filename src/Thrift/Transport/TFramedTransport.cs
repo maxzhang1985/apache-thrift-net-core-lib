@@ -43,7 +43,10 @@ namespace Thrift.Transport
         public TFramedTransport(TTransport transport)
         {
             if (transport == null)
+            {
                 throw new ArgumentNullException(nameof(transport));
+            }
+
             _transport = transport;
             InitWriteBuffer();
         }
@@ -66,8 +69,12 @@ namespace Thrift.Transport
         {
             CheckNotDisposed();
             ValidateBufferArgs(buf, off, len);
+
             if (!IsOpen)
+            {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
             var got = _readBuffer.Read(buf, off, len);
             if (got > 0)
             {
@@ -89,7 +96,7 @@ namespace Thrift.Transport
             _readBuffer.Seek(0, SeekOrigin.Begin);
             ArraySegment<byte> bufSegment;
             _readBuffer.TryGetBuffer(out bufSegment);
-            byte[] buff = bufSegment.Array;
+            var buff = bufSegment.Array;
 
             //byte[] buff = readBuffer.GetBuffer();
             _transport.ReadAll(buff, 0, size);
@@ -99,27 +106,40 @@ namespace Thrift.Transport
         {
             CheckNotDisposed();
             ValidateBufferArgs(buf, off, len);
+
             if (!IsOpen)
+            {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
             if (_writeBuffer.Length + len > int.MaxValue)
+            {
                 Flush();
+            }
+
             _writeBuffer.Write(buf, off, len);
         }
 
         public override void Flush()
         {
             CheckNotDisposed();
+
             if (!IsOpen)
+            {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
             ArraySegment<byte> bufSegment;
             _writeBuffer.TryGetBuffer(out bufSegment);
-            byte[] buf = bufSegment.Array;
+            var buf = bufSegment.Array;
 
             //byte[] buf = writeBuffer.GetBuffer();
             var len = (int) _writeBuffer.Length;
             var dataLen = len - HeaderSize;
             if (dataLen < 0)
+            {
                 throw new InvalidOperationException(); // logic error actually
+            }
 
             // Inject message header into the reserved buffer space
             EncodeFrameSize(dataLen, buf);
@@ -160,7 +180,9 @@ namespace Thrift.Transport
         private void CheckNotDisposed()
         {
             if (_isDisposed)
+            {
                 throw new ObjectDisposedException("TFramedTransport");
+            }
         }
 
         private bool _isDisposed;

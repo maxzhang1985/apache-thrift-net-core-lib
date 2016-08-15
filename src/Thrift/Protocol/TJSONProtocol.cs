@@ -118,8 +118,7 @@ namespace Thrift.Protocol
                 case TType.List:
                     return NameList;
                 default:
-                    throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED,
-                        "Unrecognized exType");
+                    throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED, "Unrecognized exType");
             }
         }
 
@@ -176,8 +175,7 @@ namespace Thrift.Protocol
             }
             if (result == TType.Stop)
             {
-                throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED,
-                    "Unrecognized exType");
+                throw new TProtocolException(TProtocolException.NOT_IMPLEMENTED, "Unrecognized exType");
             }
             return result;
         }
@@ -397,8 +395,7 @@ namespace Thrift.Protocol
             var ch = Reader.Read();
             if (ch != b[0])
             {
-                throw new TProtocolException(TProtocolException.INVALID_DATA,
-                    "Unexpected character:" + (char) ch);
+                throw new TProtocolException(TProtocolException.INVALID_DATA, $"Unexpected character: {(char)ch}");
             }
         }
 
@@ -412,13 +409,14 @@ namespace Thrift.Protocol
             {
                 return (byte) ((char) ch - '0');
             }
+
             if ((ch >= 'a') && (ch <= 'f'))
             {
                 ch += 10;
                 return (byte) ((char) ch - 'a');
             }
-            throw new TProtocolException(TProtocolException.INVALID_DATA,
-                "Expected hex character");
+
+            throw new TProtocolException(TProtocolException.INVALID_DATA, "Expected hex character");
         }
 
         ///<summary>
@@ -492,12 +490,16 @@ namespace Thrift.Protocol
 
             var escapeNum = Context.EscapeNumbers();
             if (escapeNum)
+            {
                 Trans.Write(Quote);
+            }
 
             Trans.Write(Utf8Encoding.GetBytes(str));
 
             if (escapeNum)
+            {
                 Trans.Write(Quote);
+            }
         }
 
         ///<summary>
@@ -528,12 +530,16 @@ namespace Thrift.Protocol
             var escapeNum = special || Context.EscapeNumbers();
 
             if (escapeNum)
+            {
                 Trans.Write(Quote);
+            }
 
             Trans.Write(Utf8Encoding.GetBytes(str));
 
             if (escapeNum)
+            {
                 Trans.Write(Quote);
+            }
         }
 
         ///<summary>
@@ -550,10 +556,12 @@ namespace Thrift.Protocol
 
             // Ignore padding
             var bound = len >= 2 ? len - 2 : 0;
+
             for (var i = len - 1; i >= bound && b[i] == '='; --i)
             {
                 --len;
             }
+
             while (len >= 3)
             {
                 // Encode 3 bytes at a time
@@ -562,6 +570,7 @@ namespace Thrift.Protocol
                 off += 3;
                 len -= 3;
             }
+
             if (len > 0)
             {
                 // Encode remainder
@@ -721,10 +730,6 @@ namespace Thrift.Protocol
             WriteJsonBase64(bin);
         }
 
-        /**
-         * Reading methods.
-         */
-
         ///<summary>
         /// Read in a JSON string, unescaping as appropriate.. Skip Reading from the
         /// context if skipContext is true.
@@ -739,7 +744,9 @@ namespace Thrift.Protocol
             {
                 Context.Read();
             }
+
             ReadJsonSyntaxChar(Quote);
+
             while (true)
             {
                 var ch = Reader.Read();
@@ -762,8 +769,7 @@ namespace Thrift.Protocol
                     var off = Array.IndexOf(_escapeChars, (char) ch);
                     if (off == -1)
                     {
-                        throw new TProtocolException(TProtocolException.INVALID_DATA,
-                            "Expected control char");
+                        throw new TProtocolException(TProtocolException.INVALID_DATA, "Expected control char");
                     }
                     ch = _escapeCharVals[off];
                     buffer.Write(new[] {ch}, 0, 1);
@@ -773,16 +779,17 @@ namespace Thrift.Protocol
 
                 // it's \uXXXX
                 Trans.ReadAll(_tempBuffer, 0, 4);
+
                 var wch = (short) ((HexVal(_tempBuffer[0]) << 12) +
                                    (HexVal(_tempBuffer[1]) << 8) +
                                    (HexVal(_tempBuffer[2]) << 4) +
                                    HexVal(_tempBuffer[3]));
+
                 if (char.IsHighSurrogate((char) wch))
                 {
                     if (codeunits.Count > 0)
                     {
-                        throw new TProtocolException(TProtocolException.INVALID_DATA,
-                            "Expected low surrogate char");
+                        throw new TProtocolException(TProtocolException.INVALID_DATA, "Expected low surrogate char");
                     }
                     codeunits.Add((char) wch);
                 }
@@ -790,9 +797,9 @@ namespace Thrift.Protocol
                 {
                     if (codeunits.Count == 0)
                     {
-                        throw new TProtocolException(TProtocolException.INVALID_DATA,
-                            "Expected high surrogate char");
+                        throw new TProtocolException(TProtocolException.INVALID_DATA, "Expected high surrogate char");
                     }
+
                     codeunits.Add((char) wch);
                     var tmp = Utf8Encoding.GetBytes(codeunits.ToArray());
                     buffer.Write(tmp, 0, tmp.Length);
@@ -805,11 +812,9 @@ namespace Thrift.Protocol
                 }
             }
 
-
             if (codeunits.Count > 0)
             {
-                throw new TProtocolException(TProtocolException.INVALID_DATA,
-                    "Expected low surrogate char");
+                throw new TProtocolException(TProtocolException.INVALID_DATA, "Expected low surrogate char");
             }
 
             return buffer.ToArray();
@@ -818,7 +823,7 @@ namespace Thrift.Protocol
         ///<summary>
         /// Return true if the given byte could be a valid part of a JSON number.
         ///</summary>
-        private bool IsJsonNumeric(byte b)
+        private static bool IsJsonNumeric(byte b)
         {
             switch (b)
             {
@@ -839,6 +844,7 @@ namespace Thrift.Protocol
                 case (byte) 'e':
                     return true;
             }
+
             return false;
         }
 
@@ -871,19 +877,20 @@ namespace Thrift.Protocol
             {
                 ReadJsonSyntaxChar(Quote);
             }
+
             var str = ReadJsonNumericChars();
             if (Context.EscapeNumbers())
             {
                 ReadJsonSyntaxChar(Quote);
             }
+
             try
             {
                 return long.Parse(str);
             }
             catch (FormatException)
             {
-                throw new TProtocolException(TProtocolException.INVALID_DATA,
-                    "Bad data encounted in numeric data");
+                throw new TProtocolException(TProtocolException.INVALID_DATA, "Bad data encounted in numeric data");
             }
         }
 
@@ -899,28 +906,28 @@ namespace Thrift.Protocol
                 var arr = ReadJsonString(true);
                 var dub = double.Parse(Utf8Encoding.GetString(arr, 0, arr.Length), CultureInfo.InvariantCulture);
 
-                if (!Context.EscapeNumbers() && !double.IsNaN(dub) &&
-                    !double.IsInfinity(dub))
+                if (!Context.EscapeNumbers() && !double.IsNaN(dub) && !double.IsInfinity(dub))
                 {
                     // Throw exception -- we should not be in a string in this case
-                    throw new TProtocolException(TProtocolException.INVALID_DATA,
-                        "Numeric data unexpectedly quoted");
+                    throw new TProtocolException(TProtocolException.INVALID_DATA, "Numeric data unexpectedly quoted");
                 }
+
                 return dub;
             }
+
             if (Context.EscapeNumbers())
             {
                 // This will throw - we should have had a quote if escapeNum == true
                 ReadJsonSyntaxChar(Quote);
             }
+
             try
             {
                 return double.Parse(ReadJsonNumericChars(), CultureInfo.InvariantCulture);
             }
             catch (FormatException)
             {
-                throw new TProtocolException(TProtocolException.INVALID_DATA,
-                    "Bad data encounted in numeric data");
+                throw new TProtocolException(TProtocolException.INVALID_DATA, "Bad data encounted in numeric data");
             }
         }
 
@@ -933,11 +940,13 @@ namespace Thrift.Protocol
             var len = b.Length;
             var off = 0;
             var size = 0;
+            
             // reduce len to ignore fill bytes
             while ((len > 0) && (b[len - 1] == '='))
             {
                 --len;
             }
+
             // read & decode full byte triplets = 4 source bytes
             while (len > 4)
             {
@@ -947,6 +956,7 @@ namespace Thrift.Protocol
                 len -= 4;
                 size += 3;
             }
+            
             // Don't decode if we hit the end or got a single leftover byte (invalid
             // base64 but legal for skip of regular string exType)
             if (len > 1)
@@ -955,6 +965,7 @@ namespace Thrift.Protocol
                 TBase64Utils.Decode(b, off, len, b, size); // NB: decoded in place
                 size += len - 1;
             }
+            
             // Sadly we must copy the byte[] (any way around this?)
             var result = new byte[size];
             Array.Copy(b, 0, result, 0, size);
@@ -993,8 +1004,7 @@ namespace Thrift.Protocol
             ReadJsonArrayStart();
             if (ReadJsonInteger() != Version)
             {
-                throw new TProtocolException(TProtocolException.BAD_VERSION,
-                    "Message contained bad version.");
+                throw new TProtocolException(TProtocolException.BAD_VERSION, "Message contained bad version.");
             }
 
             var buf = ReadJsonString(false);

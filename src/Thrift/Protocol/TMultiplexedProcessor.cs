@@ -27,29 +27,31 @@ using System.IO;
 
 namespace Thrift.Protocol
 {
-/**
-         * TMultiplexedProcessor is a TProcessor allowing a single TServer to provide multiple services.
-         * To do so, you instantiate the processor and then register additional processors with it,
-         * as shown in the following example:
-         *
-         *     TMultiplexedProcessor processor = new TMultiplexedProcessor();
-         *
-         *     processor.registerProcessor(
-         *         "Calculator",
-         *         new Calculator.Processor(new CalculatorHandler()));
-         *
-         *     processor.registerProcessor(
-         *         "WeatherReport",
-         *         new WeatherReport.Processor(new WeatherReportHandler()));
-         *
-         *     TServerTransport t = new TServerSocket(9090);
-         *     TSimpleServer server = new TSimpleServer(processor, t);
-         *
-         *     server.serve();
-         */
+    /**
+    * TMultiplexedProcessor is a TProcessor allowing a single TServer to provide multiple services.
+    * To do so, you instantiate the processor and then register additional processors with it,
+    * as shown in the following example:
+    *
+    *     TMultiplexedProcessor processor = new TMultiplexedProcessor();
+    *
+    *     processor.registerProcessor(
+    *         "Calculator",
+    *         new Calculator.Processor(new CalculatorHandler()));
+    *
+    *     processor.registerProcessor(
+    *         "WeatherReport",
+    *         new WeatherReport.Processor(new WeatherReportHandler()));
+    *
+    *     TServerTransport t = new TServerSocket(9090);
+    *     TSimpleServer server = new TSimpleServer(processor, t);
+    *
+    *     server.serve();
+    */
     // ReSharper disable once InconsistentNaming
     public class TMultiplexedProcessor : TProcessor
     {
+        //TODO: Localization
+
         private readonly Dictionary<string, TProcessor> _serviceProcessorMap = new Dictionary<string, TProcessor>();
 
         /**
@@ -109,8 +111,7 @@ namespace Thrift.Protocol
 
                 if ((message.Type != TMessageType.Call) && (message.Type != TMessageType.Oneway))
                 {
-                    Fail(oprot, message,
-                        TApplicationException.ExceptionType.InvalidMessageType,
+                    Fail(oprot, message, TApplicationException.ExceptionType.InvalidMessageType,
                         "Message exType CALL or ONEWAY expected");
                     return false;
                 }
@@ -119,10 +120,8 @@ namespace Thrift.Protocol
                 var index = message.Name.IndexOf(TMultiplexedProtocol.Separator, StringComparison.Ordinal);
                 if (index < 0)
                 {
-                    Fail(oprot, message,
-                        TApplicationException.ExceptionType.InvalidProtocol,
-                        "Service name not found in message name: " + message.Name + ". " +
-                        "Did you forget to use a TMultiplexProtocol in your client?");
+                    Fail(oprot, message, TApplicationException.ExceptionType.InvalidProtocol,
+                        $"Service name not found in message name: {message.Name}. Did you forget to use a TMultiplexProtocol in your client?");
                     return false;
                 }
 
@@ -131,10 +130,8 @@ namespace Thrift.Protocol
                 TProcessor actualProcessor;
                 if (!_serviceProcessorMap.TryGetValue(serviceName, out actualProcessor))
                 {
-                    Fail(oprot, message,
-                        TApplicationException.ExceptionType.InternalError,
-                        "Service name not found: " + serviceName + ". " +
-                        "Did you forget to call RegisterProcessor()?");
+                    Fail(oprot, message, TApplicationException.ExceptionType.InternalError,
+                        $"Service name not found: {serviceName}. Did you forget to call RegisterProcessor()?");
                     return false;
                 }
 

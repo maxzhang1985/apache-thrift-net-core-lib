@@ -34,19 +34,23 @@ namespace Thrift.Collections
             {
                 return true;
             }
+
             if (first == null || second == null)
             {
                 return false;
             }
+
             var fiter = first.GetEnumerator();
             var siter = second.GetEnumerator();
 
             var fnext = fiter.MoveNext();
             var snext = siter.MoveNext();
+
             while (fnext && snext)
             {
                 var fenum = fiter.Current as IEnumerable;
                 var senum = siter.Current as IEnumerable;
+
                 if (fenum != null && senum != null)
                 {
                     if (!Equals(fenum, senum))
@@ -62,6 +66,7 @@ namespace Thrift.Collections
                 {
                     return false;
                 }
+
                 fnext = fiter.MoveNext();
                 snext = siter.MoveNext();
             }
@@ -80,15 +85,18 @@ namespace Thrift.Collections
             }
 
             var hashcode = 0;
+
             foreach (var obj in enumerable)
             {
                 var enum2 = obj as IEnumerable;
                 var objHash = enum2 == null ? obj.GetHashCode() : GetHashCode(enum2);
+
                 unchecked
                 {
-                    hashcode = (hashcode*397) ^ (objHash);
+                    hashcode = (hashcode * 397) ^ (objHash);
                 }
             }
+
             return hashcode;
         }
     }

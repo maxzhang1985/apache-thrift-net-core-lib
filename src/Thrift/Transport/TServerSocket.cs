@@ -131,7 +131,7 @@ namespace Thrift.Transport
             {
                 TSocket result2 = null;
                 //TODO: Async
-                TcpClient result = _server.AcceptTcpClientAsync().Result;
+                var result = _server.AcceptTcpClientAsync().Result;
                 try
                 {
                     result2 = new TSocket(result);

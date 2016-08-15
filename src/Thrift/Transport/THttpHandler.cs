@@ -19,6 +19,7 @@
  *
  */
 
+using System;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
@@ -53,9 +54,25 @@ namespace Thrift.Transport
         public THttpHandler(TAsyncProcessor processor, TProtocolFactory inputProtocolFactory,
             TProtocolFactory outputProtocolFactory, RequestDelegate next)
         {
+            if (processor == null)
+            {
+                throw new ArgumentNullException(nameof(processor));
+            }
+
+            if (inputProtocolFactory == null)
+            {
+                throw new ArgumentNullException(nameof(inputProtocolFactory));
+            }
+
+            if (outputProtocolFactory == null)
+            {
+                throw new ArgumentNullException(nameof(outputProtocolFactory));
+            }
+
             Processor = processor;
             InputProtocolFactory = inputProtocolFactory;
             OutputProtocolFactory = outputProtocolFactory;
+
             _next = next;
         }
 

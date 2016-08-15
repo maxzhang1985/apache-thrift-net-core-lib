@@ -31,9 +31,9 @@ namespace Thrift.Collections
 
         public int Count => _set.Count;
 
-      public bool IsReadOnly => false;
+        public bool IsReadOnly => false;
 
-      public void Add(T item)
+        public void Add(T item)
         {
             _set.Add(item);
         }

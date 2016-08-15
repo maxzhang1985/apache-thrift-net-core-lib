@@ -21,78 +21,74 @@
  * details.
  */
 
-//TODO: TNamedPipeClientTransport
+using System.IO.Pipes;
 
-//using System.IO.Pipes;
+namespace Thrift.Transport
+{
+    // ReSharper disable once InconsistentNaming
+    public class TNamedPipeClientTransport : TTransport
+    {
+        private NamedPipeClientStream _client;
+        private readonly string _serverName;
+        private readonly string _pipeName;
 
-//namespace Thrift.Transport
-//{
-//    public class TNamedPipeClientTransport : TTransport
-//    {
-//        private NamedPipeClientStream client;
-//        private string ServerName;
-//        private string PipeName;
+        public TNamedPipeClientTransport(string pipe)
+        {
+            _serverName = ".";
+            _pipeName = pipe;
+        }
 
-//        public TNamedPipeClientTransport(string pipe)
-//        {
-//            ServerName = ".";
-//            PipeName = pipe;
-//        }
+        public TNamedPipeClientTransport(string server, string pipe)
+        {
+            _serverName = string.IsNullOrWhiteSpace(server) ? server : ".";
+            _pipeName = pipe;
+        }
 
-//        public TNamedPipeClientTransport(string server, string pipe)
-//        {
-//            ServerName = (server != "") ? server : ".";
-//            PipeName = pipe;
-//        }
+        public override bool IsOpen => _client != null && _client.IsConnected;
 
-//        public override bool IsOpen
-//        {
-//            get { return client != null && client.IsConnected; }
-//        }
+        public override void Open()
+        {
+            if (IsOpen)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
+            }
+            _client = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut, PipeOptions.None);
+            _client.Connect();
+        }
 
-//        public override void Open()
-//        {
-//            if (IsOpen)
-//            {
-//                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
-//            }
-//            client = new NamedPipeClientStream(ServerName, PipeName, PipeDirection.InOut, PipeOptions.None);
-//            client.Connect();
-//        }
+        public override void Close()
+        {
+            if (_client != null)
+            {
+                _client.Dispose();
+                _client = null;
+            }
+        }
 
-//        public override void Close()
-//        {
-//            if (client != null)
-//            {
-//                client.Close();
-//                client = null;
-//            }
-//        }
+        public override int Read(byte[] buf, int off, int len)
+        {
+            if (_client == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
 
-//        public override int Read(byte[] buf, int off, int len)
-//        {
-//            if (client == null)
-//            {
-//                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-//            }
+            return _client.Read(buf, off, len);
+        }
 
-//            return client.Read(buf, off, len);
-//        }
+        public override void Write(byte[] buf, int off, int len)
+        {
+            if (_client == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
 
-//        public override void Write(byte[] buf, int off, int len)
-//        {
-//            if (client == null)
-//            {
-//                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-//            }
+            _client.Write(buf, off, len);
+        }
 
-//            client.Write(buf, off, len);
-//        }
-
-//        protected override void Dispose(bool disposing)
-//        {
-//            client.Dispose();
-//        }
-//    }
-//}
+        protected override void Dispose(bool disposing)
+        {
+            _client.Dispose();
+        }
+    }
+}
 

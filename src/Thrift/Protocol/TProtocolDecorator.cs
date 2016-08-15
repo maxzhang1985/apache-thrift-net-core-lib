@@ -21,30 +21,29 @@
  * details.
  */
 
+using System;
+
 namespace Thrift.Protocol
 {
-/**
-         * TProtocolDecorator forwards all requests to an enclosed TProtocol instance,
-         * providing a way to author concise concrete decorator subclasses.  While it has
-         * no abstract methods, it is marked abstract as a reminder that by itself,
-         * it does not modify the behaviour of the enclosed TProtocol.
-         *
-         * See p.175 of Design Patterns (by Gamma et al.)
-         * See TMultiplexedProtocol
-         */
     // ReSharper disable once InconsistentNaming
+    ///<summary>
+    /// TProtocolDecorator forwards all requests to an enclosed TProtocol instance,
+    /// providing a way to author concise concrete decorator subclasses.While it has
+    /// no abstract methods, it is marked abstract as a reminder that by itself,
+    /// it does not modify the behaviour of the enclosed TProtocol.
+    /// </summary>
     public abstract class TProtocolDecorator : TProtocol
     {
         private readonly TProtocol _wrappedProtocol;
 
-        /**
-         * Encloses the specified protocol.
-         * @param protocol All operations will be forward to this protocol.  Must be non-null.
-         */
-
         protected TProtocolDecorator(TProtocol protocol)
             : base(protocol.Transport)
         {
+            if (protocol == null)
+            {
+                throw new ArgumentNullException(nameof(protocol));
+            }
+
             _wrappedProtocol = protocol;
         }
 

@@ -14,9 +14,12 @@
 
   "scripts": {
     "precompile": [
-      //"%project:Directory%/../../thrift-0.9.3.exe -r -out %project:Directory%/Generated --gen csharp %project:Directory%/ThriftTest.thrift",
-      //"%project:Directory%/../../thrift-0.9.3.exe -r -out %project:Directory%/Generated --gen csharp %project:Directory%/Facebook303Test.thrift",
-      //"%project:Directory%/../../thrift-0.9.3.exe -r -out %project:Directory%/Generated --gen csharp %project:Directory%/CassandraTest.thrift"
+      /*
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp %project:Directory%/ThriftTest.thrift",
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp:async %project:Directory%/ThriftTestAsync.thrift",
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp %project:Directory%/Facebook303Test.thrift",
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp %project:Directory%/CassandraTest.thrift"
+      */
     ]
   }
 }

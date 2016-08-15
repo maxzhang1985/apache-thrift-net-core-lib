@@ -70,14 +70,17 @@ namespace Thrift.Transport
             {
                 throw new ArgumentNullException(nameof(buf));
             }
+
             if (off < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(off),"Buffer offset is smaller than zero.");
             }
+
             if (len < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(len), "Buffer length is smaller than zero.");
             }
+
             if (off + len > buf.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(buf), "Not enough data.");

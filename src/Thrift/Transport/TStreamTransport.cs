@@ -21,29 +21,29 @@
  * details.
  */
 
+using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
     // ReSharper disable once InconsistentNaming
     public class TStreamTransport : TTransport
     {
-        protected Stream inputStream;
-        protected Stream outputStream;
-
         protected TStreamTransport()
         {
         }
 
         public TStreamTransport(Stream inputStream, Stream outputStream)
         {
-            this.inputStream = inputStream;
-            this.outputStream = outputStream;
+            InputStream = inputStream;
+            OutputStream = outputStream;
         }
 
-        public Stream OutputStream => outputStream;
+        protected Stream OutputStream { get; set; }
 
-        public Stream InputStream => inputStream;
+        protected Stream InputStream { get; set; }
 
         public override bool IsOpen => true;
 
@@ -53,51 +53,64 @@ namespace Thrift.Transport
 
         public override void Close()
         {
-            if (inputStream != null)
+            if (InputStream != null)
             {
-                inputStream.Dispose();
-                inputStream = null;
+                InputStream.Dispose();
+                InputStream = null;
             }
-            if (outputStream != null)
+            if (OutputStream != null)
             {
-                outputStream.Dispose();
-                outputStream = null;
+                OutputStream.Dispose();
+                OutputStream = null;
             }
         }
 
         public override int Read(byte[] buf, int off, int len)
         {
-            if (inputStream == null)
+            if (InputStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen,
                     "Cannot read from null inputstream");
             }
 
-            return inputStream.Read(buf, off, len);
+            return InputStream.Read(buf, off, len);
         }
 
         public override void Write(byte[] buf, int off, int len)
         {
-            if (outputStream == null)
+            if (OutputStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen,
                     "Cannot write to null outputstream");
             }
 
-            outputStream.Write(buf, off, len);
+            OutputStream.Write(buf, off, len);
         }
 
         public override void Flush()
         {
-            if (outputStream == null)
+            if (OutputStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen,
                     "Cannot flush null outputstream");
             }
 
-            outputStream.Flush();
+            OutputStream.Flush();
         }
 
+        public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
+        {
+            Console.WriteLine("TStreamTransport -> BeginFlush");
+            //TODO: Check implementation
+            return OutputStream.FlushAsync(CancellationToken.None);
+        }
+
+        public override void EndFlush(IAsyncResult asyncResult)
+        {
+            Console.WriteLine("TStreamTransport -> EndFlush");
+            //TODO: Check implementation
+            ((Task)asyncResult).GetAwaiter().GetResult();
+        }
 
         private bool _isDisposed;
 

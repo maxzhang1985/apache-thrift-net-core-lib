@@ -57,7 +57,7 @@ namespace Thrift.Protocol
         {
         }
 
-        public int getType()
+        public int GetExceptionType()
         {
             return Type;
         }

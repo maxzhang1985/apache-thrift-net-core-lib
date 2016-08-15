@@ -31,32 +31,33 @@ namespace Thrift.Protocol
     public abstract class TProtocol : IDisposable
     {
         private const int DefaultRecursionDepth = 64;
+        private bool _isDisposed;
 
         protected TTransport Trans;
-        protected int recursionLimit;
         protected int RecursionDepth;
 
         protected TProtocol(TTransport trans)
         {
             Trans = trans;
-            recursionLimit = DefaultRecursionDepth;
+            RecursionLimit = DefaultRecursionDepth;
             RecursionDepth = 0;
         }
 
         public TTransport Transport => Trans;
 
-        public int RecursionLimit
-        {
-            get { return recursionLimit; }
-            set { recursionLimit = value; }
-        }
+        //TODO: check for protected
+        protected int RecursionLimit { get; set; }
 
         public void IncrementRecursionDepth()
         {
-            if (RecursionDepth < recursionLimit)
+            if (RecursionDepth < RecursionLimit)
+            {
                 ++RecursionDepth;
+            }
             else
+            {
                 throw new TProtocolException(TProtocolException.DEPTH_LIMIT, "Depth limit exceeded");
+            }
         }
 
         public void DecrementRecursionDepth()
@@ -64,9 +65,6 @@ namespace Thrift.Protocol
             --RecursionDepth;
         }
 
-        private bool _isDisposed;
-
-        // IDisposable
         public void Dispose()
         {
             Dispose(true);
@@ -78,8 +76,7 @@ namespace Thrift.Protocol
             {
                 if (disposing)
                 {
-                    if (Trans is IDisposable)
-                        (Trans as IDisposable).Dispose();
+                    (Trans as IDisposable)?.Dispose();
                 }
             }
             _isDisposed = true;
@@ -111,7 +108,6 @@ namespace Thrift.Protocol
         }
 
         public abstract void WriteBinary(byte[] b);
-
         public abstract TMessage ReadMessageBegin();
         public abstract void ReadMessageEnd();
         public abstract TStruct ReadStructBegin();

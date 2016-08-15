@@ -33,9 +33,15 @@ namespace Thrift.Transport
         public TBufferedTransport(TTransport transport, int bufSize = 1024)
         {
             if (transport == null)
+            {
                 throw new ArgumentNullException(nameof(transport));
+            }
+
             if (bufSize <= 0)
+            {
                 throw new ArgumentOutOfRangeException(nameof(bufSize), "Buffer size must be a positive number.");
+            }
+
             _transport = transport;
             _bufSize = bufSize;
         }
@@ -67,13 +73,22 @@ namespace Thrift.Transport
         {
             CheckNotDisposed();
             ValidateBufferArgs(buf, off, len);
+
             if (!IsOpen)
+            {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
             if (_inputBuffer.Capacity < _bufSize)
+            {
                 _inputBuffer.Capacity = _bufSize;
+            }
+
             var got = _inputBuffer.Read(buf, off, len);
             if (got > 0)
+            {
                 return got;
+            }
 
             _inputBuffer.Seek(0, SeekOrigin.Begin);
             _inputBuffer.SetLength(_inputBuffer.Capacity);
@@ -83,8 +98,12 @@ namespace Thrift.Transport
 
             var filled = _transport.Read(bufSegment.Array, 0, (int) _inputBuffer.Length);
             _inputBuffer.SetLength(filled);
+
             if (filled == 0)
+            {
                 return 0;
+            }
+
             return Read(buf, off, len);
         }
 
@@ -93,7 +112,9 @@ namespace Thrift.Transport
             CheckNotDisposed();
             ValidateBufferArgs(buf, off, len);
             if (!IsOpen)
+            {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
             // Relative offset from "off" argument
             var offset = 0;
             if (_outputBuffer.Length > 0)
@@ -120,7 +141,9 @@ namespace Thrift.Transport
             if (remain > 0)
             {
                 if (_outputBuffer.Capacity < _bufSize)
+                {
                     _outputBuffer.Capacity = _bufSize;
+                }
                 _outputBuffer.Write(buf, off + offset, remain);
             }
         }
@@ -129,7 +152,10 @@ namespace Thrift.Transport
         {
             CheckNotDisposed();
             if (!IsOpen)
+            {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
             if (_outputBuffer.Length > 0)
             {
                 ArraySegment<byte> bufSegment;
@@ -143,7 +169,9 @@ namespace Thrift.Transport
         private void CheckNotDisposed()
         {
             if (_isDisposed)
+            {
                 throw new ObjectDisposedException("TBufferedTransport");
+            }
         }
 
         private bool _isDisposed;

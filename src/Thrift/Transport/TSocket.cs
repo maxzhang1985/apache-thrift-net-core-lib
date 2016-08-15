@@ -23,6 +23,8 @@
 
 using System;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -37,8 +39,8 @@ namespace Thrift.Transport
 
             if (IsOpen)
             {
-                inputStream = client.GetStream();
-                outputStream = client.GetStream();
+                InputStream = client.GetStream();
+                OutputStream = client.GetStream();
             }
         }
 
@@ -138,8 +140,8 @@ namespace Thrift.Transport
             //    }
             //}
 
-            inputStream = TcpClient?.GetStream();
-            outputStream = TcpClient?.GetStream();
+            InputStream = TcpClient?.GetStream();
+            OutputStream = TcpClient?.GetStream();
         }
 
 

@@ -23,36 +23,36 @@
 
 namespace Thrift.Protocol
 {
-/**
-         * TMultiplexedProtocol is a protocol-independent concrete decorator that allows a Thrift
-         * client to communicate with a multiplexing Thrift server, by prepending the service name
-         * to the function name during function calls.
-         *
-         * NOTE: THIS IS NOT TO BE USED BY SERVERS.
-         * On the server, use TMultiplexedProcessor to handle requests from a multiplexing client.
-         *
-         * This example uses a single socket transport to invoke two services:
-         *
-         *     TSocket transport = new TSocket("localhost", 9090);
-         *     transport.open();
-         *
-         *     TBinaryProtocol protocol = new TBinaryProtocol(transport);
-         *
-         *     TMultiplexedProtocol mp = new TMultiplexedProtocol(protocol, "Calculator");
-         *     Calculator.Client service = new Calculator.Client(mp);
-         *
-         *     TMultiplexedProtocol mp2 = new TMultiplexedProtocol(protocol, "WeatherReport");
-         *     WeatherReport.Client service2 = new WeatherReport.Client(mp2);
-         *
-         *     System.out.println(service.add(2,2));
-         *     System.out.println(service2.getTemperature());
-         *
-         */
+    /**
+    * TMultiplexedProtocol is a protocol-independent concrete decorator that allows a Thrift
+    * client to communicate with a multiplexing Thrift server, by prepending the service name
+    * to the function name during function calls.
+    *
+    * NOTE: THIS IS NOT TO BE USED BY SERVERS.
+    * On the server, use TMultiplexedProcessor to handle requests from a multiplexing client.
+    *
+    * This example uses a single socket transport to invoke two services:
+    *
+    *     TSocket transport = new TSocket("localhost", 9090);
+    *     transport.open();
+    *
+    *     TBinaryProtocol protocol = new TBinaryProtocol(transport);
+    *
+    *     TMultiplexedProtocol mp = new TMultiplexedProtocol(protocol, "Calculator");
+    *     Calculator.Client service = new Calculator.Client(mp);
+    *
+    *     TMultiplexedProtocol mp2 = new TMultiplexedProtocol(protocol, "WeatherReport");
+    *     WeatherReport.Client service2 = new WeatherReport.Client(mp2);
+    *
+    *     System.out.println(service.add(2,2));
+    *     System.out.println(service2.getTemperature());
+    *
+    */
     // ReSharper disable once InconsistentNaming
     public class TMultiplexedProtocol : TProtocolDecorator
     {
         /** Used to delimit the service name from the function name */
-        public static string Separator = ":";
+        public const string Separator = ":";
 
         private readonly string _serviceName;
 
@@ -85,12 +85,9 @@ namespace Thrift.Protocol
             {
                 case TMessageType.Call:
                 case TMessageType.Oneway:
-                    base.WriteMessageBegin(new TMessage(
-                        _serviceName + Separator + tMessage.Name,
-                        tMessage.Type,
+                    base.WriteMessageBegin(new TMessage($"{_serviceName}{Separator}{tMessage.Name}", tMessage.Type,
                         tMessage.SeqID));
                     break;
-
                 default:
                     base.WriteMessageBegin(tMessage);
                     break;

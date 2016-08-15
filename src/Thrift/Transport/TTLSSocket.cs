@@ -113,8 +113,8 @@ namespace Thrift.Transport
 
             if (IsOpen)
             {
-                inputStream = client.GetStream();
-                outputStream = client.GetStream();
+                InputStream = client.GetStream();
+               OutputStream = client.GetStream();
             }
         }
 
@@ -334,8 +334,8 @@ namespace Thrift.Transport
                 throw;
             }
 
-            inputStream = _secureStream;
-            outputStream = _secureStream;
+            InputStream = _secureStream;
+            OutputStream = _secureStream;
         }
 
         /// <summary>

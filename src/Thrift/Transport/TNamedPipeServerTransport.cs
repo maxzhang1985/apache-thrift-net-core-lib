@@ -21,258 +21,298 @@
  * details.
  */
 
-//TODO: NamedPipeServerStream
+using System;
+using System.Collections.Generic;
+using System.IO.Pipes;
+using System.Threading;
+using System.Threading.Tasks;
 
-//using System;
-//using System.Collections.Generic;
-//using System.IO.Pipes;
-//using System.Threading;
+namespace Thrift.Transport
+{
+    // ReSharper disable once InconsistentNaming
+    public class TNamedPipeServerTransport : TServerTransport
+    {
+        /// <summary>
+        /// This is the address of the Pipe on the localhost.
+        /// </summary>
+        private readonly string _pipeAddress;
 
-//namespace Thrift.Transport
-//{
-//    public class TNamedPipeServerTransport : TServerTransport
-//    {
-//        /// <summary>
-//        /// This is the address of the Pipe on the localhost.
-//        /// </summary>
-//        private readonly string pipeAddress;
-//        private NamedPipeServerStream stream = null;
-//        private bool asyncMode = true;
+        private NamedPipeServerStream _stream = null;
+        private bool _asyncMode = true;
 
-//        public TNamedPipeServerTransport(string pipeAddress)
-//        {
-//            this.pipeAddress = pipeAddress;
-//        }
+        public TNamedPipeServerTransport(string pipeAddress)
+        {
+            _pipeAddress = pipeAddress;
+        }
 
-//        public override void Listen()
-//        {
-//            // nothing to do here
-//        }
+        public override void Listen()
+        {
+            // nothing to do here
+        }
 
-//        public override void Close()
-//        {
-//            if (stream != null)
-//            {
-//                try
-//                {
-//                    stream.Close();
-//                    stream.Dispose();
-//                }
-//                finally
-//                {
-//                    stream = null;
-//                }
-//            }
-//        }
+        public override void Close()
+        {
+            if (_stream != null)
+            {
+                try
+                {
+                    //TODO: check for disconection 
+                    _stream.Disconnect();
+                    _stream.Dispose();
+                }
+                finally
+                {
+                    _stream = null;
+                }
+            }
+        }
 
-//        private void EnsurePipeInstance()
-//        {
-//            if (stream == null)
-//            {
-//                var direction = PipeDirection.InOut;
-//                var maxconn = 254;
-//                var mode = PipeTransmissionMode.Byte;
-//                var options = asyncMode ? PipeOptions.Asynchronous : PipeOptions.None;
-//                var inbuf = 4096;
-//                var outbuf = 4096;
-//                // TODO: security
+        private void EnsurePipeInstance()
+        {
+            if (_stream == null)
+            {
+                var direction = PipeDirection.InOut;
+                var maxconn = 254;
+                var mode = PipeTransmissionMode.Byte;
+                var options = _asyncMode ? PipeOptions.Asynchronous : PipeOptions.None;
+                var inbuf = 4096;
+                var outbuf = 4096;
+                // TODO: security
 
-//                try
-//                {
-//                    stream = new NamedPipeServerStream(pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
-//                }
-//                catch (NotImplementedException)  // Mono still does not support async, fallback to sync
-//                {
-//                    if (asyncMode)
-//                    {
-//                        options &= (~PipeOptions.Asynchronous);
-//                        stream = new NamedPipeServerStream(pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
-//                        asyncMode = false;
-//                    }
-//                    else
-//                    {
-//                        throw;
-//                    }
-//                }
+                try
+                {
+                    _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
+                }
+                catch (NotImplementedException) // Mono still does not support async, fallback to sync
+                {
+                    if (_asyncMode)
+                    {
+                        options &= (~PipeOptions.Asynchronous);
+                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
+                        _asyncMode = false;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
 
-//            }
-//        }
+        protected override TTransport AcceptImpl()
+        {
+            try
+            {
+                EnsurePipeInstance();
 
-//        protected override TTransport AcceptImpl()
-//        {
-//            try
-//            {
-//                EnsurePipeInstance();
+                if (_asyncMode)
+                {
 
-//                if (asyncMode)
-//                {
-//                    var evt = new ManualResetEvent(false);
-//                    Exception eOuter = null;
+                    //TODO: test async
+                    _stream.WaitForConnectionAsync(CancellationToken.None).GetAwaiter().GetResult();
 
-//                    stream.BeginWaitForConnection(asyncResult =>
-//                    {
-//                        try
-//                        {
-//                            if (stream != null)
-//                                stream.EndWaitForConnection(asyncResult);
-//                            else
-//                                eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
-//                        }
-//                        catch (Exception e)
-//                        {
-//                            if (stream != null)
-//                                eOuter = e;
-//                            else
-//                                eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
-//                        }
-//                        evt.Set();
-//                    }, null);
+                    //var evt = new ManualResetEvent(false);
+                    //Exception eOuter = null;
 
-//                    evt.WaitOne();
+                    //_stream.BeginWaitForConnection(asyncResult =>
+                    //{
+                    //    try
+                    //    {
+                    //        if (_stream != null)
+                    //        {
+                    //            _stream.EndWaitForConnection(asyncResult);
+                    //        }
+                    //        else
+                    //        {
+                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
+                    //        }
+                    //    }
+                    //    catch (Exception e)
+                    //    {
+                    //        if (_stream != null)
+                    //        {
+                    //            eOuter = e;
+                    //        }
+                    //        else
+                    //        {
+                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted,
+                    //                e.Message);
+                    //        }
+                    //    }
 
-//                    if (eOuter != null)
-//                        throw eOuter; // rethrow exception
-//                }
-//                else
-//                {
-//                    stream.WaitForConnection();
-//                }
+                    //    evt.Set();
 
-//                var trans = new ServerTransport(stream,asyncMode);
-//                stream = null;  // pass ownership to ServerTransport
-//                return trans;
-//            }
-//            catch (TTransportException)
-//            {
-//                Close();
-//                throw;
-//            }
-//            catch (Exception e)
-//            {
-//                Close();
-//                throw new TTransportException(TTransportException.ExceptionType.NotOpen, e.Message);
-//            }
-//        }
+                    //}, null);
 
-//        private class ServerTransport : TTransport
-//        {
-//            private NamedPipeServerStream stream;
-//            private bool asyncMode;
+                    //evt.WaitOne();
 
-//            public ServerTransport(NamedPipeServerStream stream, bool asyncMode)
-//            {
-//                this.stream = stream;
-//                this.asyncMode = asyncMode;
-//            }
+                    //if (eOuter != null)
+                    //{
+                    //    throw eOuter; // rethrow exception
+                    //}
+                }
+                else
+                {
+                    _stream.WaitForConnection();
+                }
 
-//            public override bool IsOpen
-//            {
-//                get { return stream != null && stream.IsConnected; }
-//            }
+                var trans = new ServerTransport(_stream, _asyncMode);
+                _stream = null; // pass ownership to ServerTransport
+                return trans;
+            }
+            catch (TTransportException)
+            {
+                Close();
+                throw;
+            }
+            catch (Exception e)
+            {
+                Close();
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, e.Message);
+            }
+        }
 
-//            public override void Open()
-//            {
-//            }
+        private class ServerTransport : TTransport
+        {
+            private readonly NamedPipeServerStream _stream;
+            private readonly bool _asyncMode;
 
-//            public override void Close()
-//            {
-//                if (stream != null)
-//                    stream.Close();
-//            }
+            public ServerTransport(NamedPipeServerStream stream, bool asyncMode)
+            {
+                _stream = stream;
+                _asyncMode = asyncMode;
+            }
 
-//            public override int Read(byte[] buf, int off, int len)
-//            {
-//                if (stream == null)
-//                {
-//                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-//                }
+            public override bool IsOpen => _stream != null && _stream.IsConnected;
 
-//                if (asyncMode)
-//                {
-//                    Exception eOuter = null;
-//                    var evt = new ManualResetEvent(false);
-//                    var retval = 0;
+            public override void Open()
+            {
+            }
 
-//                    stream.BeginRead(buf, off, len, asyncResult =>
-//                    {
-//                        try
-//                        {
-//                            if (stream != null)
-//                                retval = stream.EndRead(asyncResult);
-//                            else
-//                                eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
-//                        }
-//                        catch (Exception e)
-//                        {
-//                            if (stream != null)
-//                                eOuter = e;
-//                            else
-//                                eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
-//                        }
-//                        evt.Set();
-//                    }, null);
+            public override void Close()
+            {
+                _stream?.Dispose();
+            }
 
-//                    evt.WaitOne();
+            public override int Read(byte[] buf, int off, int len)
+            {
+                if (_stream == null)
+                {
+                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+                }
 
-//                    if (eOuter != null)
-//                        throw eOuter; // rethrow exception
-//                    else
-//                        return retval;
-//                }
-//                else
-//                {
-//                    return stream.Read(buf, off, len);
-//                }
-//            }
+                if (_asyncMode)
+                {
+                    var retval = 0;
 
-//            public override void Write(byte[] buf, int off, int len)
-//            {
-//                if (stream == null)
-//                {
-//                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-//                }
+                    retval = _stream.ReadAsync(buf, off, len).ConfigureAwait(false).GetAwaiter().GetResult();
 
-//                if (asyncMode)
-//                {
-//                    Exception eOuter = null;
-//                    var evt = new ManualResetEvent(false);
+                    //Exception eOuter = null;
+                    //var evt = new ManualResetEvent(false);
+                    
 
-//                    stream.BeginWrite(buf, off, len, asyncResult =>
-//                    {
-//                        try
-//                        {
-//                            if (stream != null)
-//                                stream.EndWrite(asyncResult);
-//                            else
-//                                eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
-//                        }
-//                        catch (Exception e)
-//                        {
-//                            if (stream != null)
-//                                eOuter = e;
-//                            else
-//                                eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
-//                        }
-//                        evt.Set();
-//                    }, null);
+                    //stream.BeginRead(buf, off, len, asyncResult =>
+                    //{
+                    //    try
+                    //    {
+                    //        if (stream != null)
+                    //        {
+                    //            retval = stream.EndRead(asyncResult);
+                    //        }
+                    //        else
+                    //        {
+                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
+                    //        }
+                    //    }
+                    //    catch (Exception e)
+                    //    {
+                    //        if (stream != null)
+                    //        {
+                    //            eOuter = e;
+                    //        }
+                    //        else
+                    //        {
+                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
+                    //        }
+                    //    }
 
-//                    evt.WaitOne();
+                    //    evt.Set();
 
-//                    if (eOuter != null)
-//                        throw eOuter; // rethrow exception
-//                }
-//                else
-//                {
-//                    stream.Write(buf, off, len);
-//                }
+                    //}, null);
 
-//            }
+                    //evt.WaitOne();
 
-//            protected override void Dispose(bool disposing)
-//            {
-//                stream?.Dispose();
-//            }
-//        }
-//    }
-//}
+                    //if (eOuter != null)
+                    //{
+                    //    throw eOuter; // rethrow exception
+                    //}
 
+                    return retval;
+                }
+
+                return _stream.Read(buf, off, len);
+            }
+
+            public override void Write(byte[] buf, int off, int len)
+            {
+                if (_stream == null)
+                {
+                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+                }
+
+                if (_asyncMode)
+                {
+                    _stream.WriteAsync(buf, off, len).GetAwaiter().GetResult();
+
+                    //Exception eOuter = null;
+                    //var evt = new ManualResetEvent(false);
+                    
+                    //stream.BeginWrite(buf, off, len, asyncResult =>
+                    //{
+                    //    try
+                    //    {
+                    //        if (stream != null)
+                    //        {
+                    //            stream.EndWrite(asyncResult);
+                    //        }
+                    //        else
+                    //        {
+                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
+                    //        }
+                    //    }
+                    //    catch (Exception e)
+                    //    {
+                    //        if (stream != null)
+                    //        {
+                    //            eOuter = e;
+                    //        }
+                    //        else
+                    //        {
+                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
+                    //        }
+                    //    }
+
+                    //    evt.Set();
+
+                    //}, null);
+
+                    //evt.WaitOne();
+
+                    //if (eOuter != null)
+                    //{
+                    //    throw eOuter; // rethrow exception
+                    //}
+                }
+                else
+                {
+                    _stream.Write(buf, off, len);
+                }
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                _stream?.Dispose();
+            }
+        }
+    }
+}

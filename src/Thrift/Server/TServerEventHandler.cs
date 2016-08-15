@@ -32,6 +32,8 @@ namespace Thrift.Server
     // ReSharper disable once InconsistentNaming
     public interface TServerEventHandler
     {
+        //TODO: check method names 
+
         /// <summary>
         /// Called before the server begins */
         /// </summary>

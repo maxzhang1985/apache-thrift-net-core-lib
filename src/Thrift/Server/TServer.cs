@@ -22,6 +22,7 @@
  */
 
 using System;
+using Microsoft.Extensions.Logging;
 using Thrift.Protocol;
 using Thrift.Transport;
 
@@ -30,91 +31,67 @@ namespace Thrift.Server
     // ReSharper disable once InconsistentNaming
     public abstract class TServer
     {
-        //Attributes
-        protected TProcessorFactory processorFactory;
-        protected TServerTransport serverTransport;
-        protected TTransportFactory inputTransportFactory;
-        protected TTransportFactory outputTransportFactory;
-        protected TProtocolFactory inputProtocolFactory;
-        protected TProtocolFactory outputProtocolFactory;
-        protected TServerEventHandler serverEventHandler;
+        protected TProcessorFactory ProcessorFactory;
+        protected TServerTransport ServerTransport;
+        protected TTransportFactory InputTransportFactory;
+        protected TTransportFactory OutputTransportFactory;
+        protected TProtocolFactory InputProtocolFactory;
+        protected TProtocolFactory OutputProtocolFactory;
+        protected TServerEventHandler ServerEventHandler;
+        protected readonly ILogger Logger;
 
-        //Methods
         public void setEventHandler(TServerEventHandler seh)
         {
-            serverEventHandler = seh;
+            ServerEventHandler = seh;
         }
 
         public TServerEventHandler getEventHandler()
         {
-            return serverEventHandler;
+            return ServerEventHandler;
         }
 
-        //Log delegation
-        public delegate void LogDelegate(string str);
-
-        private LogDelegate _logDelegate;
-
-        protected LogDelegate logDelegate
-        {
-            get { return _logDelegate; }
-            set { _logDelegate = value ?? DefaultLogDelegate; }
-        }
-
-        protected static void DefaultLogDelegate(string s)
-        {
-            Console.Error.WriteLine(s);
-        }
-
-        //Construction
-        protected TServer(TProcessor processor,
-            TServerTransport serverTransport)
+        protected TServer(TProcessor processor, TServerTransport serverTransport, ILoggerFactory loggerFactory)
             : this(processor, serverTransport,
                 new TTransportFactory(),
                 new TTransportFactory(),
                 new TBinaryProtocol.Factory(),
                 new TBinaryProtocol.Factory(),
-                DefaultLogDelegate)
+                loggerFactory.CreateLogger<TServer>())
         {
         }
 
-        protected TServer(TProcessor processor,
-            TServerTransport serverTransport,
-            LogDelegate logDelegate)
+        protected TServer(TProcessor processor, TServerTransport serverTransport, ILogger logger)
             : this(processor,
                 serverTransport,
                 new TTransportFactory(),
                 new TTransportFactory(),
                 new TBinaryProtocol.Factory(),
                 new TBinaryProtocol.Factory(),
-                logDelegate)
+                logger)
         {
         }
 
-        protected TServer(TProcessor processor,
-            TServerTransport serverTransport,
-            TTransportFactory transportFactory)
+        protected TServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory,
+            ILogger logger)
             : this(processor,
                 serverTransport,
                 transportFactory,
                 transportFactory,
                 new TBinaryProtocol.Factory(),
                 new TBinaryProtocol.Factory(),
-                DefaultLogDelegate)
+                logger)
         {
         }
 
-        protected TServer(TProcessor processor,
-            TServerTransport serverTransport,
-            TTransportFactory transportFactory,
-            TProtocolFactory protocolFactory)
+        protected TServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory,
+            TProtocolFactory protocolFactory, ILogger logger)
             : this(processor,
                 serverTransport,
                 transportFactory,
                 transportFactory,
                 protocolFactory,
                 protocolFactory,
-                DefaultLogDelegate)
+                logger)
         {
         }
 
@@ -124,15 +101,15 @@ namespace Thrift.Server
             TTransportFactory outputTransportFactory,
             TProtocolFactory inputProtocolFactory,
             TProtocolFactory outputProtocolFactory,
-            LogDelegate logDelegate)
+            ILogger logger)
         {
-            processorFactory = new TSingletonProcessorFactory(processor);
-            this.serverTransport = serverTransport;
-            this.inputTransportFactory = inputTransportFactory;
-            this.outputTransportFactory = outputTransportFactory;
-            this.inputProtocolFactory = inputProtocolFactory;
-            this.outputProtocolFactory = outputProtocolFactory;
-            this.logDelegate = logDelegate ?? DefaultLogDelegate;
+            ProcessorFactory = new TSingletonProcessorFactory(processor);
+            ServerTransport = serverTransport;
+            InputTransportFactory = inputTransportFactory;
+            OutputTransportFactory = outputTransportFactory;
+            InputProtocolFactory = inputProtocolFactory;
+            OutputProtocolFactory = outputProtocolFactory;
+            Logger = logger;
         }
 
         protected TServer(TProcessorFactory processorFactory,
@@ -141,18 +118,17 @@ namespace Thrift.Server
             TTransportFactory outputTransportFactory,
             TProtocolFactory inputProtocolFactory,
             TProtocolFactory outputProtocolFactory,
-            LogDelegate logDelegate)
+            ILogger logger)
         {
-            this.processorFactory = processorFactory;
-            this.serverTransport = serverTransport;
-            this.inputTransportFactory = inputTransportFactory;
-            this.outputTransportFactory = outputTransportFactory;
-            this.inputProtocolFactory = inputProtocolFactory;
-            this.outputProtocolFactory = outputProtocolFactory;
-            this.logDelegate = logDelegate ?? DefaultLogDelegate;
+            ProcessorFactory = processorFactory;
+            ServerTransport = serverTransport;
+            InputTransportFactory = inputTransportFactory;
+            OutputTransportFactory = outputTransportFactory;
+            InputProtocolFactory = inputProtocolFactory;
+            OutputProtocolFactory = outputProtocolFactory;
+            Logger = logger;
         }
 
-        //Abstract Interface
         public abstract void Serve();
         public abstract void Stop();
     }

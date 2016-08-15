@@ -69,7 +69,7 @@ namespace Thrift.Transport
 
         public override bool IsOpen => true;
 
-      public override void Open()
+        public override void Open()
         {
         }
 
@@ -339,11 +339,11 @@ namespace Thrift.Transport
 
             public WaitHandle AsyncWaitHandle => GetEvtHandle();
 
-          public bool CompletedSynchronously => false;
+            public bool CompletedSynchronously => false;
 
-          public bool IsCompleted => _isCompleted;
+            public bool IsCompleted => _isCompleted;
 
-          private readonly object _locker = new object();
+            private readonly object _locker = new object();
 
             private ManualResetEvent GetEvtHandle()
             {
