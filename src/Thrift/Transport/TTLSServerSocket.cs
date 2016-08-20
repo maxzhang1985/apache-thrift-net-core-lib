@@ -115,8 +115,7 @@ namespace Thrift.Transport
         {
             if (!certificate.HasPrivateKey)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                    "Your server-certificate needs to have a private key");
+                throw new TTransportException(TTransportException.ExceptionType.Unknown, "Your server-certificate needs to have a private key");
             }
 
             _port = port;
@@ -125,6 +124,7 @@ namespace Thrift.Transport
             _clientCertValidator = clientCertValidator;
             _localCertificateSelectionCallback = localCertificateSelectionCallback;
             _sslProtocols = sslProtocols;
+
             try
             {
                 // Create server socket
@@ -177,13 +177,7 @@ namespace Thrift.Transport
                 client.SendTimeout = client.ReceiveTimeout = _clientTimeout;
 
                 //wrap the client in an SSL Socket passing in the SSL cert
-                var socket = new TTLSSocket(
-                    client,
-                    _serverCertificate,
-                    true,
-                    _clientCertValidator,
-                    _localCertificateSelectionCallback,
-                    _sslProtocols);
+                var socket = new TTLSSocket(client, _serverCertificate, true, _clientCertValidator, _localCertificateSelectionCallback, _sslProtocols);
 
                 socket.SetupTls();
 
@@ -192,6 +186,7 @@ namespace Thrift.Transport
                     var trans = new TBufferedTransport(socket);
                     return trans;
                 }
+
                 return socket;
             }
             catch (Exception ex)
@@ -215,6 +210,7 @@ namespace Thrift.Transport
                 {
                     throw new TTransportException("WARNING: Could not close server socket: " + ex);
                 }
+
                 _server = null;
             }
         }

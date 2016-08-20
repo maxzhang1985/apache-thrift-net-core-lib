@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Thrift.Protocol
 {
@@ -169,6 +170,11 @@ namespace Thrift.Protocol
             public override TMessage ReadMessageBegin()
             {
                 return _msgBegin;
+            }
+
+            public override async Task<TMessage> ReadMessageBeginAsync()
+            {
+                return await Task.FromResult(_msgBegin);
             }
         }
     }

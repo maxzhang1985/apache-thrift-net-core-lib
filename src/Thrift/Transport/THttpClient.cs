@@ -75,6 +75,9 @@ namespace Thrift.Transport
 
         public override void Close()
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> Close");
+#endif
             if (_inputStream != null)
             {
                 _inputStream.Dispose();
@@ -87,8 +90,11 @@ namespace Thrift.Transport
             }
         }
 
-        public override int Read(byte[] buf, int off, int len)
+        public override int Read(byte[] buffer, int offset, int length)
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> Read");
+#endif
             if (_inputStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No request has been sent");
@@ -96,7 +102,7 @@ namespace Thrift.Transport
 
             try
             {
-                var ret = _inputStream.Read(buf, off, len);
+                var ret = _inputStream.Read(buffer, offset, length);
 
                 if (ret == -1)
                 {
@@ -111,13 +117,19 @@ namespace Thrift.Transport
             }
         }
 
-        public override void Write(byte[] buf, int off, int len)
+        public override void Write(byte[] buffer, int offset, int length)
         {
-            _outputStream.Write(buf, off, len);
+#if DEBUG
+            Console.WriteLine("THttpClient -> Write");
+#endif
+            _outputStream.Write(buffer, offset, length);
         }
 
         public override void Flush()
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> Flush");
+#endif
             try
             {
                 SendRequest();
@@ -130,6 +142,9 @@ namespace Thrift.Transport
 
         private void SendRequest()
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> SendRequest");
+#endif
             try
             {
                 var httpClient = CreateClient();
@@ -190,6 +205,9 @@ namespace Thrift.Transport
 
         private HttpClient CreateClient()
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> CreateClient");
+#endif
             var handler = new HttpClientHandler();
             handler.ClientCertificates.AddRange(_certificates);
 
@@ -260,6 +278,9 @@ namespace Thrift.Transport
 
         public override void EndFlush(IAsyncResult asyncResult)
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> EndFlush");
+#endif
             try
             {
                 var flushAsyncResult = (FlushAsyncResult) asyncResult;
@@ -387,6 +408,9 @@ namespace Thrift.Transport
         // IDisposable
         protected override void Dispose(bool disposing)
         {
+#if DEBUG
+            Console.WriteLine("THttpClient -> Dispose");
+#endif
             if (!_isDisposed)
             {
                 if (disposing)

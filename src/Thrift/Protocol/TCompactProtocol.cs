@@ -24,13 +24,23 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Thrift.Transport;
 
 namespace Thrift.Protocol
 {
+    //TODO: implementation of TProtocol
+
     // ReSharper disable once InconsistentNaming
     public class TCompactProtocol : TProtocol
     {
+        private const byte ProtocolId = 0x82;
+        private const byte Version = 1;
+        private const byte VersionMask = 0x1f; // 0001 1111
+        private const byte TypeMask = 0xE0; // 1110 0000
+        private const byte TypeBits = 0x07; // 0000 0111
+        private const int TypeShiftAmount = 5;
         private static readonly TStruct AnonymousStruct = new TStruct("");
         private static readonly TField Tstop = new TField("", TType.Stop, 0);
 
@@ -38,56 +48,21 @@ namespace Thrift.Protocol
         private static readonly byte[] TTypeToCompactType = new byte[16];
 
         /// <summary>
-        /// Used to keep track of the last field for the current and previous structs, so we can do the delta stuff.
+        ///     Used to keep track of the last field for the current and previous structs, so we can do the delta stuff.
         /// </summary>
         private readonly Stack<short> _lastField = new Stack<short>(15);
 
-        private short _lastFieldId;
-
         /// <summary>
-        /// If we encounter a boolean field begin, save the TField here so it can have the value incorporated.
+        ///     If we encounter a boolean field begin, save the TField here so it can have the value incorporated.
         /// </summary>
         private TField? _booleanField;
 
         /// <summary>
-        /// If we Read a field header, and it's a boolean field, save the boolean value here so that ReadBool can use it.
+        ///     If we Read a field header, and it's a boolean field, save the boolean value here so that ReadBool can use it.
         /// </summary>
         private bool? _boolValue;
 
-        private const byte ProtocolId = 0x82;
-        private const byte Version = 1;
-        private const byte VersionMask = 0x1f; // 0001 1111
-        private const byte TypeMask = 0xE0; // 1110 0000
-        private const byte TypeBits = 0x07; // 0000 0111
-        private const int TypeShiftAmount = 5;
-
-        /// <summary>
-        /// All of the on-wire exType codes. 
-        /// </summary>        
-        private static class Types
-        {
-            public const byte Stop = 0x00;
-            public const byte BooleanTrue = 0x01;
-            public const byte BooleanFalse = 0x02;
-            public const byte Byte = 0x03;
-            public const byte I16 = 0x04;
-            public const byte I32 = 0x05;
-            public const byte I64 = 0x06;
-            public const byte Double = 0x07;
-            public const byte Binary = 0x08;
-            public const byte List = 0x09;
-            public const byte Set = 0x0A;
-            public const byte Map = 0x0B;
-            public const byte Struct = 0x0C;
-        }
-
-        public class Factory : TProtocolFactory
-        {
-            public TProtocol GetProtocol(TTransport trans)
-            {
-                return new TCompactProtocol(trans);
-            }
-        }
+        private short _lastFieldId;
 
         public TCompactProtocol(TTransport trans)
             : base(trans)
@@ -116,12 +91,13 @@ namespace Thrift.Protocol
         {
             // Writes a byte without any possibility of all that field header nonsense. 
             // Used internally by other writing methods that know they need to Write a byte.
+
             var buf = new[] {b};
             Trans.Write(buf);
         }
 
         /// <summary>
-        /// Writes a byte without any possibility of all that field header nonsense.
+        ///     Writes a byte without any possibility of all that field header nonsense.
         /// </summary>
         private void WriteByteDirect(int n)
         {
@@ -151,21 +127,26 @@ namespace Thrift.Protocol
         }
 
         /// <summary>
-        /// Write a message header to the wire. Compact Protocol messages contain the protocol version so we can migrate forwards in the future if need be.
+        ///     Write a message header to the wire. Compact Protocol messages contain the protocol version so we can migrate
+        ///     forwards in the future if need be.
         /// </summary>
         public override void WriteMessageBegin(TMessage message)
         {
             WriteByteDirect(ProtocolId);
-            WriteByteDirect(
-                (byte) ((Version & VersionMask) | ((((uint) message.Type) << TypeShiftAmount) & TypeMask)));
+            WriteByteDirect((byte) ((Version & VersionMask) | (((uint) message.Type << TypeShiftAmount) & TypeMask)));
             WriteVarInt32((uint) message.SeqID);
             WriteString(message.Name);
         }
 
+        public override Task WriteMessageEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
-        /// Write a struct begin. This doesn't actually put anything on the wire. We 
-        /// use it as an opportunity to put special placeholder markers on the field 
-        /// stack so we can get the field id deltas correct.
+        ///     Write a struct begin. This doesn't actually put anything on the wire. We
+        ///     use it as an opportunity to put special placeholder markers on the field
+        ///     stack so we can get the field id deltas correct.
         /// </summary>
         public override void WriteStructBegin(TStruct strct)
         {
@@ -173,42 +154,34 @@ namespace Thrift.Protocol
             _lastFieldId = 0;
         }
 
-        /**
-         * Write a struct end. This doesn't actually put anything on the wire. We use
-         * this as an opportunity to pop the last field from the current struct off
-         * of the field stack.
-         */
+        public override Task WriteStructBeginAsync(TStruct struc, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteStructEnd()
         {
+            /*
+            Write a struct end. This doesn't actually put anything on the wire. We use
+            this as an opportunity to pop the last field from the current struct off
+            of the field stack.
+            */
+
             _lastFieldId = _lastField.Pop();
         }
 
-        /**
-         * Write a field header containing the field id and field exType. If the
-         * difference between the current field id and the last one is small (less 15),
-         * then the field id will be encoded in the 4 MSB as a delta. Otherwise, the
-         * field id will follow the exType header as a zigzag varint.
-         */
+        public override Task WriteStructEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteFieldBegin(TField field)
         {
             if (field.Type == TType.Bool)
-            {
-                // we want to possibly include the value, so we'll wait.
                 _booleanField = field;
-            }
             else
-            {
                 WriteFieldBeginInternal(field, 0xFF);
-            }
         }
-
-        /**
-         * The workhorse of WriteFieldBegin. It has the option of doing a
-         * 'exType override' of the exType header. This is used specifically in the
-         * boolean field case.
-         */
 
         private void WriteFieldBeginInternal(TField field, byte typeOverride)
         {
@@ -218,10 +191,10 @@ namespace Thrift.Protocol
             var typeToWrite = typeOverride == 0xFF ? GetCompactType(field.Type) : typeOverride;
 
             // check if we can use delta encoding for the field id
-            if (field.ID > _lastFieldId && field.ID - _lastFieldId <= 15)
+            if ((field.ID > _lastFieldId) && (field.ID - _lastFieldId <= 15))
             {
                 // Write them together
-                WriteByteDirect((field.ID - _lastFieldId) << 4 | typeToWrite);
+                WriteByteDirect(((field.ID - _lastFieldId) << 4) | typeToWrite);
             }
             else
             {
@@ -234,19 +207,20 @@ namespace Thrift.Protocol
             // lastField_.push(field.id);
         }
 
-        /**
-         * Write the STOP symbol so we know there are no more fields in this struct.
-         */
+        public override Task WriteFieldEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteFieldStop()
         {
             WriteByteDirect(Types.Stop);
         }
 
-        /**
-         * Write a map header. If the map is empty, omit the key and value exType
-         * headers, as we don't need any additional information to skip it.
-         */
+        public override Task WriteFieldStopAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteMapBegin(TMap map)
         {
@@ -257,37 +231,45 @@ namespace Thrift.Protocol
             else
             {
                 WriteVarInt32((uint) map.Count);
-                WriteByteDirect(GetCompactType(map.KeyType) << 4 | GetCompactType(map.ValueType));
+                WriteByteDirect((GetCompactType(map.KeyType) << 4) | GetCompactType(map.ValueType));
             }
         }
 
-        /**
-         * Write a list header.
-         */
+        public override Task WriteMapEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteListBegin(TList list)
         {
             WriteCollectionBegin(list.ElementType, list.Count);
         }
 
-        /**
-         * Write a set header.
-         */
+        public override Task WriteListEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteSetBegin(TSet set)
         {
             WriteCollectionBegin(set.ElementType, set.Count);
         }
 
-        /**
-         * Write a boolean value. Potentially, this could be a boolean field, in
-         * which case the field header info isn't written yet. If so, decide what the
-         * right exType header is for the value and then Write the field header.
-         * Otherwise, Write a single byte.
-         */
+
+        public override Task WriteSetEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteBool(bool b)
         {
+            /*
+            Write a boolean value. Potentially, this could be a boolean field, in
+            which case the field header info isn't written yet. If so, decide what the
+            right exType header is for the value and then Write the field header.
+            Otherwise, Write a single byte.
+            */
+
             if (_booleanField != null)
             {
                 // we haven't written the field header yet
@@ -301,45 +283,50 @@ namespace Thrift.Protocol
             }
         }
 
-        /**
-         * Write a byte. Nothing to see here!
-         */
+        public override Task WriteBoolAsync(bool b, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteByte(sbyte b)
         {
             WriteByteDirect((byte) b);
         }
 
-        /**
-         * Write an I16 as a zigzag varint.
-         */
+        public override Task WriteByteAsync(sbyte b, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteI16(short i16)
         {
             WriteVarInt32(IntToZigZag(i16));
         }
 
-        /**
-         * Write an i32 as a zigzag varint.
-         */
+        public override Task WriteI16Async(short i16, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteI32(int i32)
         {
             WriteVarInt32(IntToZigZag(i32));
         }
 
-        /**
-         * Write an i64 as a zigzag varint.
-         */
+        public override Task WriteI32Async(int i32, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteI64(long i64)
         {
             WriteVarint64(LongToZigzag(i64));
         }
 
-        /**
-         * Write a double to the wire as 8 bytes.
-         */
+        public override Task WriteI64Async(long i64, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteDouble(double dub)
         {
@@ -348,19 +335,16 @@ namespace Thrift.Protocol
             Trans.Write(data);
         }
 
-        /**
-         * Write a string to the wire with a varint size preceding.
-         */
+        public override Task WriteDoubleAsync(double d, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteString(string str)
         {
             var bytes = Encoding.UTF8.GetBytes(str);
             WriteBinary(bytes, 0, bytes.Length);
         }
-
-        /**
-         * Write a byte array, using a varint for the size.
-         */
 
         public override void WriteBinary(byte[] bin)
         {
@@ -373,45 +357,62 @@ namespace Thrift.Protocol
             Trans.Write(buf, offset, length);
         }
 
-        //
-        // These methods are called by structs, but don't actually have any wire
-        // output or purpose.
-        //
+        public override Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void WriteMessageEnd()
         {
+        }
+
+        public override Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteMapEnd()
         {
         }
 
+        public override Task WriteListBeginAsync(TList list, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteListEnd()
         {
+        }
+
+        public override Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteSetEnd()
         {
         }
 
+        public override Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteFieldEnd()
         {
         }
 
-        //
-        // Internal writing methods
-        //
-
-        /**
-         * Abstract method for writing the start of lists and sets. List and sets on
-         * the wire differ only by the exType indicator.
-         */
 
         protected void WriteCollectionBegin(TType elemType, int size)
         {
+            /**
+             * Abstract method for writing the start of lists and sets. List and sets on
+             * the wire differ only by the exType indicator.
+             */
+
             if (size <= 14)
             {
-                WriteByteDirect(size << 4 | GetCompactType(elemType));
+                WriteByteDirect((size << 4) | GetCompactType(elemType));
             }
             else
             {
@@ -420,11 +421,11 @@ namespace Thrift.Protocol
             }
         }
 
-        /**
-         * Write an i64 as a varint. Results in 1-10 bytes on the wire.
-         */
+
         private void WriteVarint64(ulong n)
         {
+            // Write an i64 as a varint. Results in 1-10 bytes on the wire.
+
             var buf = new byte[10];
             var idx = 0;
             while (true)
@@ -434,36 +435,33 @@ namespace Thrift.Protocol
                     buf[idx++] = (byte) n;
                     break;
                 }
-                buf[idx++] = ((byte) ((n & 0x7F) | 0x80));
+                buf[idx++] = (byte) ((n & 0x7F) | 0x80);
                 n >>= 7;
             }
             Trans.Write(buf, 0, idx);
         }
 
-        /**
-         * Convert l into a zigzag long. This allows negative numbers to be
-         * represented compactly as a varint.
-         */
+
         private ulong LongToZigzag(long n)
         {
+            // Convert l into a zigzag long. This allows negative numbers to be represented compactly as a varint.
+
             return (ulong) (n << 1) ^ (ulong) (n >> 63);
         }
 
-        /**
-         * Convert n into a zigzag int. This allows negative numbers to be
-         * represented compactly as a varint.
-         */
+
         private uint IntToZigZag(int n)
         {
+            // Convert n into a zigzag int. This allows negative numbers to be represented compactly as a varint.
+
             return (uint) (n << 1) ^ (uint) (n >> 31);
         }
 
-        /**
-         * Convert a long into little-endian bytes in buf starting at off and going
-         * until off+7.
-         */
+
         private void FixedLongToBytes(long n, byte[] buf, int off)
         {
+            // Convert a long into little-endian bytes in buf starting at off and going until off+7.
+
             buf[off + 0] = (byte) (n & 0xff);
             buf[off + 1] = (byte) ((n >> 8) & 0xff);
             buf[off + 2] = (byte) ((n >> 16) & 0xff);
@@ -474,9 +472,11 @@ namespace Thrift.Protocol
             buf[off + 7] = (byte) ((n >> 56) & 0xff);
         }
 
-        /**
-        * Read a message header.
-        */
+        public override Task WriteBinaryAsync(byte[] b, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TMessage ReadMessageBegin()
         {
             var protocolId = (byte) ReadByte();
@@ -502,32 +502,48 @@ namespace Thrift.Protocol
             return new TMessage(messageName, (TMessageType) type, seqid);
         }
 
-        /**
-         * Read a struct begin. There's nothing on the wire for this, but it is our
-         * opportunity to push a new struct begin marker onto the field stack.
-         */
+        public override Task ReadMessageEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TStruct ReadStructBegin()
         {
+            /*
+            Read a struct begin. There's nothing on the wire for this, but it is our
+            opportunity to push a new struct begin marker onto the field stack.
+            */
+
             _lastField.Push(_lastFieldId);
             _lastFieldId = 0;
             return AnonymousStruct;
         }
 
-        /**
-         * Doesn't actually consume any wire data, just removes the last field for
-         * this struct from the field stack.
-         */
+        public override Task<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadStructEnd()
         {
+            /*
+            Doesn't actually consume any wire data, just removes the last field for
+            this struct from the field stack.
+            */
+
             // consume the last field we Read off the wire.
             _lastFieldId = _lastField.Pop();
         }
 
-        /**
-         * Read a field header off the wire.
-         */
+        public override Task ReadStructEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TField ReadFieldBegin()
         {
+            // Read a field header off the wire.
+
             var type = (byte) ReadByte();
 
             // if it's a stop, then we can return immediately, as the struct is over.
@@ -542,12 +558,10 @@ namespace Thrift.Protocol
             var modifier = (short) ((type & 0xf0) >> 4);
             if (modifier == 0)
             {
-                // not a delta. look ahead for the zigzag varint field id.
                 fieldId = ReadI16();
             }
             else
             {
-                // has a delta. add the delta to the last Read field id.
                 fieldId = (short) (_lastFieldId + modifier);
             }
 
@@ -556,7 +570,6 @@ namespace Thrift.Protocol
             // if this happens to be a boolean field, the value is encoded in the exType
             if (IsBoolType(type))
             {
-                // save the boolean value in a special instance variable.
                 _boolValue = (byte) (type & 0x0f) == Types.BooleanTrue;
             }
 
@@ -565,26 +578,40 @@ namespace Thrift.Protocol
             return field;
         }
 
-        /**
-         * Read a map header off the wire. If the size is zero, skip Reading the key
-         * and value exType. This means that 0-length maps will yield TMaps without the
-         * "correct" types.
-         */
+
+        public override Task ReadFieldEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TMap ReadMapBegin()
         {
+            /*
+            Read a map header off the wire. If the size is zero, skip Reading the key
+            and value exType. This means that 0-length maps will yield TMaps without the
+            "correct" types.
+            */
+
             var size = (int) ReadVarInt32();
             var keyAndValueType = size == 0 ? (byte) 0 : (byte) ReadByte();
             return new TMap(GetTType((byte) (keyAndValueType >> 4)), GetTType((byte) (keyAndValueType & 0xf)), size);
         }
 
-        /**
-         * Read a list header off the wire. If the list size is 0-14, the size will
-         * be packed into the element exType header. If it's a longer list, the 4 MSB
-         * of the element exType header will be 0xF, and a varint will follow with the
-         * true size.
-        */
+
+        public override Task ReadMapEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TList ReadListBegin()
         {
+            /*
+            Read a list header off the wire. If the list size is 0-14, the size will
+            be packed into the element exType header. If it's a longer list, the 4 MSB
+            of the element exType header will be 0xF, and a varint will follow with the
+            true size.
+            */
+
             var sizeAndType = (byte) ReadByte();
             var size = (sizeAndType >> 4) & 0x0f;
             if (size == 15)
@@ -595,24 +622,38 @@ namespace Thrift.Protocol
             return new TList(type, size);
         }
 
-        /**
-         * Read a set header off the wire. If the set size is 0-14, the size will
-         * be packed into the element exType header. If it's a longer set, the 4 MSB
-         * of the element exType header will be 0xF, and a varint will follow with the
-         * true size.
-        */
+
+        public override Task ReadListEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TSet ReadSetBegin()
         {
+            /*
+            Read a set header off the wire. If the set size is 0-14, the size will
+            be packed into the element exType header. If it's a longer set, the 4 MSB
+            of the element exType header will be 0xF, and a varint will follow with the
+            true size.
+            */
+
             return new TSet(ReadListBegin());
         }
 
-        /**
-         * Read a boolean off the wire. If this is a boolean field, the value should
-         * already have been Read during ReadFieldBegin, so we'll just consume the
-         * pre-stored value. Otherwise, Read a byte.
-         */
+
+        public override Task ReadSetEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool ReadBool()
         {
+            /*
+            Read a boolean off the wire. If this is a boolean field, the value should
+            already have been Read during ReadFieldBegin, so we'll just consume the
+            pre-stored value. Otherwise, Read a byte.
+            */
+
             if (_boolValue != null)
             {
                 var result = _boolValue.Value;
@@ -622,56 +663,84 @@ namespace Thrift.Protocol
             return ReadByte() == Types.BooleanTrue;
         }
 
-        /**
-         * Read a single byte off the wire. Nothing interesting here.
-         */
+
+        public override Task<bool> ReadBoolAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override sbyte ReadByte()
         {
+            // Read a single byte off the wire. Nothing interesting here.
+
             var buf = new byte[1];
             Trans.ReadAll(buf, 0, 1);
             return (sbyte) buf[0];
         }
 
-        /**
-         * Read an i16 from the wire as a zigzag varint.
-         */
+        public override Task<sbyte> ReadByteAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override short ReadI16()
         {
+            // Read an i16 from the wire as a zigzag varint.
+
             return (short) ZigzagToInt(ReadVarInt32());
         }
 
-        /**
-         * Read an i32 from the wire as a zigzag varint.
-         */
+
+        public override Task<short> ReadI16Async(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override int ReadI32()
         {
+            // Read an i32 from the wire as a zigzag varint.
+
             return ZigzagToInt(ReadVarInt32());
         }
 
-        /**
-         * Read an i64 from the wire as a zigzag varint.
-         */
+
+        public override Task<int> ReadI32Async(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override long ReadI64()
         {
+            // Read an i64 from the wire as a zigzag varint.
+
             return ZigzagToLong(ReadVarint64());
         }
 
-        /**
-         * No magic here - just Read a double off the wire.
-         */
+
+        public override Task<long> ReadI64Async(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override double ReadDouble()
         {
+            // No magic here - just Read a double off the wire.
+
             var longBits = new byte[8];
             Trans.ReadAll(longBits, 0, 8);
             return BitConverter.Int64BitsToDouble(BytesToLong(longBits));
         }
 
-        /**
-         * Reads a byte[] (via ReadBinary), and then UTF-8 decodes it.
-         */
+
+        public override Task<double> ReadDoubleAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
 
         public override string ReadString()
         {
+            // Reads a byte[] (via ReadBinary), and then UTF-8 decodes it.
+
             var length = (int) ReadVarInt32();
 
             if (length == 0)
@@ -682,67 +751,94 @@ namespace Thrift.Protocol
             return Encoding.UTF8.GetString(ReadBinary(length));
         }
 
-        /**
-         * Read a byte[] from the wire.
-         */
+
         public override byte[] ReadBinary()
         {
+            // Read a byte[] from the wire.
+
             var length = (int) ReadVarInt32();
-            if (length == 0) return new byte[0];
+            if (length == 0)
+            {
+                return new byte[0];
+            }
 
             var buf = new byte[length];
             Trans.ReadAll(buf, 0, length);
             return buf;
         }
 
-        /**
-         * Read a byte[] of a known length from the wire.
-         */
+        public override Task<byte[]> ReadBinaryAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
 
         private byte[] ReadBinary(int length)
         {
-            if (length == 0) return new byte[0];
+            // Read a byte[] of a known length from the wire.
+
+            if (length == 0)
+            {
+                return new byte[0];
+            }
 
             var buf = new byte[length];
             Trans.ReadAll(buf, 0, length);
             return buf;
         }
 
-        //
-        // These methods are here for the struct to call, but don't have any wire
-        // encoding.
-        //
+        public override Task<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadMessageEnd()
         {
+        }
+
+        public override Task<TField> ReadFieldBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void ReadFieldEnd()
         {
         }
 
+        public override Task<TMap> ReadMapBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadMapEnd()
         {
+        }
+
+        public override Task<TList> ReadListBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void ReadListEnd()
         {
         }
 
+        public override Task<TSet> ReadSetBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadSetEnd()
         {
         }
 
-        //
-        // Internal Reading methods
-        //
-
-        /**
-         * Read an i32 from the wire as a varint. The MSB of each byte is set
-         * if there is another byte to follow. This can Read up to 5 bytes.
-         */
-
         private uint ReadVarInt32()
         {
+            /*
+            Read an i32 from the wire as a varint. The MSB of each byte is set
+            if there is another byte to follow. This can Read up to 5 bytes.
+            */
+
             uint result = 0;
             var shift = 0;
             while (true)
@@ -755,13 +851,13 @@ namespace Thrift.Protocol
             return result;
         }
 
-        /**
-         * Read an i64 from the wire as a proper varint. The MSB of each byte is set
-         * if there is another byte to follow. This can Read up to 10 bytes.
-         */
-
         private ulong ReadVarint64()
         {
+            /*
+            Read an i64 from the wire as a proper varint. The MSB of each byte is set
+            if there is another byte to follow. This can Read up to 10 bytes.
+            */
+
             var shift = 0;
             ulong result = 0;
             while (true)
@@ -775,35 +871,24 @@ namespace Thrift.Protocol
             return result;
         }
 
-        //
-        // encoding helpers
-        //
-
-        /**
-         * Convert from zigzag int to int.
-         */
-
         private static int ZigzagToInt(uint n)
         {
-            return (int) (n >> 1) ^ (-(int) (n & 1));
+            return (int) (n >> 1) ^ -(int) (n & 1);
         }
-
-        /**
-         * Convert from zigzag long to long.
-         */
 
         private static long ZigzagToLong(ulong n)
         {
-            return (long) (n >> 1) ^ (-(long) (n & 1));
+            return (long) (n >> 1) ^ -(long) (n & 1);
         }
 
-        /**
-         * Note that it's important that the mask bytes are long literals,
-         * otherwise they'll default to ints, and when you shift an int left 56 bits,
-         * you just get a messed up int.
-         */
         private static long BytesToLong(byte[] bytes)
         {
+            /*
+            Note that it's important that the mask bytes are long literals,
+            otherwise they'll default to ints, and when you shift an int left 56 bits,
+            you just get a messed up int.
+            */
+
             return
                 ((bytes[7] & 0xffL) << 56) |
                 ((bytes[6] & 0xffL) << 48) |
@@ -812,24 +897,19 @@ namespace Thrift.Protocol
                 ((bytes[3] & 0xffL) << 24) |
                 ((bytes[2] & 0xffL) << 16) |
                 ((bytes[1] & 0xffL) << 8) |
-                ((bytes[0] & 0xffL));
+                (bytes[0] & 0xffL);
         }
 
-        //
-        // exType testing and converting
-        //
         private static bool IsBoolType(byte b)
         {
             var lowerNibble = b & 0x0f;
-            return lowerNibble == Types.BooleanTrue || lowerNibble == Types.BooleanFalse;
+            return (lowerNibble == Types.BooleanTrue) || (lowerNibble == Types.BooleanFalse);
         }
 
-        /**
-         * Given a TCompactProtocol.Types constant, convert it to its corresponding
-         * TType value.
-         */
         private static TType GetTType(byte type)
         {
+            // Given a TCompactProtocol.Types constant, convert it to its corresponding TType value.
+
             switch ((byte) (type & 0x0f))
             {
                 case Types.Stop:
@@ -858,16 +938,44 @@ namespace Thrift.Protocol
                 case Types.Struct:
                     return TType.Struct;
                 default:
-                    throw new TProtocolException($"Don't know what exType: {(byte)(type & 0x0f)}");
+                    throw new TProtocolException($"Don't know what exType: {(byte) (type & 0x0f)}");
             }
         }
 
-        /**
-         * Given a TType value, find the appropriate TCompactProtocol.Types constant.
-         */
+
         private static byte GetCompactType(TType ttype)
         {
+            // Given a TType value, find the appropriate TCompactProtocol.Types constant.
+
             return TTypeToCompactType[(int) ttype];
+        }
+
+        /// <summary>
+        ///     All of the on-wire exType codes.
+        /// </summary>
+        private static class Types
+        {
+            public const byte Stop = 0x00;
+            public const byte BooleanTrue = 0x01;
+            public const byte BooleanFalse = 0x02;
+            public const byte Byte = 0x03;
+            public const byte I16 = 0x04;
+            public const byte I32 = 0x05;
+            public const byte I64 = 0x06;
+            public const byte Double = 0x07;
+            public const byte Binary = 0x08;
+            public const byte List = 0x09;
+            public const byte Set = 0x0A;
+            public const byte Map = 0x0B;
+            public const byte Struct = 0x0C;
+        }
+
+        public class Factory : TProtocolFactory
+        {
+            public TProtocol GetProtocol(TTransport trans)
+            {
+                return new TCompactProtocol(trans);
+            }
         }
     }
 }

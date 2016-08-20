@@ -47,7 +47,7 @@ namespace Client
                     work.Op = Operation.Substract;
                     work.Num1 = 15;
                     work.Num2 = 10;
-                    
+
                     try
                     {
                         var diff = client.Calculate(1, work);
@@ -63,7 +63,7 @@ namespace Client
 
 
 
-                     // Async version
+                    // Async version
 
                     Console.WriteLine("PingAsync()");
                     client.PingAsync().GetAwaiter().GetResult();

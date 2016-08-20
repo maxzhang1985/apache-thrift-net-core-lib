@@ -22,10 +22,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Thrift.Transport;
 
 namespace Thrift.Protocol
 {
+    //TODO: implementation of TProtocol
+
     /// <summary>
     /// JSON protocol implementation for thrift.
     ///
@@ -619,9 +623,19 @@ namespace Thrift.Protocol
             WriteJsonInteger(message.SeqID);
         }
 
+        public override Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteMessageEnd()
         {
             WriteJsonArrayEnd();
+        }
+
+        public override Task WriteMessageEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteStructBegin(TStruct str)
@@ -629,9 +643,19 @@ namespace Thrift.Protocol
             WriteJsonObjectStart();
         }
 
+        public override Task WriteStructBeginAsync(TStruct struc, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteStructEnd()
         {
             WriteJsonObjectEnd();
+        }
+
+        public override Task WriteStructEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteFieldBegin(TField field)
@@ -641,13 +665,28 @@ namespace Thrift.Protocol
             WriteJsonString(GetTypeNameForTypeId(field.Type));
         }
 
+        public override Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteFieldEnd()
         {
             WriteJsonObjectEnd();
         }
 
+        public override Task WriteFieldEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteFieldStop()
         {
+        }
+
+        public override Task WriteFieldStopAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteMapBegin(TMap map)
@@ -659,10 +698,20 @@ namespace Thrift.Protocol
             WriteJsonObjectStart();
         }
 
+        public override Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteMapEnd()
         {
             WriteJsonObjectEnd();
             WriteJsonArrayEnd();
+        }
+
+        public override Task WriteMapEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteListBegin(TList list)
@@ -672,9 +721,19 @@ namespace Thrift.Protocol
             WriteJsonInteger(list.Count);
         }
 
+        public override Task WriteListBeginAsync(TList list, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteListEnd()
         {
             WriteJsonArrayEnd();
+        }
+
+        public override Task WriteListEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteSetBegin(TSet set)
@@ -684,9 +743,19 @@ namespace Thrift.Protocol
             WriteJsonInteger(set.Count);
         }
 
+        public override Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteSetEnd()
         {
             WriteJsonArrayEnd();
+        }
+
+        public override Task WriteSetEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteBool(bool b)
@@ -694,14 +763,29 @@ namespace Thrift.Protocol
             WriteJsonInteger(b ? 1 : 0);
         }
 
+        public override Task WriteBoolAsync(bool b, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteByte(sbyte b)
         {
             WriteJsonInteger(b);
         }
 
-        public override void WriteI16(short i16)
+        public override Task WriteByteAsync(sbyte b, CancellationToken cancellationToken)
         {
-            WriteJsonInteger(i16);
+            throw new NotImplementedException();
+        }
+
+        public override void WriteI16(short int16)
+        {
+            WriteJsonInteger(int16);
+        }
+
+        public override Task WriteI16Async(short i16, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteI32(int i32)
@@ -709,14 +793,29 @@ namespace Thrift.Protocol
             WriteJsonInteger(i32);
         }
 
+        public override Task WriteI32Async(int i32, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteI64(long i64)
         {
             WriteJsonInteger(i64);
         }
 
+        public override Task WriteI64Async(long i64, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteDouble(double dub)
         {
             WriteJsonDouble(dub);
+        }
+
+        public override Task WriteDoubleAsync(double d, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteString(string str)
@@ -998,6 +1097,11 @@ namespace Thrift.Protocol
             PopContext();
         }
 
+        public override Task WriteBinaryAsync(byte[] b, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override TMessage ReadMessageBegin()
         {
             var message = new TMessage();
@@ -1014,9 +1118,19 @@ namespace Thrift.Protocol
             return message;
         }
 
+        public override Task<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadMessageEnd()
         {
             ReadJsonArrayEnd();
+        }
+
+        public override Task ReadMessageEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override TStruct ReadStructBegin()
@@ -1025,9 +1139,19 @@ namespace Thrift.Protocol
             return new TStruct();
         }
 
+        public override Task<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadStructEnd()
         {
             ReadJsonObjectEnd();
+        }
+
+        public override Task ReadStructEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override TField ReadFieldBegin()
@@ -1047,9 +1171,19 @@ namespace Thrift.Protocol
             return field;
         }
 
+        public override Task<TField> ReadFieldBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadFieldEnd()
         {
             ReadJsonObjectEnd();
+        }
+
+        public override Task ReadFieldEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override TMap ReadMapBegin()
@@ -1063,10 +1197,20 @@ namespace Thrift.Protocol
             return map;
         }
 
+        public override Task<TMap> ReadMapBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadMapEnd()
         {
             ReadJsonObjectEnd();
             ReadJsonArrayEnd();
+        }
+
+        public override Task ReadMapEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override TList ReadListBegin()
@@ -1078,9 +1222,19 @@ namespace Thrift.Protocol
             return list;
         }
 
+        public override Task<TList> ReadListBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadListEnd()
         {
             ReadJsonArrayEnd();
+        }
+
+        public override Task ReadListEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override TSet ReadSetBegin()
@@ -1092,9 +1246,19 @@ namespace Thrift.Protocol
             return set;
         }
 
+        public override Task<TSet> ReadSetBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void ReadSetEnd()
         {
             ReadJsonArrayEnd();
+        }
+
+        public override Task ReadSetEndAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override bool ReadBool()
@@ -1102,9 +1266,19 @@ namespace Thrift.Protocol
             return (ReadJsonInteger() != 0);
         }
 
+        public override Task<bool> ReadBoolAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override sbyte ReadByte()
         {
             return (sbyte) ReadJsonInteger();
+        }
+
+        public override Task<sbyte> ReadByteAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override short ReadI16()
@@ -1112,9 +1286,19 @@ namespace Thrift.Protocol
             return (short) ReadJsonInteger();
         }
 
+        public override Task<short> ReadI16Async(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override int ReadI32()
         {
             return (int) ReadJsonInteger();
+        }
+
+        public override Task<int> ReadI32Async(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override long ReadI64()
@@ -1122,9 +1306,19 @@ namespace Thrift.Protocol
             return ReadJsonInteger();
         }
 
+        public override Task<long> ReadI64Async(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public override double ReadDouble()
         {
             return ReadJsonDouble();
+        }
+
+        public override Task<double> ReadDoubleAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public override string ReadString()
@@ -1136,6 +1330,11 @@ namespace Thrift.Protocol
         public override byte[] ReadBinary()
         {
             return ReadJsonBase64();
+        }
+
+        public override Task<byte[]> ReadBinaryAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -51,6 +51,16 @@ namespace Thrift.Transport
         {
         }
 
+        public override async Task OpenAsync()
+        {
+            await OpenAsync(CancellationToken.None);
+        }
+
+        public override async Task OpenAsync(CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask;
+        }
+
         public override void Close()
         {
             if (InputStream != null)
@@ -58,6 +68,7 @@ namespace Thrift.Transport
                 InputStream.Dispose();
                 InputStream = null;
             }
+
             if (OutputStream != null)
             {
                 OutputStream.Dispose();
@@ -65,50 +76,83 @@ namespace Thrift.Transport
             }
         }
 
-        public override int Read(byte[] buf, int off, int len)
+        public override int Read(byte[] buffer, int offset, int length)
         {
             if (InputStream == null)
             {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                    "Cannot read from null inputstream");
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot read from null inputstream");
             }
-
-            return InputStream.Read(buf, off, len);
+            
+            return InputStream.Read(buffer, offset, length);
         }
 
-        public override void Write(byte[] buf, int off, int len)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int length)
+        {
+            return await ReadAsync(buffer, offset, length, CancellationToken.None);
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            if (InputStream == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot read from null inputstream");
+            }
+
+            return await InputStream.ReadAsync(buffer, offset, length, cancellationToken);
+        }
+
+        public override void Write(byte[] buffer, int offset, int length)
         {
             if (OutputStream == null)
             {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                    "Cannot write to null outputstream");
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot write to null outputstream");
             }
 
-            OutputStream.Write(buf, off, len);
+            OutputStream.Write(buffer, offset, length);
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int length)
+        {
+            await WriteAsync(buffer, offset, length, CancellationToken.None);
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            if (InputStream == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot read from null inputstream");
+            }
+
+            await InputStream.WriteAsync(buffer, offset, length, cancellationToken);
         }
 
         public override void Flush()
         {
             if (OutputStream == null)
             {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                    "Cannot flush null outputstream");
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot flush null outputstream");
             }
 
             OutputStream.Flush();
         }
 
+        public override async Task FlushAsync()
+        {
+            await FlushAsync(CancellationToken.None);
+        }
+
+        public override async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            await OutputStream.FlushAsync(cancellationToken);
+        }
+
         public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
         {
-            Console.WriteLine("TStreamTransport -> BeginFlush");
-            //TODO: Check implementation
             return OutputStream.FlushAsync(CancellationToken.None);
         }
 
         public override void EndFlush(IAsyncResult asyncResult)
         {
-            Console.WriteLine("TStreamTransport -> EndFlush");
-            //TODO: Check implementation
             ((Task)asyncResult).GetAwaiter().GetResult();
         }
 

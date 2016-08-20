@@ -21,6 +21,9 @@
  * details.
  */
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Thrift.Protocol
 {
     /**
@@ -48,6 +51,9 @@ namespace Thrift.Protocol
     *     System.out.println(service2.getTemperature());
     *
     */
+
+    //TODO: implementation of TProtocol
+
     // ReSharper disable once InconsistentNaming
     public class TMultiplexedProtocol : TProtocolDecorator
     {
@@ -85,13 +91,207 @@ namespace Thrift.Protocol
             {
                 case TMessageType.Call:
                 case TMessageType.Oneway:
-                    base.WriteMessageBegin(new TMessage($"{_serviceName}{Separator}{tMessage.Name}", tMessage.Type,
-                        tMessage.SeqID));
+                    base.WriteMessageBegin(new TMessage($"{_serviceName}{Separator}{tMessage.Name}", tMessage.Type, tMessage.SeqID));
                     break;
                 default:
                     base.WriteMessageBegin(tMessage);
                     break;
             }
+        }
+
+        public override Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteMessageEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteStructBeginAsync(TStruct struc, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteStructEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteFieldEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteFieldStopAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteMapEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteListBeginAsync(TList list, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteListEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteSetEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteBoolAsync(bool b, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteByteAsync(sbyte b, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteI16Async(short i16, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteI32Async(int i32, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteI64Async(long i64, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteDoubleAsync(double d, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task WriteBinaryAsync(byte[] b, CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task ReadMessageEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task ReadStructEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<TField> ReadFieldBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task ReadFieldEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<TMap> ReadMapBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task ReadMapEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<TList> ReadListBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task ReadListEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<TSet> ReadSetBeginAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task ReadSetEndAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<bool> ReadBoolAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<sbyte> ReadByteAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<short> ReadI16Async(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<int> ReadI32Async(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<long> ReadI64Async(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<double> ReadDoubleAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override Task<byte[]> ReadBinaryAsync(CancellationToken cancellationToken)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

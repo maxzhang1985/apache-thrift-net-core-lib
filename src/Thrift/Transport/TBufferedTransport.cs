@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace Thrift.Transport
 {
@@ -30,6 +31,7 @@ namespace Thrift.Transport
         private readonly MemoryStream _outputBuffer = new MemoryStream(0);
         private readonly TTransport _transport;
 
+        //TODO: should support only specified input transport?
         public TBufferedTransport(TTransport transport, int bufSize = 1024)
         {
             if (transport == null)
@@ -57,7 +59,7 @@ namespace Thrift.Transport
 
         public override bool IsOpen => !_isDisposed && _transport.IsOpen;
 
-      public override void Open()
+        public override void Open()
         {
             CheckNotDisposed();
             _transport.Open();
@@ -69,10 +71,10 @@ namespace Thrift.Transport
             _transport.Close();
         }
 
-        public override int Read(byte[] buf, int off, int len)
+        public override int Read(byte[] buffer, int offset, int length)
         {
             CheckNotDisposed();
-            ValidateBufferArgs(buf, off, len);
+            ValidateBufferArgs(buffer, offset, length);
 
             if (!IsOpen)
             {
@@ -84,7 +86,7 @@ namespace Thrift.Transport
                 _inputBuffer.Capacity = _bufSize;
             }
 
-            var got = _inputBuffer.Read(buf, off, len);
+            var got = _inputBuffer.Read(buffer, offset, length);
             if (got > 0)
             {
                 return got;
@@ -104,25 +106,27 @@ namespace Thrift.Transport
                 return 0;
             }
 
-            return Read(buf, off, len);
+            return Read(buffer, offset, length);
         }
 
-        public override void Write(byte[] buf, int off, int len)
+        public override void Write(byte[] buffer, int offset, int length)
         {
             CheckNotDisposed();
-            ValidateBufferArgs(buf, off, len);
+            ValidateBufferArgs(buffer, offset, length);
+
             if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
+
             // Relative offset from "off" argument
-            var offset = 0;
+            var writtenCount = 0;
             if (_outputBuffer.Length > 0)
             {
                 var capa = (int) (_outputBuffer.Capacity - _outputBuffer.Length);
-                var writeSize = capa <= len ? capa : len;
-                _outputBuffer.Write(buf, off, writeSize);
-                offset += writeSize;
+                var writeSize = capa <= length ? capa : length;
+                _outputBuffer.Write(buffer, offset, writeSize);
+                writtenCount += writeSize;
                 if (writeSize == capa)
                 {
                     ArraySegment<byte> bufSegment;
@@ -132,19 +136,21 @@ namespace Thrift.Transport
                     _outputBuffer.SetLength(0);
                 }
             }
-            while (len - offset >= _bufSize)
+
+            while (length - writtenCount >= _bufSize)
             {
-                _transport.Write(buf, off + offset, _bufSize);
-                offset += _bufSize;
+                _transport.Write(buffer, offset + writtenCount, _bufSize);
+                writtenCount += _bufSize;
             }
-            var remain = len - offset;
+
+            var remain = length - writtenCount;
             if (remain > 0)
             {
                 if (_outputBuffer.Capacity < _bufSize)
                 {
                     _outputBuffer.Capacity = _bufSize;
                 }
-                _outputBuffer.Write(buf, off + offset, remain);
+                _outputBuffer.Write(buffer, offset + writtenCount, remain);
             }
         }
 
@@ -170,7 +176,7 @@ namespace Thrift.Transport
         {
             if (_isDisposed)
             {
-                throw new ObjectDisposedException("TBufferedTransport");
+                throw new ObjectDisposedException(nameof(_transport));
             }
         }
 

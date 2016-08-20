@@ -30,38 +30,15 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TServerSocket : TServerTransport
     {
-        /**
-        * Underlying server with socket
-        */
         private TcpListener _server;
-
-        /**
-         * Port to listen on
-         */
         private readonly int _port;
-
-        /**
-         * Timeout for client sockets from accept
-         */
         private readonly int _clientTimeout;
-
-        /**
-         * Whether or not to wrap new TSocket connections in buffers
-         */
         private readonly bool _useBufferedSockets;
-
-        /**
-         * Creates a server socket from underlying socket object
-         */
 
         public TServerSocket(TcpListener listener)
             : this(listener, 0)
         {
         }
-
-        /**
-         * Creates a server socket from underlying socket object
-         */
 
         public TServerSocket(TcpListener listener, int clientTimeout)
         {
@@ -69,18 +46,10 @@ namespace Thrift.Transport
             _clientTimeout = clientTimeout;
         }
 
-        /**
-         * Creates just a port listening server socket
-         */
-
         public TServerSocket(int port)
             : this(port, 0)
         {
         }
-
-        /**
-         * Creates just a port listening server socket
-         */
 
         public TServerSocket(int port, int clientTimeout)
             : this(port, clientTimeout, false)
@@ -127,20 +96,26 @@ namespace Thrift.Transport
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
             }
+
             try
             {
                 TSocket result2 = null;
                 //TODO: Async
                 var result = _server.AcceptTcpClientAsync().Result;
+
                 try
                 {
-                    result2 = new TSocket(result);
-                    result2.Timeout = _clientTimeout;
+                    result2 = new TSocket(result)
+                    {
+                        Timeout = _clientTimeout
+                    };
+
                     if (_useBufferedSockets)
                     {
                         var result3 = new TBufferedTransport(result2);
                         return result3;
                     }
+
                     return result2;
                 }
                 catch (Exception)
@@ -148,9 +123,14 @@ namespace Thrift.Transport
                     // If a TSocket was successfully created, then let
                     // it do proper cleanup of the TcpClient object.
                     if (result2 != null)
+                    {
                         result2.Dispose();
+                    }
                     else //  Otherwise, clean it up ourselves.
+                    {
                         ((IDisposable) result).Dispose();
+                    }
+
                     throw;
                 }
             }

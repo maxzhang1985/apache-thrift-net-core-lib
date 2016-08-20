@@ -21,6 +21,8 @@
  * details.
  */
 
+using System;
+
 namespace Thrift.Transport
 {
     // ReSharper disable once InconsistentNaming

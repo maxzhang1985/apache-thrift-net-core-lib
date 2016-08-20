@@ -21,6 +21,7 @@
  * details.
  */
 
+using System;
 using System.IO.Pipes;
 
 namespace Thrift.Transport
@@ -65,24 +66,24 @@ namespace Thrift.Transport
             }
         }
 
-        public override int Read(byte[] buf, int off, int len)
+        public override int Read(byte[] buffer, int offset, int length)
         {
             if (_client == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            return _client.Read(buf, off, len);
+            return _client.Read(buffer, offset, length);
         }
 
-        public override void Write(byte[] buf, int off, int len)
+        public override void Write(byte[] buffer, int offset, int length)
         {
             if (_client == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            _client.Write(buf, off, len);
+            _client.Write(buffer, offset, length);
         }
 
         protected override void Dispose(bool disposing)

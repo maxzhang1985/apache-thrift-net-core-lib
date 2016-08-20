@@ -28,6 +28,9 @@ namespace Thrift
     // ReSharper disable once InconsistentNaming
     public class TApplicationException : TException
     {
+        private const int MessageTypeFieldId = 1;
+        private const int ExTypeFieldId = 2;
+
         protected ExceptionType Type;
 
         public TApplicationException()
@@ -61,7 +64,7 @@ namespace Thrift
 
                 switch (field.ID)
                 {
-                    case 1:
+                    case MessageTypeFieldId:
                         if (field.Type == TType.String)
                         {
                             message = iprot.ReadString();
@@ -71,7 +74,7 @@ namespace Thrift
                             TProtocolUtil.Skip(iprot, field.Type);
                         }
                         break;
-                    case 2:
+                    case ExTypeFieldId:
                         if (field.Type == TType.I32)
                         {
                             type = (ExceptionType) iprot.ReadI32();
@@ -96,24 +99,28 @@ namespace Thrift
 
         public void Write(TProtocol oprot)
         {
-            var struc = new TStruct("TApplicationException");
+            const string messageTypeFieldName = "message";
+            const string exTypeFieldName = "exType";
+            const string structApplicationExceptionName = "TApplicationException";
+
+            var struc = new TStruct(structApplicationExceptionName);
             var field = new TField();
 
             oprot.WriteStructBegin(struc);
 
             if (!string.IsNullOrEmpty(Message))
             {
-                field.Name = "message";
+                field.Name = messageTypeFieldName;
                 field.Type = TType.String;
-                field.ID = 1;
+                field.ID = MessageTypeFieldId;
                 oprot.WriteFieldBegin(field);
                 oprot.WriteString(Message);
                 oprot.WriteFieldEnd();
             }
 
-            field.Name = "exType";
+            field.Name = exTypeFieldName;
             field.Type = TType.I32;
-            field.ID = 2;
+            field.ID = ExTypeFieldId;
             oprot.WriteFieldBegin(field);
             oprot.WriteI32((int) Type);
             oprot.WriteFieldEnd();

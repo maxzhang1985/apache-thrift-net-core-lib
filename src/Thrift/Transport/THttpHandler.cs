@@ -78,6 +78,9 @@ namespace Thrift.Transport
 
         public async Task Invoke(HttpContext context)
         {
+#if DEBUG
+            Console.WriteLine("THttpHandler -> Invoke");
+#endif
             context.Response.ContentType = ContentType;
             //context.Response.ContentEncoding = encoding;
             //ProcessRequest(context.Request.Body, context.Response.Body);
@@ -87,6 +90,9 @@ namespace Thrift.Transport
         //TODO correct TPL statement
         public async Task ProcessRequestAsync(HttpContext context)
         {
+#if DEBUG
+            Console.WriteLine("THttpHandler -> ProcessRequestAsync");
+#endif
             var transport = new TStreamTransport(context.Request.Body, context.Response.Body);
 
             try

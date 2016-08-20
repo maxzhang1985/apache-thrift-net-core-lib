@@ -37,31 +37,39 @@ namespace Thrift.Server
         private bool _stop;
 
         public TSimpleServer(TProcessor processor, TServerTransport serverTransport, ILoggerFactory loggerFactory)
-            : base(
-                processor, serverTransport, new TTransportFactory(), new TTransportFactory(),
-                new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(), loggerFactory.CreateLogger<TSimpleServer>())
+            : base(processor, serverTransport, new TTransportFactory(), new TTransportFactory(),
+                new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(),
+                loggerFactory.CreateLogger<TSimpleServer>())
         {
         }
 
         public TSimpleServer(TProcessor processor, TServerTransport serverTransport, ILogger logger)
-            : base(
-                processor, serverTransport, new TTransportFactory(), new TTransportFactory(),
+            : base(processor, serverTransport, new TTransportFactory(), new TTransportFactory(),
                 new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(), logger)
         {
         }
 
-        public TSimpleServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory, ILogger logger)
-            : base(processor, serverTransport, transportFactory, transportFactory, new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(), logger)
+        public TSimpleServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory,
+            ILogger logger)
+            : base(
+                processor, serverTransport, transportFactory, transportFactory, new TBinaryProtocol.Factory(),
+                new TBinaryProtocol.Factory(), logger)
         {
         }
 
-        public TSimpleServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory, TProtocolFactory protocolFactory, ILogger logger)
-            : base(processor, serverTransport, transportFactory, transportFactory, protocolFactory, protocolFactory, logger)
+        public TSimpleServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory,
+            TProtocolFactory protocolFactory, ILogger logger)
+            : base(
+                processor, serverTransport, transportFactory, transportFactory, protocolFactory, protocolFactory, logger
+            )
         {
         }
 
-        public TSimpleServer(TProcessorFactory processorFactory, TServerTransport serverTransport, TTransportFactory transportFactory, TProtocolFactory protocolFactory, ILogger logger)
-            : base(processorFactory, serverTransport, transportFactory, transportFactory, protocolFactory, protocolFactory, logger)
+        public TSimpleServer(TProcessorFactory processorFactory, TServerTransport serverTransport,
+            TTransportFactory transportFactory, TProtocolFactory protocolFactory, ILogger logger)
+            : base(
+                processorFactory, serverTransport, transportFactory, transportFactory, protocolFactory, protocolFactory,
+                logger)
         {
         }
 
@@ -88,17 +96,15 @@ namespace Thrift.Server
                 object connectionContext = null;
                 try
                 {
-                    TTransport client = null;
-                    using (client = ServerTransport.Accept())
+                    using (var client = ServerTransport.Accept())
                     {
-                        var processor = ProcessorFactory.GetProcessor(client);
+                        Logger.LogTrace("Accepted client");
+                        
                         if (client != null)
                         {
-                            TTransport inputTransport = null;
-                            using (inputTransport = InputTransportFactory.GetTransport(client))
+                            using (var inputTransport = InputTransportFactory.GetTransport(client))
                             {
-                                TTransport outputTransport = null;
-                                using (outputTransport = OutputTransportFactory.GetTransport(client))
+                                using (var outputTransport = OutputTransportFactory.GetTransport(client))
                                 {
                                     inputProtocol = InputProtocolFactory.GetProtocol(inputTransport);
                                     outputProtocol = OutputProtocolFactory.GetProtocol(outputTransport);
@@ -112,7 +118,10 @@ namespace Thrift.Server
                                     //Process client requests until client disconnects
                                     while (!_stop)
                                     {
-                                        if (!inputTransport.Peek()) break;
+                                        if (!inputTransport.Peek())
+                                        {
+                                            break;
+                                        }
 
                                         //Fire processContext server event
                                         //N.B. This is the pattern implemented in C++ and the event fires provisionally.
@@ -120,8 +129,15 @@ namespace Thrift.Server
                                         //actually arriving or the client may hang up without ever makeing a request.
                                         ServerEventHandler?.ProcessContext(connectionContext, inputTransport);
 
+                                        var processor = ProcessorFactory.GetProcessor(client);
+
+                                        Logger.LogTrace("Starting processing client's request");
+
                                         //Process client request (blocks until transport is readable)
-                                        if (!processor.Process(inputProtocol, outputProtocol)) break;
+                                        if (!processor.Process(inputProtocol, outputProtocol))
+                                        {
+                                            break;
+                                        }
                                     }
                                 }
                             }

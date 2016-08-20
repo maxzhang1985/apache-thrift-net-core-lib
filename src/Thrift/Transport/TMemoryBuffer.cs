@@ -49,26 +49,38 @@ namespace Thrift.Transport
             /** do nothing **/
         }
 
-        public override int Read(byte[] buf, int off, int len)
+        public override int Read(byte[] buffer, int offset, int length)
         {
-            return _byteStream.Read(buf, off, len);
+#if DEBUG
+            Console.WriteLine("TMemoryBuffer -> Read");
+#endif
+            return _byteStream.Read(buffer, offset, length);
         }
 
-        public override void Write(byte[] buf, int off, int len)
+        public override void Write(byte[] buffer, int offset, int length)
         {
-            _byteStream.Write(buf, off, len);
+#if DEBUG
+            Console.WriteLine("TMemoryBuffer -> Write");
+#endif
+            _byteStream.Write(buffer, offset, length);
         }
 
         public byte[] GetBuffer()
         {
+#if DEBUG
+            Console.WriteLine("TMemoryBuffer -> GetBuffer");
+#endif
             return _byteStream.ToArray();
         }
 
 
         public override bool IsOpen => true;
 
-      public static byte[] Serialize(TAbstractBase s)
+        public static byte[] Serialize(TAbstractBase s)
         {
+#if DEBUG
+            Console.WriteLine("TMemoryBuffer -> Serialize");
+#endif
             var t = new TMemoryBuffer();
             var p = new TBinaryProtocol(t);
 
@@ -79,6 +91,9 @@ namespace Thrift.Transport
 
         public static T DeSerialize<T>(byte[] buf) where T : TAbstractBase
         {
+#if DEBUG
+            Console.WriteLine("TMemoryBuffer -> DeSerialize");
+#endif
             var trans = new TMemoryBuffer(buf);
             var p = new TBinaryProtocol(trans);
             if (typeof(TBase).IsAssignableFrom(typeof(T)))
@@ -100,6 +115,9 @@ namespace Thrift.Transport
         // IDisposable
         protected override void Dispose(bool disposing)
         {
+#if DEBUG
+            Console.WriteLine("TMemoryBuffer -> Dispose");
+#endif
             if (!_isDisposed)
             {
                 if (disposing)

@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace Thrift.Transport
 {
@@ -32,13 +33,14 @@ namespace Thrift.Transport
         private const int HeaderSize = 4;
         private readonly byte[] _headerBuf = new byte[HeaderSize];
 
-        public class Factory : TTransportFactory
-        {
-            public override TTransport GetTransport(TTransport trans)
-            {
-                return new TFramedTransport(trans);
-            }
-        }
+        //TODO: do we need it ?
+        //public class Factory : TTransportFactory
+        //{
+        //    public override TTransport GetTransport(TTransport trans)
+        //    {
+        //        return new TFramedTransport(trans, _logger);
+        //    }
+        //}
 
         public TFramedTransport(TTransport transport)
         {
@@ -53,29 +55,38 @@ namespace Thrift.Transport
 
         public override void Open()
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> Open");
+#endif
             CheckNotDisposed();
             _transport.Open();
         }
 
         public override bool IsOpen => !_isDisposed && _transport.IsOpen;
 
-      public override void Close()
+        public override void Close()
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> Close");
+#endif
             CheckNotDisposed();
             _transport.Close();
         }
 
-        public override int Read(byte[] buf, int off, int len)
+        public override int Read(byte[] buffer, int offset, int length)
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> Read");
+#endif
             CheckNotDisposed();
-            ValidateBufferArgs(buf, off, len);
+            ValidateBufferArgs(buffer, offset, length);
 
             if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            var got = _readBuffer.Read(buf, off, len);
+            var got = _readBuffer.Read(buffer, offset, length);
             if (got > 0)
             {
                 return got;
@@ -84,11 +95,14 @@ namespace Thrift.Transport
             // Read another frame of data
             ReadFrame();
 
-            return _readBuffer.Read(buf, off, len);
+            return _readBuffer.Read(buffer, offset, length);
         }
 
         private void ReadFrame()
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> ReadFrame");
+#endif
             _transport.ReadAll(_headerBuf, 0, HeaderSize);
             var size = DecodeFrameSize(_headerBuf);
 
@@ -102,26 +116,32 @@ namespace Thrift.Transport
             _transport.ReadAll(buff, 0, size);
         }
 
-        public override void Write(byte[] buf, int off, int len)
+        public override void Write(byte[] buffer, int offset, int length)
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> Write");
+#endif
             CheckNotDisposed();
-            ValidateBufferArgs(buf, off, len);
+            ValidateBufferArgs(buffer, offset, length);
 
             if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            if (_writeBuffer.Length + len > int.MaxValue)
+            if (_writeBuffer.Length + length > int.MaxValue)
             {
                 Flush();
             }
 
-            _writeBuffer.Write(buf, off, len);
+            _writeBuffer.Write(buffer, offset, length);
         }
 
         public override void Flush()
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> Flush");
+#endif
             CheckNotDisposed();
 
             if (!IsOpen)
@@ -190,6 +210,9 @@ namespace Thrift.Transport
         // IDisposable
         protected override void Dispose(bool disposing)
         {
+#if DEBUG
+            Console.WriteLine("TFramedTransport -> Dispose");
+#endif
             if (!_isDisposed)
             {
                 if (disposing)

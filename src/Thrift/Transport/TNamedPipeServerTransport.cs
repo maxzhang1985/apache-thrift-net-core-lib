@@ -88,7 +88,8 @@ namespace Thrift.Transport
                     if (_asyncMode)
                     {
                         options &= (~PipeOptions.Asynchronous);
-                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
+                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf,
+                            outbuf);
                         _asyncMode = false;
                     }
                     else
@@ -110,46 +111,6 @@ namespace Thrift.Transport
 
                     //TODO: test async
                     _stream.WaitForConnectionAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-                    //var evt = new ManualResetEvent(false);
-                    //Exception eOuter = null;
-
-                    //_stream.BeginWaitForConnection(asyncResult =>
-                    //{
-                    //    try
-                    //    {
-                    //        if (_stream != null)
-                    //        {
-                    //            _stream.EndWaitForConnection(asyncResult);
-                    //        }
-                    //        else
-                    //        {
-                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
-                    //        }
-                    //    }
-                    //    catch (Exception e)
-                    //    {
-                    //        if (_stream != null)
-                    //        {
-                    //            eOuter = e;
-                    //        }
-                    //        else
-                    //        {
-                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted,
-                    //                e.Message);
-                    //        }
-                    //    }
-
-                    //    evt.Set();
-
-                    //}, null);
-
-                    //evt.WaitOne();
-
-                    //if (eOuter != null)
-                    //{
-                    //    throw eOuter; // rethrow exception
-                    //}
                 }
                 else
                 {
@@ -194,7 +155,7 @@ namespace Thrift.Transport
                 _stream?.Dispose();
             }
 
-            public override int Read(byte[] buf, int off, int len)
+            public override int Read(byte[] buffer, int offset, int length)
             {
                 if (_stream == null)
                 {
@@ -205,55 +166,15 @@ namespace Thrift.Transport
                 {
                     var retval = 0;
 
-                    retval = _stream.ReadAsync(buf, off, len).ConfigureAwait(false).GetAwaiter().GetResult();
-
-                    //Exception eOuter = null;
-                    //var evt = new ManualResetEvent(false);
-                    
-
-                    //stream.BeginRead(buf, off, len, asyncResult =>
-                    //{
-                    //    try
-                    //    {
-                    //        if (stream != null)
-                    //        {
-                    //            retval = stream.EndRead(asyncResult);
-                    //        }
-                    //        else
-                    //        {
-                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
-                    //        }
-                    //    }
-                    //    catch (Exception e)
-                    //    {
-                    //        if (stream != null)
-                    //        {
-                    //            eOuter = e;
-                    //        }
-                    //        else
-                    //        {
-                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
-                    //        }
-                    //    }
-
-                    //    evt.Set();
-
-                    //}, null);
-
-                    //evt.WaitOne();
-
-                    //if (eOuter != null)
-                    //{
-                    //    throw eOuter; // rethrow exception
-                    //}
+                    retval = _stream.ReadAsync(buffer, offset, length).ConfigureAwait(false).GetAwaiter().GetResult();
 
                     return retval;
                 }
 
-                return _stream.Read(buf, off, len);
+                return _stream.Read(buffer, offset, length);
             }
 
-            public override void Write(byte[] buf, int off, int len)
+            public override void Write(byte[] buffer, int offset, int length)
             {
                 if (_stream == null)
                 {
@@ -262,50 +183,11 @@ namespace Thrift.Transport
 
                 if (_asyncMode)
                 {
-                    _stream.WriteAsync(buf, off, len).GetAwaiter().GetResult();
-
-                    //Exception eOuter = null;
-                    //var evt = new ManualResetEvent(false);
-                    
-                    //stream.BeginWrite(buf, off, len, asyncResult =>
-                    //{
-                    //    try
-                    //    {
-                    //        if (stream != null)
-                    //        {
-                    //            stream.EndWrite(asyncResult);
-                    //        }
-                    //        else
-                    //        {
-                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted);
-                    //        }
-                    //    }
-                    //    catch (Exception e)
-                    //    {
-                    //        if (stream != null)
-                    //        {
-                    //            eOuter = e;
-                    //        }
-                    //        else
-                    //        {
-                    //            eOuter = new TTransportException(TTransportException.ExceptionType.Interrupted, e.Message);
-                    //        }
-                    //    }
-
-                    //    evt.Set();
-
-                    //}, null);
-
-                    //evt.WaitOne();
-
-                    //if (eOuter != null)
-                    //{
-                    //    throw eOuter; // rethrow exception
-                    //}
+                    _stream.WriteAsync(buffer, offset, length).GetAwaiter().GetResult();
                 }
                 else
                 {
-                    _stream.Write(buf, off, len);
+                    _stream.Write(buffer, offset, length);
                 }
             }
 

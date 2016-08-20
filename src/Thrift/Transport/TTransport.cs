@@ -23,9 +23,12 @@
 
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
+    //TODO: think about client info 
     // ReSharper disable once InconsistentNaming
     public abstract class TTransport : IDisposable
     {
@@ -38,18 +41,24 @@ namespace Thrift.Transport
         {
             //If we already have a byte read but not consumed, do nothing.
             if (_hasPeekByte)
+            {
                 return true;
+            }
 
             //If transport closed we can't peek.
             if (!IsOpen)
+            {
                 return false;
+            }
 
             //Try to read one byte. If succeeds we will need to store it for the next read.
             try
             {
                 var bytes = Read(_peekBuffer, 0, 1);
                 if (bytes == 0)
+                {
                     return false;
+                }
             }
             catch (IOException)
             {
@@ -62,90 +71,202 @@ namespace Thrift.Transport
 
         public abstract void Open();
 
+        public virtual async Task OpenAsync()
+        {
+            await OpenAsync(CancellationToken.None);
+        }
+
+        public virtual async Task OpenAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
+            //TODO: check for correct work
+            await Task.Factory.StartNew(state => ((TTransport)state).Open(), this, cancellationToken,
+                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
         public abstract void Close();
 
-        protected static void ValidateBufferArgs(byte[] buf, int off, int len)
+        protected static void ValidateBufferArgs(byte[] buffer, int offset, int length)
         {
-            if (buf == null)
+            if (buffer == null)
             {
-                throw new ArgumentNullException(nameof(buf));
+                throw new ArgumentNullException(nameof(buffer));
             }
 
-            if (off < 0)
+            if (offset < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(off),"Buffer offset is smaller than zero.");
+                throw new ArgumentOutOfRangeException(nameof(offset),"Buffer offset is smaller than zero.");
             }
 
-            if (len < 0)
+            if (length < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(len), "Buffer length is smaller than zero.");
+                throw new ArgumentOutOfRangeException(nameof(length), "Buffer length is smaller than zero.");
             }
 
-            if (off + len > buf.Length)
+            if (offset + length > buffer.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(buf), "Not enough data.");
+                throw new ArgumentOutOfRangeException(nameof(buffer), "Not enough data.");
             }
         }
 
-        public abstract int Read(byte[] buf, int off, int len);
+        public abstract int Read(byte[] buffer, int offset, int length);
 
-        public int ReadAll(byte[] buf, int off, int len)
+        public virtual async Task<int> ReadAsync(byte[] buffer, int offset, int length)
         {
-            ValidateBufferArgs(buf, off, len);
-            var got = 0;
+            return await ReadAsync(buffer, offset, length, CancellationToken.None);
+        }
+
+        public virtual async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return await Task.FromCanceled<int>(cancellationToken);
+            }
+
+            //TODO: check for correct work
+            return await Task.Factory.StartNew(state => ((TTransport)state).Read(buffer, offset, length), this, cancellationToken,
+                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
+        public int ReadAll(byte[] buffer, int offset, int length)
+        {
+            ValidateBufferArgs(buffer, offset, length);
+            var retrieved = 0;
 
             //If we previously peeked a byte, we need to use that first.
             if (_hasPeekByte)
             {
-                buf[off + got++] = _peekBuffer[0];
+                buffer[offset + retrieved++] = _peekBuffer[0];
                 _hasPeekByte = false;
             }
 
-            while (got < len)
+            while (retrieved < length)
             {
-                var ret = Read(buf, off + got, len - got);
-                if (ret <= 0)
+                var returnedCount = Read(buffer, offset + retrieved, length - retrieved);
+                if (returnedCount <= 0)
                 {
-                    throw new TTransportException(
-                        TTransportException.ExceptionType.EndOfFile,
-                        "Cannot read, Remote side has closed");
+                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "Cannot read, Remote side has closed");
                 }
-                got += ret;
+                retrieved += returnedCount;
             }
-            return got;
+            return retrieved;
         }
 
-        public virtual void Write(byte[] buf)
+        public virtual async Task<int> ReadAllAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            Write(buf, 0, buf.Length);
+            ValidateBufferArgs(buffer, offset, length);
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return await Task.FromCanceled<int>(cancellationToken);
+            }
+
+            var retrieved = 0;
+
+            //If we previously peeked a byte, we need to use that first.
+            if (_hasPeekByte)
+            {
+                buffer[offset + retrieved++] = _peekBuffer[0];
+                _hasPeekByte = false;
+            }
+
+            while (retrieved < length)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return await Task.FromCanceled<int>(cancellationToken);
+                }
+
+                var returnedCount = await ReadAsync(buffer, offset + retrieved, length - retrieved, cancellationToken);
+                if (returnedCount <= 0)
+                {
+                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "Cannot read, Remote side has closed");
+                }
+                retrieved += returnedCount;
+            }
+            return retrieved;
         }
 
-        public abstract void Write(byte[] buf, int off, int len);
+        public virtual void Write(byte[] buffer)
+        {
+            Write(buffer, 0, buffer.Length);
+        }
+
+        public virtual async Task WriteAsync(byte[] buffer)
+        {
+            await WriteAsync(buffer, CancellationToken.None);
+        }
+
+        public virtual async Task WriteAsync(byte[] buffer, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
+            //TODO: check for correct work
+            await Task.Factory.StartNew(state => ((TTransport) state).Write(buffer), this, cancellationToken,
+                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
+        public abstract void Write(byte[] buffer, int offset, int length);
+
+        public virtual async Task WriteAsync(byte[] buffer, int offset, int length)
+        {
+            await WriteAsync(buffer, offset, length, CancellationToken.None);
+        }
+
+        public virtual async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
+            //TODO: check for correct work
+            await Task.Factory.StartNew(state => ((TTransport)state).Write(buffer, offset, length), this, cancellationToken,
+                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
 
         public virtual void Flush()
         {
         }
 
+        public virtual async Task FlushAsync()
+        {
+            await FlushAsync(CancellationToken.None);
+        }
+
+        public virtual async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
+            //TODO: check for correct work
+            await Task.Factory.StartNew(state => ((TTransport) state).Flush(), this, cancellationToken,
+                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
         public virtual IAsyncResult BeginFlush(AsyncCallback callback, object state)
         {
-            throw new TTransportException(
-                TTransportException.ExceptionType.Unknown,
-                "Asynchronous operations are not supported by this transport.");
+            throw new TTransportException(TTransportException.ExceptionType.Unknown, "Asynchronous operations are not supported by this transport.");
         }
 
         public virtual void EndFlush(IAsyncResult asyncResult)
         {
-            throw new TTransportException(
-                TTransportException.ExceptionType.Unknown,
-                "Asynchronous operations are not supported by this transport.");
+            throw new TTransportException(TTransportException.ExceptionType.Unknown, "Asynchronous operations are not supported by this transport.");
         }
 
-        // IDisposable
         protected abstract void Dispose(bool disposing);
 
         public void Dispose()
         {
-            // Do not change this code.  Put cleanup code in Dispose(ByVal disposing As Boolean) above.
             Dispose(true);
             GC.SuppressFinalize(this);
         }
