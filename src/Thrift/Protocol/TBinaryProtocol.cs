@@ -121,7 +121,10 @@ namespace Thrift.Protocol
 
         public override async Task WriteMessageEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteStructBegin(TStruct struc)
@@ -131,7 +134,10 @@ namespace Thrift.Protocol
 
         public override async Task WriteStructBeginAsync(TStruct struc, CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteStructEnd()
@@ -140,7 +146,10 @@ namespace Thrift.Protocol
 
         public override async Task WriteStructEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteFieldBegin(TField field)
@@ -166,7 +175,10 @@ namespace Thrift.Protocol
 
         public override async Task WriteFieldEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteFieldStop()
@@ -207,9 +219,12 @@ namespace Thrift.Protocol
         {
         }
 
-        public override Task WriteMapEndAsync(CancellationToken cancellationToken)
+        public override async Task WriteMapEndAsync(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteListBegin(TList list)
@@ -235,7 +250,10 @@ namespace Thrift.Protocol
 
         public override async Task WriteListEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteSetBegin(TSet set)
@@ -261,7 +279,10 @@ namespace Thrift.Protocol
 
         public override async Task WriteSetEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void WriteBool(bool b)
@@ -493,7 +514,10 @@ namespace Thrift.Protocol
 
         public override async Task ReadMessageEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override TStruct ReadStructBegin()
@@ -504,8 +528,13 @@ namespace Thrift.Protocol
 
         public override async Task<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
             //TODO: no read from internal transport?
-            return await Task.FromResult(new TStruct());
+            return new TStruct();
         }
 
         public override void ReadStructEnd()
@@ -514,7 +543,10 @@ namespace Thrift.Protocol
 
         public override async Task ReadStructEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override TField ReadFieldBegin()
@@ -558,7 +590,10 @@ namespace Thrift.Protocol
 
         public override async Task ReadFieldEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override TMap ReadMapBegin()
@@ -596,7 +631,10 @@ namespace Thrift.Protocol
 
         public override async Task ReadMapEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override TList ReadListBegin()
@@ -632,7 +670,10 @@ namespace Thrift.Protocol
 
         public override async Task ReadListEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override TSet ReadSetBegin()
@@ -668,7 +709,10 @@ namespace Thrift.Protocol
 
         public override async Task ReadSetEndAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override bool ReadBool()
@@ -829,8 +873,13 @@ namespace Thrift.Protocol
             return Encoding.UTF8.GetString(buf, 0, buf.Length);
         }
 
-        private async Task<string>  ReadStringBodyAsync(int size, CancellationToken cancellationToken)
+        private async Task<string> ReadStringBodyAsync(int size, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled<string>(cancellationToken);
+            }
+
             var buf = new byte[size];
             await Trans.ReadAllAsync(buf, 0, size, cancellationToken);
             return Encoding.UTF8.GetString(buf, 0, buf.Length);
