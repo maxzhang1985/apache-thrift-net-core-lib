@@ -22,7 +22,6 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,8 +87,7 @@ namespace Thrift.Transport
                     if (_asyncMode)
                     {
                         options &= (~PipeOptions.Asynchronous);
-                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf,
-                            outbuf);
+                        _stream = new NamedPipeServerStream(_pipeAddress, direction, maxconn, mode, options, inbuf, outbuf);
                         _asyncMode = false;
                     }
                     else
@@ -106,18 +104,33 @@ namespace Thrift.Transport
             {
                 EnsurePipeInstance();
 
-                if (_asyncMode)
-                {
+                _stream.WaitForConnection();
+                
+                var trans = new ServerTransport(_stream);
+                _stream = null; // pass ownership to ServerTransport
+                return trans;
+            }
+            catch (TTransportException)
+            {
+                Close();
+                throw;
+            }
+            catch (Exception e)
+            {
+                Close();
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, e.Message);
+            }
+        }
 
-                    //TODO: test async
-                    _stream.WaitForConnectionAsync(CancellationToken.None).GetAwaiter().GetResult();
-                }
-                else
-                {
-                    _stream.WaitForConnection();
-                }
+        protected override async Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                EnsurePipeInstance();
 
-                var trans = new ServerTransport(_stream, _asyncMode);
+                await _stream.WaitForConnectionAsync(CancellationToken.None);
+                
+                var trans = new ServerTransport(_stream);
                 _stream = null; // pass ownership to ServerTransport
                 return trans;
             }
@@ -136,18 +149,24 @@ namespace Thrift.Transport
         private class ServerTransport : TTransport
         {
             private readonly NamedPipeServerStream _stream;
-            private readonly bool _asyncMode;
 
-            public ServerTransport(NamedPipeServerStream stream, bool asyncMode)
+            public ServerTransport(NamedPipeServerStream stream)
             {
                 _stream = stream;
-                _asyncMode = asyncMode;
             }
 
             public override bool IsOpen => _stream != null && _stream.IsConnected;
 
             public override void Open()
             {
+            }
+
+            public override async Task OpenAsync(CancellationToken cancellationToken)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    await Task.FromCanceled(cancellationToken);
+                }
             }
 
             public override void Close()
@@ -162,16 +181,17 @@ namespace Thrift.Transport
                     throw new TTransportException(TTransportException.ExceptionType.NotOpen);
                 }
 
-                if (_asyncMode)
+                return _stream.Read(buffer, offset, length);
+            }
+
+            public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+            {
+                if (_stream == null)
                 {
-                    var retval = 0;
-
-                    retval = _stream.ReadAsync(buffer, offset, length).ConfigureAwait(false).GetAwaiter().GetResult();
-
-                    return retval;
+                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
                 }
 
-                return _stream.Read(buffer, offset, length);
+                return await _stream.ReadAsync(buffer, offset, length, cancellationToken);
             }
 
             public override void Write(byte[] buffer, int offset, int length)
@@ -181,13 +201,24 @@ namespace Thrift.Transport
                     throw new TTransportException(TTransportException.ExceptionType.NotOpen);
                 }
 
-                if (_asyncMode)
+                _stream.Write(buffer, offset, length);
+            }
+
+            public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+            {
+                if (_stream == null)
                 {
-                    _stream.WriteAsync(buffer, offset, length).GetAwaiter().GetResult();
+                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
                 }
-                else
+
+                await _stream.WriteAsync(buffer, offset, length, cancellationToken);
+            }
+
+            public override async Task FlushAsync(CancellationToken cancellationToken)
+            {
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    _stream.Write(buffer, offset, length);
+                    await Task.FromCanceled(cancellationToken);
                 }
             }
 

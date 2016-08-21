@@ -69,6 +69,38 @@ namespace Thrift.Transport
             return true;
         }
 
+        public async Task<bool> PeekAsync(CancellationToken cancellationToken)
+        {
+            //If we already have a byte read but not consumed, do nothing.
+            if (_hasPeekByte)
+            {
+                return true;
+            }
+
+            //If transport closed we can't peek.
+            if (!IsOpen)
+            {
+                return false;
+            }
+
+            //Try to read one byte. If succeeds we will need to store it for the next read.
+            try
+            {
+                var bytes = await ReadAsync(_peekBuffer, 0, 1, cancellationToken);
+                if (bytes == 0)
+                {
+                    return false;
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+
+            _hasPeekByte = true;
+            return true;
+        }
+
         public abstract void Open();
 
         public virtual async Task OpenAsync()
@@ -76,17 +108,7 @@ namespace Thrift.Transport
             await OpenAsync(CancellationToken.None);
         }
 
-        public virtual async Task OpenAsync(CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
-
-            //TODO: check for correct work
-            await Task.Factory.StartNew(state => ((TTransport)state).Open(), this, cancellationToken,
-                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-        }
+        public abstract Task OpenAsync(CancellationToken cancellationToken);
 
         public abstract void Close();
 
@@ -120,17 +142,7 @@ namespace Thrift.Transport
             return await ReadAsync(buffer, offset, length, CancellationToken.None);
         }
 
-        public virtual async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return await Task.FromCanceled<int>(cancellationToken);
-            }
-
-            //TODO: check for correct work
-            return await Task.Factory.StartNew(state => ((TTransport)state).Read(buffer, offset, length), this, cancellationToken,
-                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-        }
+        public abstract Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
 
         public int ReadAll(byte[] buffer, int offset, int length)
         {
@@ -154,6 +166,11 @@ namespace Thrift.Transport
                 retrieved += returnedCount;
             }
             return retrieved;
+        }
+
+        public virtual async Task<int> ReadAllAsync(byte[] buffer, int offset, int length)
+        {
+            return await ReadAllAsync(buffer, offset, length, CancellationToken.None);
         }
 
         public virtual async Task<int> ReadAllAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -203,14 +220,7 @@ namespace Thrift.Transport
 
         public virtual async Task WriteAsync(byte[] buffer, CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
-
-            //TODO: check for correct work
-            await Task.Factory.StartNew(state => ((TTransport) state).Write(buffer), this, cancellationToken,
-                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            await WriteAsync(buffer, 0, buffer.Length, CancellationToken.None);
         }
 
         public abstract void Write(byte[] buffer, int offset, int length);
@@ -220,17 +230,7 @@ namespace Thrift.Transport
             await WriteAsync(buffer, offset, length, CancellationToken.None);
         }
 
-        public virtual async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
-
-            //TODO: check for correct work
-            await Task.Factory.StartNew(state => ((TTransport)state).Write(buffer, offset, length), this, cancellationToken,
-                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-        }
+        public abstract Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
 
         public virtual void Flush()
         {
@@ -241,17 +241,7 @@ namespace Thrift.Transport
             await FlushAsync(CancellationToken.None);
         }
 
-        public virtual async Task FlushAsync(CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
-
-            //TODO: check for correct work
-            await Task.Factory.StartNew(state => ((TTransport) state).Flush(), this, cancellationToken,
-                TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-        }
+        public abstract Task FlushAsync(CancellationToken cancellationToken);
 
         public virtual IAsyncResult BeginFlush(AsyncCallback callback, object state)
         {

@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Http;
 
 namespace Server
 {
     public class Program
     {
-        private static readonly string[] SupportedSampleTransports = {"tcp", "namedpipe"};
+        private static readonly string[] SupportedSampleTransports = {"tcp", "namedpipe", "http"};
         private static readonly string[] SupportedSampleServers = { "simple" };
 
         public static void Main(string[] args)
@@ -50,6 +49,10 @@ namespace Server
                 {
                     new NamedPipeSimpleServerSample().Run();
                 }
+                else if (transport.Equals("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    new HttpServerSample().Run();
+                }
             }
             else
             {
@@ -71,6 +74,7 @@ Options:
     -t (transport): 
         tcp - tcp transport will be used (host - ""localhost"", port - 9090)
         namedpipe - namedpipe transport will be used (pipe address - "".test"")
+        http - http transport will be used (http address - ""localhost:9090"")
         
     -s (server):
         simple - simple server will be used 

@@ -21,8 +21,9 @@
  * details.
  */
 
-using System;
 using System.IO.Pipes;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -30,19 +31,16 @@ namespace Thrift.Transport
     public class TNamedPipeClientTransport : TTransport
     {
         private NamedPipeClientStream _client;
-        private readonly string _serverName;
-        private readonly string _pipeName;
 
-        public TNamedPipeClientTransport(string pipe)
+        public TNamedPipeClientTransport(string pipe) : this(".", pipe)
         {
-            _serverName = ".";
-            _pipeName = pipe;
         }
 
         public TNamedPipeClientTransport(string server, string pipe)
         {
-            _serverName = string.IsNullOrWhiteSpace(server) ? server : ".";
-            _pipeName = pipe;
+            var serverName = string.IsNullOrWhiteSpace(server) ? server : ".";
+
+            _client = new NamedPipeClientStream(serverName, pipe, PipeDirection.InOut, PipeOptions.None);
         }
 
         public override bool IsOpen => _client != null && _client.IsConnected;
@@ -53,8 +51,18 @@ namespace Thrift.Transport
             {
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
             }
-            _client = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut, PipeOptions.None);
+
             _client.Connect();
+        }
+
+        public override async Task OpenAsync(CancellationToken cancellationToken)
+        {
+            if (IsOpen)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
+            }
+
+            await _client.ConnectAsync(cancellationToken);
         }
 
         public override void Close()
@@ -76,6 +84,16 @@ namespace Thrift.Transport
             return _client.Read(buffer, offset, length);
         }
 
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            if (_client == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
+            return await _client.ReadAsync(buffer, offset, length, cancellationToken);
+        }
+
         public override void Write(byte[] buffer, int offset, int length)
         {
             if (_client == null)
@@ -86,10 +104,27 @@ namespace Thrift.Transport
             _client.Write(buffer, offset, length);
         }
 
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            if (_client == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
+            await _client.WriteAsync(buffer, offset, length, cancellationToken);
+        }
+
+        public override async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             _client.Dispose();
         }
     }
 }
-

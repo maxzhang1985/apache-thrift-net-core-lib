@@ -21,7 +21,8 @@
  * details.
  */
 
-using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -32,6 +33,13 @@ namespace Thrift.Transport
         public abstract void Close();
         protected abstract TTransport AcceptImpl();
 
+        protected virtual async Task<TTransport> AcceptImplementationAsync()
+        {
+            return await AcceptImplementationAsync(CancellationToken.None);
+        }
+
+        protected abstract Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken);
+
         public TTransport Accept()
         {
             var transport = AcceptImpl();
@@ -39,6 +47,23 @@ namespace Thrift.Transport
             {
                 throw new TTransportException("accept() may not return NULL");
             }
+            return transport;
+        }
+
+        public async Task<TTransport> AcceptAsync()
+        {
+            return await AcceptAsync(CancellationToken.None);
+        }
+
+        public async Task<TTransport> AcceptAsync(CancellationToken cancellationToken)
+        {
+            var transport = await AcceptImplementationAsync(cancellationToken);
+
+            if (transport == null)
+            {
+                throw new TTransportException("AcceptAsync() should not return null");
+            }
+
             return transport;
         }
     }

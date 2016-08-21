@@ -24,6 +24,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -129,6 +131,57 @@ namespace Thrift.Transport
                     else //  Otherwise, clean it up ourselves.
                     {
                         ((IDisposable) result).Dispose();
+                    }
+
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new TTransportException(ex.ToString());
+            }
+        }
+
+        protected override async Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return await Task.FromCanceled<TTransport>(cancellationToken);
+            }
+
+            if (_server == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
+            }
+
+            try
+            {
+                TSocket tSocketTransport = null;
+                var tcpClient = await _server.AcceptTcpClientAsync();
+
+                try
+                {
+                    tSocketTransport = new TSocket(tcpClient)
+                    {
+                        Timeout = _clientTimeout
+                    };
+
+                    if (_useBufferedSockets)
+                    {
+                        return new TBufferedTransport(tSocketTransport); 
+                    }
+
+                    return tSocketTransport;
+                }
+                catch (Exception)
+                {
+                    if (tSocketTransport != null)
+                    {
+                        tSocketTransport.Dispose();
+                    }
+                    else //  Otherwise, clean it up ourselves.
+                    {
+                        ((IDisposable)tcpClient).Dispose();
                     }
 
                     throw;

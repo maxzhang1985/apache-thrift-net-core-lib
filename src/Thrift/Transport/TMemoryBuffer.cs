@@ -17,10 +17,9 @@
  * under the License.
  */
 
-using System;
 using System.IO;
-using System.Reflection;
-using Thrift.Protocol;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -44,6 +43,14 @@ namespace Thrift.Transport
             /** do nothing **/
         }
 
+        public override async Task OpenAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+        }
+
         public override void Close()
         {
             /** do nothing **/
@@ -51,73 +58,77 @@ namespace Thrift.Transport
 
         public override int Read(byte[] buffer, int offset, int length)
         {
-#if DEBUG
-            Console.WriteLine("TMemoryBuffer -> Read");
-#endif
             return _byteStream.Read(buffer, offset, length);
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            return await _byteStream.ReadAsync(buffer, offset, length, cancellationToken);
+        }
+
+        public override async Task WriteAsync(byte[] buffer, CancellationToken cancellationToken)
+        {
+            await _byteStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
 
         public override void Write(byte[] buffer, int offset, int length)
         {
-#if DEBUG
-            Console.WriteLine("TMemoryBuffer -> Write");
-#endif
             _byteStream.Write(buffer, offset, length);
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            await _byteStream.WriteAsync(buffer, offset, length, cancellationToken);
+        }
+
+        public override async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public byte[] GetBuffer()
         {
-#if DEBUG
-            Console.WriteLine("TMemoryBuffer -> GetBuffer");
-#endif
             return _byteStream.ToArray();
         }
 
-
         public override bool IsOpen => true;
 
-        public static byte[] Serialize(TAbstractBase s)
-        {
-#if DEBUG
-            Console.WriteLine("TMemoryBuffer -> Serialize");
-#endif
-            var t = new TMemoryBuffer();
-            var p = new TBinaryProtocol(t);
+        //public static byte[] Serialize(TAbstractBase s)
+        //{
+        //    var t = new TMemoryBuffer();
+        //    var p = new TBinaryProtocol(t);
 
-            s.Write(p);
+        //    s.Write(p);
 
-            return t.GetBuffer();
-        }
+        //    return t.GetBuffer();
+        //}
 
-        public static T DeSerialize<T>(byte[] buf) where T : TAbstractBase
-        {
-#if DEBUG
-            Console.WriteLine("TMemoryBuffer -> DeSerialize");
-#endif
-            var trans = new TMemoryBuffer(buf);
-            var p = new TBinaryProtocol(trans);
-            if (typeof(TBase).IsAssignableFrom(typeof(T)))
-            {
-                var method = typeof(T).GetMethod("Read", BindingFlags.Instance | BindingFlags.Public);
-                var t = Activator.CreateInstance<T>();
-                method.Invoke(t, new object[] {p});
-                return t;
-            }
-            else
-            {
-                var method = typeof(T).GetMethod("Read", BindingFlags.Static | BindingFlags.Public);
-                return (T) method.Invoke(null, new object[] {p});
-            }
-        }
+        //public static T DeSerialize<T>(byte[] buf) where T : TAbstractBase
+        //{
+        //    var trans = new TMemoryBuffer(buf);
+        //    var p = new TBinaryProtocol(trans);
+        //    if (typeof(TBase).IsAssignableFrom(typeof(T)))
+        //    {
+        //        var method = typeof(T).GetMethod("Read", BindingFlags.Instance | BindingFlags.Public);
+        //        var t = Activator.CreateInstance<T>();
+        //        method.Invoke(t, new object[] {p});
+        //        return t;
+        //    }
+        //    else
+        //    {
+        //        var method = typeof(T).GetMethod("Read", BindingFlags.Static | BindingFlags.Public);
+        //        return (T) method.Invoke(null, new object[] {p});
+        //    }
+        //}
 
         private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-#if DEBUG
-            Console.WriteLine("TMemoryBuffer -> Dispose");
-#endif
             if (!_isDisposed)
             {
                 if (disposing)

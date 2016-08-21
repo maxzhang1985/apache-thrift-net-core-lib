@@ -20,10 +20,12 @@
  */
 
 using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.Extensions.Logging;
 using Thrift.Protocol;
 
 namespace Thrift.Transport
@@ -32,6 +34,7 @@ namespace Thrift.Transport
     public class THttpHandler
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger _logger;
 
         protected TAsyncProcessor Processor;
 
@@ -41,18 +44,18 @@ namespace Thrift.Transport
         protected const string ContentType = "application/x-thrift";
         protected Encoding Encoding = Encoding.UTF8;
 
-        public THttpHandler(TAsyncProcessor processor, RequestDelegate next)
-            : this(processor, new TBinaryProtocol.Factory(), next)
+        public THttpHandler(TAsyncProcessor processor, RequestDelegate next, ILoggerFactory loggerFactory)
+            : this(processor, new TBinaryProtocol.Factory(), next, loggerFactory)
         {
         }
 
-        public THttpHandler(TAsyncProcessor processor, TProtocolFactory protocolFactory, RequestDelegate next)
-            : this(processor, protocolFactory, protocolFactory, next)
+        public THttpHandler(TAsyncProcessor processor, TProtocolFactory protocolFactory, RequestDelegate next, ILoggerFactory loggerFactory)
+            : this(processor, protocolFactory, protocolFactory, next, loggerFactory)
         {
         }
 
         public THttpHandler(TAsyncProcessor processor, TProtocolFactory inputProtocolFactory,
-            TProtocolFactory outputProtocolFactory, RequestDelegate next)
+            TProtocolFactory outputProtocolFactory, RequestDelegate next, ILoggerFactory loggerFactory)
         {
             if (processor == null)
             {
@@ -69,30 +72,27 @@ namespace Thrift.Transport
                 throw new ArgumentNullException(nameof(outputProtocolFactory));
             }
 
+            if (loggerFactory == null)
+            {
+                throw new ArgumentNullException(nameof(loggerFactory));
+            }
+
             Processor = processor;
             InputProtocolFactory = inputProtocolFactory;
             OutputProtocolFactory = outputProtocolFactory;
 
             _next = next;
+            _logger = loggerFactory.CreateLogger<THttpHandler>();
         }
 
         public async Task Invoke(HttpContext context)
         {
-#if DEBUG
-            Console.WriteLine("THttpHandler -> Invoke");
-#endif
             context.Response.ContentType = ContentType;
-            //context.Response.ContentEncoding = encoding;
-            //ProcessRequest(context.Request.Body, context.Response.Body);
             await ProcessRequestAsync(context);
         }
 
-        //TODO correct TPL statement
         public async Task ProcessRequestAsync(HttpContext context)
         {
-#if DEBUG
-            Console.WriteLine("THttpHandler -> ProcessRequestAsync");
-#endif
             var transport = new TStreamTransport(context.Request.Body, context.Response.Body);
 
             try

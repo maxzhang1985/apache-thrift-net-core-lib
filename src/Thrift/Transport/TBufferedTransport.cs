@@ -19,7 +19,8 @@
 
 using System;
 using System.IO;
-using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -53,6 +54,7 @@ namespace Thrift.Transport
             get
             {
                 CheckNotDisposed();
+
                 return _transport;
             }
         }
@@ -62,18 +64,28 @@ namespace Thrift.Transport
         public override void Open()
         {
             CheckNotDisposed();
+
             _transport.Open();
+        }
+
+        public override async Task OpenAsync(CancellationToken cancellationToken)
+        {
+            CheckNotDisposed();
+
+            await _transport.OpenAsync(cancellationToken);
         }
 
         public override void Close()
         {
             CheckNotDisposed();
+
             _transport.Close();
         }
 
         public override int Read(byte[] buffer, int offset, int length)
         {
             CheckNotDisposed();
+
             ValidateBufferArgs(buffer, offset, length);
 
             if (!IsOpen)
@@ -109,9 +121,49 @@ namespace Thrift.Transport
             return Read(buffer, offset, length);
         }
 
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            CheckNotDisposed();
+
+            ValidateBufferArgs(buffer, offset, length);
+
+            if (!IsOpen)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
+            if (_inputBuffer.Capacity < _bufSize)
+            {
+                _inputBuffer.Capacity = _bufSize;
+            }
+
+            var got = await _inputBuffer.ReadAsync(buffer, offset, length, cancellationToken);
+            if (got > 0)
+            {
+                return got;
+            }
+
+            _inputBuffer.Seek(0, SeekOrigin.Begin);
+            _inputBuffer.SetLength(_inputBuffer.Capacity);
+
+            ArraySegment<byte> bufSegment;
+            _inputBuffer.TryGetBuffer(out bufSegment);
+
+            var filled = await _transport.ReadAsync(bufSegment.Array, 0, (int)_inputBuffer.Length, cancellationToken);
+            _inputBuffer.SetLength(filled);
+
+            if (filled == 0)
+            {
+                return 0;
+            }
+
+            return await ReadAsync(buffer, offset, length, cancellationToken);
+        }
+
         public override void Write(byte[] buffer, int offset, int length)
         {
             CheckNotDisposed();
+
             ValidateBufferArgs(buffer, offset, length);
 
             if (!IsOpen)
@@ -126,6 +178,7 @@ namespace Thrift.Transport
                 var capa = (int) (_outputBuffer.Capacity - _outputBuffer.Length);
                 var writeSize = capa <= length ? capa : length;
                 _outputBuffer.Write(buffer, offset, writeSize);
+
                 writtenCount += writeSize;
                 if (writeSize == capa)
                 {
@@ -154,9 +207,57 @@ namespace Thrift.Transport
             }
         }
 
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
+        {
+            CheckNotDisposed();
+
+            ValidateBufferArgs(buffer, offset, length);
+
+            if (!IsOpen)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
+            // Relative offset from "off" argument
+            var writtenCount = 0;
+            if (_outputBuffer.Length > 0)
+            {
+                var capa = (int)(_outputBuffer.Capacity - _outputBuffer.Length);
+                var writeSize = capa <= length ? capa : length;
+                await _outputBuffer.WriteAsync(buffer, offset, writeSize, cancellationToken);
+
+                writtenCount += writeSize;
+                if (writeSize == capa)
+                {
+                    ArraySegment<byte> bufSegment;
+                    _outputBuffer.TryGetBuffer(out bufSegment);
+                    //await _transport.WriteAsync(bufSegment.Array, 0, (int)_outputBuffer.Length, cancellationToken);
+                    await _transport.WriteAsync(bufSegment.Array, cancellationToken);
+                    _outputBuffer.SetLength(0);
+                }
+            }
+
+            while (length - writtenCount >= _bufSize)
+            {
+                await _transport.WriteAsync(buffer, offset + writtenCount, _bufSize, cancellationToken);
+                writtenCount += _bufSize;
+            }
+
+            var remain = length - writtenCount;
+            if (remain > 0)
+            {
+                if (_outputBuffer.Capacity < _bufSize)
+                {
+                    _outputBuffer.Capacity = _bufSize;
+                }
+                await _outputBuffer.WriteAsync(buffer, offset + writtenCount, remain, cancellationToken);
+            }
+        }
+
         public override void Flush()
         {
             CheckNotDisposed();
+
             if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
@@ -169,7 +270,29 @@ namespace Thrift.Transport
                 _transport.Write(bufSegment.Array, 0, (int) _outputBuffer.Length);
                 _outputBuffer.SetLength(0);
             }
+
             _transport.Flush();
+        }
+
+        public override async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            CheckNotDisposed();
+
+            if (!IsOpen)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
+            }
+
+            if (_outputBuffer.Length > 0)
+            {
+                ArraySegment<byte> bufSegment;
+                _outputBuffer.TryGetBuffer(out bufSegment);
+                //await _transport.WriteAsync(bufSegment.Array, 0, (int)_outputBuffer.Length, cancellationToken);
+                await _transport.WriteAsync(bufSegment.Array, cancellationToken);
+                _outputBuffer.SetLength(0);
+            }
+
+            await _transport.FlushAsync(cancellationToken);
         }
 
         private void CheckNotDisposed()

@@ -21,7 +21,6 @@
  * details.
  */
 
-using System;
 using Microsoft.Extensions.Logging;
 using Thrift.Protocol;
 using Thrift.Transport;

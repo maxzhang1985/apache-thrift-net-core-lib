@@ -7,7 +7,7 @@ namespace Client
 {
     public class Program
     {
-        private static readonly string[] SupportedSampleTransports = { "tcp", "namedpipe" };
+        private static readonly string[] SupportedSampleTransports = { "tcp", "namedpipe", "http" };
         private static readonly string[] SupportedSampleServers = { "simple" };
 
         public static void Main(string[] args)
@@ -49,6 +49,10 @@ namespace Client
                 {
                     new NamedPipeSimpleClientSample().Run();
                 }
+                else if (transport.Equals("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    new HttpClientSample().Run();
+                }
             }
             else
             {
@@ -70,6 +74,7 @@ Options:
     -t (transport): 
         tcp - tcp transport will be used (host - ""localhost"", port - 9090)
         namedpipe - namedpipe transport will be used (pipe address - "".test"")
+        http - http transport will be used (address - ""localhost:9090"")
         
     -s (server):
         simple - simple server will be used 

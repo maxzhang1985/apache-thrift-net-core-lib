@@ -32,10 +32,13 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TSocket : TStreamTransport
     {
-        private int _timeout;
-
-        public TSocket(TcpClient client)
+       public TSocket(TcpClient client)
         {
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
             TcpClient = client;
 
             if (IsOpen)
@@ -54,9 +57,10 @@ namespace Thrift.Transport
         {
             Host = host;
             Port = port;
-            _timeout = timeout;
 
-            InitSocket();
+            TcpClient = new TcpClient();
+            TcpClient.ReceiveTimeout = TcpClient.SendTimeout = timeout;
+            TcpClient.Client.NoDelay = true;
         }
 
         public TcpClient TcpClient { get; private set; }
@@ -68,7 +72,7 @@ namespace Thrift.Transport
             {
                 if (TcpClient != null)
                 {
-                    TcpClient.ReceiveTimeout = TcpClient.SendTimeout = _timeout = value;
+                    TcpClient.ReceiveTimeout = TcpClient.SendTimeout = value;
                 }
             }
         }
@@ -85,13 +89,6 @@ namespace Thrift.Transport
                 return TcpClient.Connected;
             }
         }
-
-        private void InitSocket()
-        {
-            TcpClient = new TcpClient();
-            TcpClient.ReceiveTimeout = TcpClient.SendTimeout = _timeout;
-            TcpClient.Client.NoDelay = true;
-        }
         
         public override void Open()
         {
@@ -105,20 +102,39 @@ namespace Thrift.Transport
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
             }
 
-            if (TcpClient == null)
+            TcpClient.ConnectAsync(Host, Port).GetAwaiter().GetResult();
+
+            InputStream = TcpClient.GetStream();
+            OutputStream = TcpClient.GetStream();
+        }
+
+        public override async Task OpenAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
             {
-                InitSocket();
+                await Task.FromCanceled(cancellationToken);
             }
 
-            TcpClient?.ConnectAsync(Host, Port).GetAwaiter().GetResult();
+            if (IsOpen)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
+            }
 
-            InputStream = TcpClient?.GetStream();
-            OutputStream = TcpClient?.GetStream();
+            if (Port <= 0)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
+            }
+
+            await TcpClient.ConnectAsync(Host, Port);
+
+            InputStream = TcpClient.GetStream();
+            OutputStream = TcpClient.GetStream();
         }
 
         public override void Close()
         {
             base.Close();
+
             if (TcpClient != null)
             {
                 TcpClient.Dispose();

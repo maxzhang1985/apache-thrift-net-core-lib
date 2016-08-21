@@ -23,6 +23,8 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
@@ -172,7 +174,6 @@ namespace Thrift.Transport
 
             try
             {
-                //TODO: Async
                 var client = _server.AcceptTcpClientAsync().Result;
                 client.SendTimeout = client.ReceiveTimeout = _clientTimeout;
 
@@ -188,6 +189,42 @@ namespace Thrift.Transport
                 }
 
                 return socket;
+            }
+            catch (Exception ex)
+            {
+                throw new TTransportException(ex.ToString());
+            }
+        }
+
+        protected override async Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return await Task.FromCanceled<TTransport>(cancellationToken);
+            }
+
+            if (_server == null)
+            {
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
+            }
+
+            try
+            {
+                var client = await _server.AcceptTcpClientAsync();
+                client.SendTimeout = client.ReceiveTimeout = _clientTimeout;
+
+                //wrap the client in an SSL Socket passing in the SSL cert
+                var tTlsSocket = new TTLSSocket(client, _serverCertificate, true, _clientCertValidator, _localCertificateSelectionCallback, _sslProtocols);
+
+                tTlsSocket.SetupTls();
+
+                if (_useBufferedSockets)
+                {
+                    var trans = new TBufferedTransport(tTlsSocket);
+                    return trans;
+                }
+
+                return tTlsSocket;
             }
             catch (Exception ex)
             {

@@ -51,14 +51,12 @@ namespace Thrift.Transport
         {
         }
 
-        public override async Task OpenAsync()
-        {
-            await OpenAsync(CancellationToken.None);
-        }
-
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
         }
 
         public override void Close()
@@ -86,11 +84,6 @@ namespace Thrift.Transport
             return InputStream.Read(buffer, offset, length);
         }
 
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int length)
-        {
-            return await ReadAsync(buffer, offset, length, CancellationToken.None);
-        }
-
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             if (InputStream == null)
@@ -111,11 +104,6 @@ namespace Thrift.Transport
             OutputStream.Write(buffer, offset, length);
         }
 
-        public override async Task WriteAsync(byte[] buffer, int offset, int length)
-        {
-            await WriteAsync(buffer, offset, length, CancellationToken.None);
-        }
-
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             if (InputStream == null)
@@ -134,11 +122,6 @@ namespace Thrift.Transport
             }
 
             OutputStream.Flush();
-        }
-
-        public override async Task FlushAsync()
-        {
-            await FlushAsync(CancellationToken.None);
         }
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
