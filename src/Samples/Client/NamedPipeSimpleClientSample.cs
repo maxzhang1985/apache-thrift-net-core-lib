@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Thrift;
 using Thrift.Protocol;
 using Thrift.Samples;
@@ -16,13 +17,14 @@ namespace Client
                 var protocol = new TBinaryProtocol(transport);
                 var client = new Calculator.Client(protocol);
 
-                transport.Open();
+                transport.OpenAsync(CancellationToken.None).GetAwaiter().GetResult();
+
                 try
                 {
-                    client.Ping();
-                    Console.WriteLine("ping()");
+                    client.PingAsync().GetAwaiter().GetResult();
+                    Console.WriteLine("Ping()");
 
-                    var sum = client.Add(1, 1);
+                    var sum = client.AddAsync(1, 1).GetAwaiter().GetResult();
                     Console.WriteLine("1+1={0}", sum);
 
                     var work = new Work
@@ -34,7 +36,7 @@ namespace Client
 
                     try
                     {
-                        var quotient = client.Calculate(1, work);
+                        client.CalculateAsync(1, work).GetAwaiter().GetResult();
                         Console.WriteLine("Whoa we can divide by 0");
                     }
                     catch (InvalidOperation io)
@@ -48,7 +50,7 @@ namespace Client
 
                     try
                     {
-                        var diff = client.Calculate(1, work);
+                        var diff = client.CalculateAsync(1, work).GetAwaiter().GetResult(); ;
                         Console.WriteLine("15-10={0}", diff);
                     }
                     catch (InvalidOperation io)
@@ -56,7 +58,7 @@ namespace Client
                         Console.WriteLine("Invalid operation: " + io.Why);
                     }
 
-                    var log = client.GetStruct(1);
+                    var log = client.GetStructAsync(1).GetAwaiter().GetResult(); ;
                     Console.WriteLine("Check log: {0}", log.Value);
 
                 }

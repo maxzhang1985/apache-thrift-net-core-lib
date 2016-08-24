@@ -159,6 +159,11 @@ namespace Thrift.Transport
             }
         }
 
+        public override bool IsClientPending()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Callback for Accept Implementation
         /// </summary>

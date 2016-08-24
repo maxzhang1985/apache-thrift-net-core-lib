@@ -92,6 +92,11 @@ namespace Thrift.Transport
             }
         }
 
+        public override bool IsClientPending()
+        {
+            return _server.Pending();
+        }
+
         protected override TTransport AcceptImpl()
         {
             if (_server == null)

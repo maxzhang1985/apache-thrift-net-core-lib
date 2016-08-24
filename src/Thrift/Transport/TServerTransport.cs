@@ -31,6 +31,7 @@ namespace Thrift.Transport
     {
         public abstract void Listen();
         public abstract void Close();
+        public abstract bool IsClientPending();
         protected abstract TTransport AcceptImpl();
 
         protected virtual async Task<TTransport> AcceptImplementationAsync()
@@ -45,7 +46,7 @@ namespace Thrift.Transport
             var transport = AcceptImpl();
             if (transport == null)
             {
-                throw new TTransportException("accept() may not return NULL");
+                throw new TTransportException("Accept() may not return NULL");
             }
             return transport;
         }

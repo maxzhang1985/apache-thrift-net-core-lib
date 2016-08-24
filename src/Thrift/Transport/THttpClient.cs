@@ -348,21 +348,14 @@ namespace Thrift.Transport
                 _cbMethod = cbMethod;
                 AsyncState = state;
             }
-
-            internal byte[] Data { get; set; }
             internal HttpClient HttpClient { get; set; }
             internal TTransportException AsyncException { get; set; }
-
             public object AsyncState { get; }
-
             public WaitHandle AsyncWaitHandle => GetEvtHandle();
-
             public bool CompletedSynchronously => false;
-
             public bool IsCompleted => _isCompleted;
 
             private readonly object _locker = new object();
-
             private ManualResetEvent GetEvtHandle()
             {
                 lock (_locker)

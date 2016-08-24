@@ -1,27 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
+using Serilog.Events;
 using Thrift.Samples;
 using Thrift.Server;
 using Thrift.Transport;
 
 namespace Server
 {
-    public class NamedPipeSimpleServerSample
+    public class TaskFactoryServerSample
     {
         readonly Logger _logger = new LoggerConfiguration()
                     .MinimumLevel.Verbose()
                     .Enrich.WithThreadId()
                     .WriteTo.ColoredConsole(outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm} [{Level}] [ThreadId:{ThreadId}] {SourceContext:l} {Message}{NewLine}{Exception}")
                     .CreateLogger();
-
+        
         public void Run()
         {
-            _logger.Verbose("Selected TAsyncServer with NamedPipe transport");
+            _logger.Verbose("Selected TAsyncServer with TCP transport");
 
             try
             {
@@ -30,16 +29,14 @@ namespace Server
 
                 var handler = new CalculatorAsyncHandler();
                 var processor = new Calculator.AsyncProcessor(handler);
-                var serverTransport = new TNamedPipeServerTransport(".test");
+                var serverTransport = new TServerSocket(9090);
                 var server = new TAsyncServer(processor, serverTransport, fabric);
 
                 _logger.Verbose("Starting the server...");
-
                 server.ServeAsync(source.Token).GetAwaiter().GetResult();
 
-                Console.WriteLine("Press any key to stop...");
+                _logger.Verbose("Press any key to stop...");
                 Console.ReadLine();
-
                 source.Cancel();
             }
             catch (Exception x)
@@ -47,7 +44,7 @@ namespace Server
                 _logger.Error(x.ToString());
             }
 
-            _logger.Verbose("Done.");
+            _logger.Verbose("Server stopped.");
         }
     }
 }

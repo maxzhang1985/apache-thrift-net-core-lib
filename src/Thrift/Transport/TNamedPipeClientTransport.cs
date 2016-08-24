@@ -21,6 +21,7 @@
  * details.
  */
 
+using System;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -120,6 +121,16 @@ namespace Thrift.Transport
             {
                 await Task.FromCanceled(cancellationToken);
             }
+        }
+
+        public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
+        {
+            return _client.FlushAsync();
+        }
+
+        public override void EndFlush(IAsyncResult asyncResult)
+        {
+            asyncResult.AsyncWaitHandle.WaitOne();
         }
 
         protected override void Dispose(bool disposing)

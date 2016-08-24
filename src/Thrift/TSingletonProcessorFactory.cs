@@ -25,16 +25,16 @@ namespace Thrift
     // ReSharper disable once InconsistentNaming
     public class TSingletonProcessorFactory : TProcessorFactory
     {
-        private readonly TProcessor _processor;
+        private readonly TAsyncProcessor _asyncProcessor;
 
-        public TSingletonProcessorFactory(TProcessor processor)
+        public TSingletonProcessorFactory(TAsyncProcessor asyncProcessor)
         {
-            _processor = processor;
+            _asyncProcessor = asyncProcessor;
         }
 
-        public TProcessor GetProcessor(TTransport trans, TServer server = null)
+        public TAsyncProcessor GetAsyncProcessor(TTransport trans, TServer server = null)
         {
-            return _processor;
+            return _asyncProcessor;
         }
     }
 }

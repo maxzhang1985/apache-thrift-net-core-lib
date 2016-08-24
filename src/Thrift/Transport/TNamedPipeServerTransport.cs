@@ -38,6 +38,7 @@ namespace Thrift.Transport
 
         private NamedPipeServerStream _stream = null;
         private bool _asyncMode = true;
+        private volatile bool _isPending = true;
 
         public TNamedPipeServerTransport(string pipeAddress)
         {
@@ -62,8 +63,14 @@ namespace Thrift.Transport
                 finally
                 {
                     _stream = null;
+                    _isPending = false;
                 }
             }
+        }
+
+        public override bool IsClientPending()
+        {
+            return _isPending;
         }
 
         private void EnsurePipeInstance()
@@ -108,6 +115,9 @@ namespace Thrift.Transport
                 
                 var trans = new ServerTransport(_stream);
                 _stream = null; // pass ownership to ServerTransport
+
+                //_isPending = false;
+
                 return trans;
             }
             catch (TTransportException)
@@ -128,10 +138,13 @@ namespace Thrift.Transport
             {
                 EnsurePipeInstance();
 
-                await _stream.WaitForConnectionAsync(CancellationToken.None);
-                
+                await _stream.WaitForConnectionAsync(cancellationToken);
+
                 var trans = new ServerTransport(_stream);
                 _stream = null; // pass ownership to ServerTransport
+
+                //_isPending = false;
+
                 return trans;
             }
             catch (TTransportException)
@@ -220,6 +233,16 @@ namespace Thrift.Transport
                 {
                     await Task.FromCanceled(cancellationToken);
                 }
+            }
+
+            public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
+            {
+                return _stream.FlushAsync();
+            }
+
+            public override void EndFlush(IAsyncResult asyncResult)
+            {
+                asyncResult.AsyncWaitHandle.WaitOne();
             }
 
             protected override void Dispose(bool disposing)

@@ -21,6 +21,9 @@
  * details.
  */
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -36,89 +39,32 @@ namespace Thrift.Server
         protected TTransportFactory OutputTransportFactory;
         protected TProtocolFactory InputProtocolFactory;
         protected TProtocolFactory OutputProtocolFactory;
-        protected TServerEventHandler ServerEventHandler;
         protected readonly ILogger Logger;
 
-        public void setEventHandler(TServerEventHandler seh)
+        protected TServerEventHandler ServerEventHandler;
+        
+        public void SetEventHandler(TServerEventHandler seh)
         {
             ServerEventHandler = seh;
         }
 
-        public TServerEventHandler getEventHandler()
+        public TServerEventHandler GetEventHandler()
         {
             return ServerEventHandler;
         }
 
-        protected TServer(TProcessor processor, TServerTransport serverTransport, ILoggerFactory loggerFactory)
-            : this(processor, serverTransport,
-                new TTransportFactory(),
-                new TTransportFactory(),
-                new TBinaryProtocol.Factory(),
-                new TBinaryProtocol.Factory(),
-                loggerFactory.CreateLogger<TServer>())
-        {
-        }
-
-        protected TServer(TProcessor processor, TServerTransport serverTransport, ILogger logger)
-            : this(processor,
-                serverTransport,
-                new TTransportFactory(),
-                new TTransportFactory(),
-                new TBinaryProtocol.Factory(),
-                new TBinaryProtocol.Factory(),
-                logger)
-        {
-        }
-
-        protected TServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory,
-            ILogger logger)
-            : this(processor,
-                serverTransport,
-                transportFactory,
-                transportFactory,
-                new TBinaryProtocol.Factory(),
-                new TBinaryProtocol.Factory(),
-                logger)
-        {
-        }
-
-        protected TServer(TProcessor processor, TServerTransport serverTransport, TTransportFactory transportFactory,
-            TProtocolFactory protocolFactory, ILogger logger)
-            : this(processor,
-                serverTransport,
-                transportFactory,
-                transportFactory,
-                protocolFactory,
-                protocolFactory,
-                logger)
-        {
-        }
-
-        protected TServer(TProcessor processor,
-            TServerTransport serverTransport,
-            TTransportFactory inputTransportFactory,
-            TTransportFactory outputTransportFactory,
-            TProtocolFactory inputProtocolFactory,
-            TProtocolFactory outputProtocolFactory,
+        protected TServer(TProcessorFactory processorFactory, TServerTransport serverTransport,
+            TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory, 
+            TProtocolFactory inputProtocolFactory, TProtocolFactory outputProtocolFactory, 
             ILogger logger)
         {
-            ProcessorFactory = new TSingletonProcessorFactory(processor);
-            ServerTransport = serverTransport;
-            InputTransportFactory = inputTransportFactory;
-            OutputTransportFactory = outputTransportFactory;
-            InputProtocolFactory = inputProtocolFactory;
-            OutputProtocolFactory = outputProtocolFactory;
-            Logger = logger;
-        }
+            if (processorFactory == null) throw new ArgumentNullException(nameof(processorFactory));
+            if (inputTransportFactory == null) throw new ArgumentNullException(nameof(inputTransportFactory));
+            if (outputTransportFactory == null) throw new ArgumentNullException(nameof(outputTransportFactory));
+            if (inputProtocolFactory == null) throw new ArgumentNullException(nameof(inputProtocolFactory));
+            if (outputProtocolFactory == null) throw new ArgumentNullException(nameof(outputProtocolFactory));
+            if (logger == null) throw new ArgumentNullException(nameof(logger));
 
-        protected TServer(TProcessorFactory processorFactory,
-            TServerTransport serverTransport,
-            TTransportFactory inputTransportFactory,
-            TTransportFactory outputTransportFactory,
-            TProtocolFactory inputProtocolFactory,
-            TProtocolFactory outputProtocolFactory,
-            ILogger logger)
-        {
             ProcessorFactory = processorFactory;
             ServerTransport = serverTransport;
             InputTransportFactory = inputTransportFactory;
@@ -128,7 +74,14 @@ namespace Thrift.Server
             Logger = logger;
         }
 
-        public abstract void Serve();
         public abstract void Stop();
+
+        public virtual async Task ServeAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+        }
     }
 }

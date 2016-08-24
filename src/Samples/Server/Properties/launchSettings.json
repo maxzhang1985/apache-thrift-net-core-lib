@@ -2,7 +2,7 @@
   "profiles": {
     "Server": {
       "commandName": "Project",
-      "commandLineArgs": "-t:http -s:simple"
+      "commandLineArgs": "-t:namedpipe"
     }
   }
 }

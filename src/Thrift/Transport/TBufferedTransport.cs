@@ -231,7 +231,6 @@ namespace Thrift.Transport
                 {
                     ArraySegment<byte> bufSegment;
                     _outputBuffer.TryGetBuffer(out bufSegment);
-                    //await _transport.WriteAsync(bufSegment.Array, 0, (int)_outputBuffer.Length, cancellationToken);
                     await _transport.WriteAsync(bufSegment.Array, cancellationToken);
                     _outputBuffer.SetLength(0);
                 }
@@ -287,7 +286,7 @@ namespace Thrift.Transport
             {
                 ArraySegment<byte> bufSegment;
                 _outputBuffer.TryGetBuffer(out bufSegment);
-                //await _transport.WriteAsync(bufSegment.Array, 0, (int)_outputBuffer.Length, cancellationToken);
+
                 await _transport.WriteAsync(bufSegment.Array, cancellationToken);
                 _outputBuffer.SetLength(0);
             }

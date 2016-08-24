@@ -1,7 +1,7 @@
 # Building of samples for different platforms 
 
 Details: 
-	
+    
 - [https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/index ](https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/index  "https://docs.microsoft.com/en-us/dotnet/articles/core/deploying/index ")
 - [https://docs.microsoft.com/en-us/dotnet/articles/core/rid-catalog](https://docs.microsoft.com/en-us/dotnet/articles/core/rid-catalog "https://docs.microsoft.com/en-us/dotnet/articles/core/rid-catalog")
 
@@ -14,20 +14,19 @@ Usage:
     Server.exe 
         will diplay help information 
 
-    Server.exe -t:<transport> -s:<server>
+    Server.exe -t:<transport>
         will run server with specified arguments
 
 Options:
 
     -t (transport): 
-        tcp - tcp transport will be used (host - ""localhost"", port - 9090)
-        namedpipe - namedpipe transport will be used (pipe address - "".test"")
-        
-    -s (server):
-        simple - simple server will be used 
+        tcp - tcp transport will be used (host - localhost, port - 9090)
+        namedpipe - namedpipe transport will be used (pipe address - .test)
+        http - http transport will be used (address - http://localhost:9090)
 
 Sample:
-    Server.exe -t:tcp -s:simple
+
+    Server.exe -t:tcp
 
 # Client
 
@@ -36,17 +35,16 @@ Usage:
     Client.exe 
         will diplay help information 
 
-    Client.exe -t:<transport> -s:<server>
+    Client.exe -t:<transport>
         will run client with specified arguments
 
 Options:
 
     -t (transport): 
-        tcp - tcp transport will be used (host - ""localhost"", port - 9090)
-        namedpipe - namedpipe transport will be used (pipe address - "".test"")
-        
-    -s (server):
-        simple - simple server will be used 
+        tcp - tcp transport will be used (host - localhost, port - 9090)
+        namedpipe - namedpipe transport will be used (pipe address - .test)
+        http - http transport will be used (address - http://localhost:9090)
 
 Sample:
-    Client.exe -transport:tcp -server:simple
+
+    Client.exe -t:tcp

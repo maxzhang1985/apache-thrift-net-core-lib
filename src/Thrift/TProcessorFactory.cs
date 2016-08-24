@@ -25,6 +25,6 @@ namespace Thrift
     // ReSharper disable once InconsistentNaming
     public interface TProcessorFactory
     {
-        TProcessor GetProcessor(TTransport trans, TServer server = null);
+        TAsyncProcessor GetAsyncProcessor(TTransport trans, TServer server = null);
     }
 }

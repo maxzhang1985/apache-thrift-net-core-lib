@@ -8,7 +8,6 @@ namespace Server
     public class Program
     {
         private static readonly string[] SupportedSampleTransports = {"tcp", "namedpipe", "http"};
-        private static readonly string[] SupportedSampleServers = { "simple" };
 
         public static void Main(string[] args)
         {
@@ -17,9 +16,7 @@ namespace Server
 
         private static void Run(string[] args)
         {
-            if (args == null || args.Length == 1 
-                || !args.Any(x => x.ToLowerInvariant().Contains("-t:")) 
-                || !args.Any(x => x.ToLowerInvariant().Contains("-s:")))
+            if (args == null || !args.Any(x => x.ToLowerInvariant().Contains("-t:")))
             {
                 DisplayHelp();
                 return;
@@ -32,27 +29,17 @@ namespace Server
                 return;
             }
 
-            var server = args.First(x => x.StartsWith("-s")).Split(':')[1];
-            if (string.IsNullOrWhiteSpace(server) || !SupportedSampleServers.Contains(server, StringComparer.OrdinalIgnoreCase))
+            if (transport.Equals("tcp", StringComparison.OrdinalIgnoreCase))
             {
-                DisplayHelp();
-                return;
+                new TaskFactoryServerSample().Run();
             }
-
-            if (server.Equals("simple", StringComparison.OrdinalIgnoreCase))
+            else if (transport.Equals("namedpipe", StringComparison.OrdinalIgnoreCase))
             {
-                if (transport.Equals("tcp", StringComparison.OrdinalIgnoreCase))
-                {
-                    new SimpleServerSample().Run();
-                }
-                else if (transport.Equals("namedpipe", StringComparison.OrdinalIgnoreCase))
-                {
-                    new NamedPipeSimpleServerSample().Run();
-                }
-                else if (transport.Equals("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    new HttpServerSample().Run();
-                }
+                new NamedPipeSimpleServerSample().Run();
+            }
+            else if (transport.Equals("http", StringComparison.OrdinalIgnoreCase))
+            {
+                new HttpServerSample().Run();
             }
             else
             {
@@ -67,7 +54,7 @@ Usage:
     Server.exe 
         will diplay help information 
 
-    Server.exe -t:<transport> -s:<server>
+    Server.exe -t:<transport>
         will run server with specified arguments
 
 Options:
@@ -76,11 +63,8 @@ Options:
         namedpipe - namedpipe transport will be used (pipe address - "".test"")
         http - http transport will be used (http address - ""localhost:9090"")
         
-    -s (server):
-        simple - simple server will be used 
-
 Sample:
-    Server.exe -t:tcp -s:simple
+    Server.exe -t:tcp 
 ");
         }
     }
