@@ -46,16 +46,6 @@ namespace Thrift.Transport
 
         public override bool IsOpen => _client != null && _client.IsConnected;
 
-        public override void Open()
-        {
-            if (IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
-            }
-
-            _client.Connect();
-        }
-
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
             if (IsOpen)
@@ -75,16 +65,6 @@ namespace Thrift.Transport
             }
         }
 
-        public override int Read(byte[] buffer, int offset, int length)
-        {
-            if (_client == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            return _client.Read(buffer, offset, length);
-        }
-
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             if (_client == null)
@@ -93,16 +73,6 @@ namespace Thrift.Transport
             }
 
             return await _client.ReadAsync(buffer, offset, length, cancellationToken);
-        }
-
-        public override void Write(byte[] buffer, int offset, int length)
-        {
-            if (_client == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            _client.Write(buffer, offset, length);
         }
 
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -121,16 +91,6 @@ namespace Thrift.Transport
             {
                 await Task.FromCanceled(cancellationToken);
             }
-        }
-
-        public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
-        {
-            return _client.FlushAsync();
-        }
-
-        public override void EndFlush(IAsyncResult asyncResult)
-        {
-            asyncResult.AsyncWaitHandle.WaitOne();
         }
 
         protected override void Dispose(bool disposing)

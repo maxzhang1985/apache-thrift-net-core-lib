@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,170 +26,238 @@ namespace Facebook.FB303.Test
     /// <summary>
     /// Standard base service
     /// </summary>
+    [ServiceContract(Namespace="")]
     public interface ISync {
       /// <summary>
       /// Returns a descriptive name of the service
       /// </summary>
+      [OperationContract]
       string getName();
       /// <summary>
       /// Returns the version of the service
       /// </summary>
+      [OperationContract]
       string getVersion();
       /// <summary>
       /// Gets the status of this service
       /// </summary>
+      [OperationContract]
       fb_status getStatus();
       /// <summary>
       /// User friendly description of status, such as why the service is in
       /// the dead or warning state, or what is being started or stopped.
       /// </summary>
+      [OperationContract]
       string getStatusDetails();
       /// <summary>
       /// Gets the counters for this service
       /// </summary>
+      [OperationContract]
       Dictionary<string, long> getCounters();
       /// <summary>
       /// Gets the value of a single counter
       /// </summary>
       /// <param name="key"></param>
+      [OperationContract]
       long getCounter(string key);
       /// <summary>
       /// Sets an option
       /// </summary>
       /// <param name="key"></param>
       /// <param name="value"></param>
+      [OperationContract]
       void setOption(string key, string @value);
       /// <summary>
       /// Gets an option
       /// </summary>
       /// <param name="key"></param>
+      [OperationContract]
       string getOption(string key);
       /// <summary>
       /// Gets all options
       /// </summary>
+      [OperationContract]
       Dictionary<string, string> getOptions();
       /// <summary>
       /// Returns a CPU profile over the given time interval (client and server
       /// must agree on the profile format).
       /// </summary>
       /// <param name="profileDurationInSec"></param>
+      [OperationContract]
       string getCpuProfile(int profileDurationInSec);
       /// <summary>
       /// Returns the unix time that the server has been running since
       /// </summary>
+      [OperationContract]
       long aliveSince();
       /// <summary>
       /// Tell the server to reload its configuration, reopen log files, etc
       /// </summary>
+      [OperationContract]
       void reinitialize();
       /// <summary>
       /// Suggest a shutdown to the server
       /// </summary>
+      [OperationContract]
       void shutdown();
     }
 
     /// <summary>
     /// Standard base service
     /// </summary>
-    public interface Iface : ISync {
+    [ServiceContract(Namespace="")]
+    public interface IAsync {
       /// <summary>
       /// Returns a descriptive name of the service
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getName(AsyncCallback callback, object state);
-      string End_getName(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> getNameAsync();
       /// <summary>
       /// Returns the version of the service
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getVersion(AsyncCallback callback, object state);
-      string End_getVersion(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> getVersionAsync();
       /// <summary>
       /// Gets the status of this service
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getStatus(AsyncCallback callback, object state);
-      fb_status End_getStatus(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<fb_status> getStatusAsync();
       /// <summary>
       /// User friendly description of status, such as why the service is in
       /// the dead or warning state, or what is being started or stopped.
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getStatusDetails(AsyncCallback callback, object state);
-      string End_getStatusDetails(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> getStatusDetailsAsync();
       /// <summary>
       /// Gets the counters for this service
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getCounters(AsyncCallback callback, object state);
-      Dictionary<string, long> End_getCounters(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Dictionary<string, long>> getCountersAsync();
       /// <summary>
       /// Gets the value of a single counter
       /// </summary>
       /// <param name="key"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getCounter(AsyncCallback callback, object state, string key);
-      long End_getCounter(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<long> getCounterAsync(string key);
       /// <summary>
       /// Sets an option
       /// </summary>
       /// <param name="key"></param>
       /// <param name="value"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_setOption(AsyncCallback callback, object state, string key, string @value);
-      void End_setOption(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task setOptionAsync(string key, string @value);
       /// <summary>
       /// Gets an option
       /// </summary>
       /// <param name="key"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getOption(AsyncCallback callback, object state, string key);
-      string End_getOption(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> getOptionAsync(string key);
       /// <summary>
       /// Gets all options
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getOptions(AsyncCallback callback, object state);
-      Dictionary<string, string> End_getOptions(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Dictionary<string, string>> getOptionsAsync();
       /// <summary>
       /// Returns a CPU profile over the given time interval (client and server
       /// must agree on the profile format).
       /// </summary>
       /// <param name="profileDurationInSec"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec);
-      string End_getCpuProfile(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> getCpuProfileAsync(int profileDurationInSec);
       /// <summary>
       /// Returns the unix time that the server has been running since
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_aliveSince(AsyncCallback callback, object state);
-      long End_aliveSince(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<long> aliveSinceAsync();
       /// <summary>
       /// Tell the server to reload its configuration, reopen log files, etc
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_reinitialize(AsyncCallback callback, object state);
-      void End_reinitialize(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task reinitializeAsync();
       /// <summary>
       /// Suggest a shutdown to the server
       /// </summary>
-      #if SILVERLIGHT
+      [OperationContract]
+      Task shutdownAsync();
+    }
+
+    /// <summary>
+    /// Standard base service
+    /// </summary>
+    [ServiceContract(Namespace="")]
+    public interface Iface : ISync, IAsync {
+      /// <summary>
+      /// Returns a descriptive name of the service
+      /// </summary>
+      IAsyncResult Begin_getName(AsyncCallback callback, object state);
+      string End_getName(IAsyncResult asyncResult);
+      /// <summary>
+      /// Returns the version of the service
+      /// </summary>
+      IAsyncResult Begin_getVersion(AsyncCallback callback, object state);
+      string End_getVersion(IAsyncResult asyncResult);
+      /// <summary>
+      /// Gets the status of this service
+      /// </summary>
+      IAsyncResult Begin_getStatus(AsyncCallback callback, object state);
+      fb_status End_getStatus(IAsyncResult asyncResult);
+      /// <summary>
+      /// User friendly description of status, such as why the service is in
+      /// the dead or warning state, or what is being started or stopped.
+      /// </summary>
+      IAsyncResult Begin_getStatusDetails(AsyncCallback callback, object state);
+      string End_getStatusDetails(IAsyncResult asyncResult);
+      /// <summary>
+      /// Gets the counters for this service
+      /// </summary>
+      IAsyncResult Begin_getCounters(AsyncCallback callback, object state);
+      Dictionary<string, long> End_getCounters(IAsyncResult asyncResult);
+      /// <summary>
+      /// Gets the value of a single counter
+      /// </summary>
+      /// <param name="key"></param>
+      IAsyncResult Begin_getCounter(AsyncCallback callback, object state, string key);
+      long End_getCounter(IAsyncResult asyncResult);
+      /// <summary>
+      /// Sets an option
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="value"></param>
+      IAsyncResult Begin_setOption(AsyncCallback callback, object state, string key, string @value);
+      void End_setOption(IAsyncResult asyncResult);
+      /// <summary>
+      /// Gets an option
+      /// </summary>
+      /// <param name="key"></param>
+      IAsyncResult Begin_getOption(AsyncCallback callback, object state, string key);
+      string End_getOption(IAsyncResult asyncResult);
+      /// <summary>
+      /// Gets all options
+      /// </summary>
+      IAsyncResult Begin_getOptions(AsyncCallback callback, object state);
+      Dictionary<string, string> End_getOptions(IAsyncResult asyncResult);
+      /// <summary>
+      /// Returns a CPU profile over the given time interval (client and server
+      /// must agree on the profile format).
+      /// </summary>
+      /// <param name="profileDurationInSec"></param>
+      IAsyncResult Begin_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec);
+      string End_getCpuProfile(IAsyncResult asyncResult);
+      /// <summary>
+      /// Returns the unix time that the server has been running since
+      /// </summary>
+      IAsyncResult Begin_aliveSince(AsyncCallback callback, object state);
+      long End_aliveSince(IAsyncResult asyncResult);
+      /// <summary>
+      /// Tell the server to reload its configuration, reopen log files, etc
+      /// </summary>
+      IAsyncResult Begin_reinitialize(AsyncCallback callback, object state);
+      void End_reinitialize(IAsyncResult asyncResult);
+      /// <summary>
+      /// Suggest a shutdown to the server
+      /// </summary>
       IAsyncResult Begin_shutdown(AsyncCallback callback, object state);
       void End_shutdown(IAsyncResult asyncResult);
-      #endif
     }
 
     /// <summary>
@@ -247,7 +320,6 @@ namespace Facebook.FB303.Test
 
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getName(AsyncCallback callback, object state)
       {
         return send_getName(callback, state);
@@ -259,38 +331,32 @@ namespace Facebook.FB303.Test
         return recv_getName();
       }
 
-      #endif
+      public async Task<string> getNameAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return getName();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Returns a descriptive name of the service
       /// </summary>
       public string getName()
       {
-        #if !SILVERLIGHT
-        send_getName();
-        return recv_getName();
-
-        #else
         var asyncResult = Begin_getName(null, null);
         return End_getName(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getName(AsyncCallback callback, object state)
-      #else
-      public void send_getName()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getName", TMessageType.Call, seqid_));
         getName_args args = new getName_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_getName()
@@ -311,7 +377,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getVersion(AsyncCallback callback, object state)
       {
         return send_getVersion(callback, state);
@@ -323,38 +388,32 @@ namespace Facebook.FB303.Test
         return recv_getVersion();
       }
 
-      #endif
+      public async Task<string> getVersionAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return getVersion();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Returns the version of the service
       /// </summary>
       public string getVersion()
       {
-        #if !SILVERLIGHT
-        send_getVersion();
-        return recv_getVersion();
-
-        #else
         var asyncResult = Begin_getVersion(null, null);
         return End_getVersion(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getVersion(AsyncCallback callback, object state)
-      #else
-      public void send_getVersion()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getVersion", TMessageType.Call, seqid_));
         getVersion_args args = new getVersion_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_getVersion()
@@ -375,7 +434,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getStatus(AsyncCallback callback, object state)
       {
         return send_getStatus(callback, state);
@@ -387,38 +445,32 @@ namespace Facebook.FB303.Test
         return recv_getStatus();
       }
 
-      #endif
+      public async Task<fb_status> getStatusAsync()
+      {
+        fb_status retval;
+        retval = await Task.Run(() =>
+        {
+          return getStatus();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Gets the status of this service
       /// </summary>
       public fb_status getStatus()
       {
-        #if !SILVERLIGHT
-        send_getStatus();
-        return recv_getStatus();
-
-        #else
         var asyncResult = Begin_getStatus(null, null);
         return End_getStatus(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getStatus(AsyncCallback callback, object state)
-      #else
-      public void send_getStatus()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getStatus", TMessageType.Call, seqid_));
         getStatus_args args = new getStatus_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public fb_status recv_getStatus()
@@ -439,7 +491,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getStatusDetails(AsyncCallback callback, object state)
       {
         return send_getStatusDetails(callback, state);
@@ -451,7 +502,15 @@ namespace Facebook.FB303.Test
         return recv_getStatusDetails();
       }
 
-      #endif
+      public async Task<string> getStatusDetailsAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return getStatusDetails();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// User friendly description of status, such as why the service is in
@@ -459,31 +518,17 @@ namespace Facebook.FB303.Test
       /// </summary>
       public string getStatusDetails()
       {
-        #if !SILVERLIGHT
-        send_getStatusDetails();
-        return recv_getStatusDetails();
-
-        #else
         var asyncResult = Begin_getStatusDetails(null, null);
         return End_getStatusDetails(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getStatusDetails(AsyncCallback callback, object state)
-      #else
-      public void send_getStatusDetails()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Call, seqid_));
         getStatusDetails_args args = new getStatusDetails_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_getStatusDetails()
@@ -504,7 +549,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getCounters(AsyncCallback callback, object state)
       {
         return send_getCounters(callback, state);
@@ -516,38 +560,32 @@ namespace Facebook.FB303.Test
         return recv_getCounters();
       }
 
-      #endif
+      public async Task<Dictionary<string, long>> getCountersAsync()
+      {
+        Dictionary<string, long> retval;
+        retval = await Task.Run(() =>
+        {
+          return getCounters();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Gets the counters for this service
       /// </summary>
       public Dictionary<string, long> getCounters()
       {
-        #if !SILVERLIGHT
-        send_getCounters();
-        return recv_getCounters();
-
-        #else
         var asyncResult = Begin_getCounters(null, null);
         return End_getCounters(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getCounters(AsyncCallback callback, object state)
-      #else
-      public void send_getCounters()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getCounters", TMessageType.Call, seqid_));
         getCounters_args args = new getCounters_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<string, long> recv_getCounters()
@@ -568,7 +606,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getCounter(AsyncCallback callback, object state, string key)
       {
         return send_getCounter(callback, state, key);
@@ -580,7 +617,15 @@ namespace Facebook.FB303.Test
         return recv_getCounter();
       }
 
-      #endif
+      public async Task<long> getCounterAsync(string key)
+      {
+        long retval;
+        retval = await Task.Run(() =>
+        {
+          return getCounter(key);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Gets the value of a single counter
@@ -588,32 +633,18 @@ namespace Facebook.FB303.Test
       /// <param name="key"></param>
       public long getCounter(string key)
       {
-        #if !SILVERLIGHT
-        send_getCounter(key);
-        return recv_getCounter();
-
-        #else
         var asyncResult = Begin_getCounter(null, null, key);
         return End_getCounter(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getCounter(AsyncCallback callback, object state, string key)
-      #else
-      public void send_getCounter(string key)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getCounter", TMessageType.Call, seqid_));
         getCounter_args args = new getCounter_args();
         args.Key = key;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public long recv_getCounter()
@@ -634,7 +665,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_setOption(AsyncCallback callback, object state, string key, string @value)
       {
         return send_setOption(callback, state, key, @value);
@@ -646,7 +676,13 @@ namespace Facebook.FB303.Test
         recv_setOption();
       }
 
-      #endif
+      public async Task setOptionAsync(string key, string @value)
+      {
+        await Task.Run(() =>
+        {
+          setOption(key, value);
+        });
+      }
 
       /// <summary>
       /// Sets an option
@@ -655,21 +691,11 @@ namespace Facebook.FB303.Test
       /// <param name="value"></param>
       public void setOption(string key, string @value)
       {
-        #if !SILVERLIGHT
-        send_setOption(key, @value);
-        recv_setOption();
-
-        #else
         var asyncResult = Begin_setOption(null, null, key, @value);
         End_setOption(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_setOption(AsyncCallback callback, object state, string key, string @value)
-      #else
-      public void send_setOption(string key, string @value)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("setOption", TMessageType.Call, seqid_));
         setOption_args args = new setOption_args();
@@ -677,11 +703,7 @@ namespace Facebook.FB303.Test
         args.Value = @value;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_setOption()
@@ -699,7 +721,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getOption(AsyncCallback callback, object state, string key)
       {
         return send_getOption(callback, state, key);
@@ -711,7 +732,15 @@ namespace Facebook.FB303.Test
         return recv_getOption();
       }
 
-      #endif
+      public async Task<string> getOptionAsync(string key)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return getOption(key);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Gets an option
@@ -719,32 +748,18 @@ namespace Facebook.FB303.Test
       /// <param name="key"></param>
       public string getOption(string key)
       {
-        #if !SILVERLIGHT
-        send_getOption(key);
-        return recv_getOption();
-
-        #else
         var asyncResult = Begin_getOption(null, null, key);
         return End_getOption(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getOption(AsyncCallback callback, object state, string key)
-      #else
-      public void send_getOption(string key)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getOption", TMessageType.Call, seqid_));
         getOption_args args = new getOption_args();
         args.Key = key;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_getOption()
@@ -765,7 +780,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getOptions(AsyncCallback callback, object state)
       {
         return send_getOptions(callback, state);
@@ -777,38 +791,32 @@ namespace Facebook.FB303.Test
         return recv_getOptions();
       }
 
-      #endif
+      public async Task<Dictionary<string, string>> getOptionsAsync()
+      {
+        Dictionary<string, string> retval;
+        retval = await Task.Run(() =>
+        {
+          return getOptions();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Gets all options
       /// </summary>
       public Dictionary<string, string> getOptions()
       {
-        #if !SILVERLIGHT
-        send_getOptions();
-        return recv_getOptions();
-
-        #else
         var asyncResult = Begin_getOptions(null, null);
         return End_getOptions(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getOptions(AsyncCallback callback, object state)
-      #else
-      public void send_getOptions()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getOptions", TMessageType.Call, seqid_));
         getOptions_args args = new getOptions_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<string, string> recv_getOptions()
@@ -829,7 +837,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec)
       {
         return send_getCpuProfile(callback, state, profileDurationInSec);
@@ -841,7 +848,15 @@ namespace Facebook.FB303.Test
         return recv_getCpuProfile();
       }
 
-      #endif
+      public async Task<string> getCpuProfileAsync(int profileDurationInSec)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return getCpuProfile(profileDurationInSec);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Returns a CPU profile over the given time interval (client and server
@@ -850,32 +865,18 @@ namespace Facebook.FB303.Test
       /// <param name="profileDurationInSec"></param>
       public string getCpuProfile(int profileDurationInSec)
       {
-        #if !SILVERLIGHT
-        send_getCpuProfile(profileDurationInSec);
-        return recv_getCpuProfile();
-
-        #else
         var asyncResult = Begin_getCpuProfile(null, null, profileDurationInSec);
         return End_getCpuProfile(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec)
-      #else
-      public void send_getCpuProfile(int profileDurationInSec)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Call, seqid_));
         getCpuProfile_args args = new getCpuProfile_args();
         args.ProfileDurationInSec = profileDurationInSec;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_getCpuProfile()
@@ -896,7 +897,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_aliveSince(AsyncCallback callback, object state)
       {
         return send_aliveSince(callback, state);
@@ -908,38 +908,32 @@ namespace Facebook.FB303.Test
         return recv_aliveSince();
       }
 
-      #endif
+      public async Task<long> aliveSinceAsync()
+      {
+        long retval;
+        retval = await Task.Run(() =>
+        {
+          return aliveSince();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Returns the unix time that the server has been running since
       /// </summary>
       public long aliveSince()
       {
-        #if !SILVERLIGHT
-        send_aliveSince();
-        return recv_aliveSince();
-
-        #else
         var asyncResult = Begin_aliveSince(null, null);
         return End_aliveSince(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_aliveSince(AsyncCallback callback, object state)
-      #else
-      public void send_aliveSince()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Call, seqid_));
         aliveSince_args args = new aliveSince_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public long recv_aliveSince()
@@ -960,7 +954,6 @@ namespace Facebook.FB303.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_reinitialize(AsyncCallback callback, object state)
       {
         return send_reinitialize(callback, state);
@@ -971,40 +964,32 @@ namespace Facebook.FB303.Test
         oprot_.Transport.EndFlush(asyncResult);
       }
 
-      #endif
+      public async Task reinitializeAsync()
+      {
+        await Task.Run(() =>
+        {
+          reinitialize();
+        });
+      }
 
       /// <summary>
       /// Tell the server to reload its configuration, reopen log files, etc
       /// </summary>
       public void reinitialize()
       {
-        #if !SILVERLIGHT
-        send_reinitialize();
-
-        #else
         var asyncResult = Begin_reinitialize(null, null);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_reinitialize(AsyncCallback callback, object state)
-      #else
-      public void send_reinitialize()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("reinitialize", TMessageType.Oneway, seqid_));
         reinitialize_args args = new reinitialize_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_shutdown(AsyncCallback callback, object state)
       {
         return send_shutdown(callback, state);
@@ -1015,39 +1000,431 @@ namespace Facebook.FB303.Test
         oprot_.Transport.EndFlush(asyncResult);
       }
 
-      #endif
+      public async Task shutdownAsync()
+      {
+        await Task.Run(() =>
+        {
+          shutdown();
+        });
+      }
 
       /// <summary>
       /// Suggest a shutdown to the server
       /// </summary>
       public void shutdown()
       {
-        #if !SILVERLIGHT
-        send_shutdown();
-
-        #else
         var asyncResult = Begin_shutdown(null, null);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_shutdown(AsyncCallback callback, object state)
-      #else
-      public void send_shutdown()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("shutdown", TMessageType.Oneway, seqid_));
         shutdown_args args = new shutdown_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
     }
+    public class AsyncProcessor : TAsyncProcessor {
+      public AsyncProcessor(IAsync iface)
+      {
+        iface_ = iface;
+        processMap_["getName"] = getName_ProcessAsync;
+        processMap_["getVersion"] = getVersion_ProcessAsync;
+        processMap_["getStatus"] = getStatus_ProcessAsync;
+        processMap_["getStatusDetails"] = getStatusDetails_ProcessAsync;
+        processMap_["getCounters"] = getCounters_ProcessAsync;
+        processMap_["getCounter"] = getCounter_ProcessAsync;
+        processMap_["setOption"] = setOption_ProcessAsync;
+        processMap_["getOption"] = getOption_ProcessAsync;
+        processMap_["getOptions"] = getOptions_ProcessAsync;
+        processMap_["getCpuProfile"] = getCpuProfile_ProcessAsync;
+        processMap_["aliveSince"] = aliveSince_ProcessAsync;
+        processMap_["reinitialize"] = reinitialize_ProcessAsync;
+        processMap_["shutdown"] = shutdown_ProcessAsync;
+      }
+
+      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
+      private IAsync iface_;
+      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
+
+      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+      {
+        try
+        {
+          TMessage msg = iprot.ReadMessageBegin();
+          ProcessFunction fn;
+          processMap_.TryGetValue(msg.Name, out fn);
+          if (fn == null) {
+            TProtocolUtil.Skip(iprot, TType.Struct);
+            iprot.ReadMessageEnd();
+            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
+            x.Write(oprot);
+            oprot.WriteMessageEnd();
+            oprot.Transport.Flush();
+            return true;
+          }
+          await fn(msg.SeqID, iprot, oprot);
+        }
+        catch (IOException)
+        {
+          return false;
+        }
+        return true;
+      }
+
+      public async Task getName_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getName_args args = new getName_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getName_result result = new getName_result();
+        try
+        {
+          result.Success = await iface_.getNameAsync();
+          oprot.WriteMessageBegin(new TMessage("getName", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getName", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getVersion_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getVersion_args args = new getVersion_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getVersion_result result = new getVersion_result();
+        try
+        {
+          result.Success = await iface_.getVersionAsync();
+          oprot.WriteMessageBegin(new TMessage("getVersion", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getVersion", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getStatus_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getStatus_args args = new getStatus_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getStatus_result result = new getStatus_result();
+        try
+        {
+          result.Success = await iface_.getStatusAsync();
+          oprot.WriteMessageBegin(new TMessage("getStatus", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getStatus", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getStatusDetails_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getStatusDetails_args args = new getStatusDetails_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getStatusDetails_result result = new getStatusDetails_result();
+        try
+        {
+          result.Success = await iface_.getStatusDetailsAsync();
+          oprot.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getCounters_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getCounters_args args = new getCounters_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getCounters_result result = new getCounters_result();
+        try
+        {
+          result.Success = await iface_.getCountersAsync();
+          oprot.WriteMessageBegin(new TMessage("getCounters", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getCounters", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getCounter_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getCounter_args args = new getCounter_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getCounter_result result = new getCounter_result();
+        try
+        {
+          result.Success = await iface_.getCounterAsync(args.Key);
+          oprot.WriteMessageBegin(new TMessage("getCounter", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getCounter", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task setOption_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        setOption_args args = new setOption_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        setOption_result result = new setOption_result();
+        try
+        {
+          await iface_.setOptionAsync(args.Key, args.Value);
+          oprot.WriteMessageBegin(new TMessage("setOption", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("setOption", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getOption_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getOption_args args = new getOption_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getOption_result result = new getOption_result();
+        try
+        {
+          result.Success = await iface_.getOptionAsync(args.Key);
+          oprot.WriteMessageBegin(new TMessage("getOption", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getOption", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getOptions_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getOptions_args args = new getOptions_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getOptions_result result = new getOptions_result();
+        try
+        {
+          result.Success = await iface_.getOptionsAsync();
+          oprot.WriteMessageBegin(new TMessage("getOptions", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getOptions", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task getCpuProfile_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        getCpuProfile_args args = new getCpuProfile_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        getCpuProfile_result result = new getCpuProfile_result();
+        try
+        {
+          result.Success = await iface_.getCpuProfileAsync(args.ProfileDurationInSec);
+          oprot.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task aliveSince_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        aliveSince_args args = new aliveSince_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        aliveSince_result result = new aliveSince_result();
+        try
+        {
+          result.Success = await iface_.aliveSinceAsync();
+          oprot.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task reinitialize_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        reinitialize_args args = new reinitialize_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        try
+        {
+          await iface_.reinitializeAsync();
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+        }
+      }
+
+      public async Task shutdown_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        shutdown_args args = new shutdown_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        try
+        {
+          await iface_.shutdownAsync();
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+        }
+      }
+
+    }
+
     public class Processor : TProcessor {
       public Processor(ISync iface)
       {
@@ -1451,6 +1828,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getName_args : TBase
     {
 
@@ -1513,10 +1891,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getName_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -1531,13 +1911,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getName_result() {
       }
@@ -1624,6 +2017,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getVersion_args : TBase
     {
 
@@ -1686,10 +2080,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getVersion_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -1704,13 +2100,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getVersion_result() {
       }
@@ -1797,6 +2206,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getStatus_args : TBase
     {
 
@@ -1859,6 +2269,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getStatus_result : TBase
     {
       private fb_status _success;
@@ -1867,6 +2278,7 @@ namespace Facebook.FB303.Test
       /// 
       /// <seealso cref="fb_status"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public fb_status Success
       {
         get
@@ -1881,13 +2293,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getStatus_result() {
       }
@@ -1972,6 +2397,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getStatusDetails_args : TBase
     {
 
@@ -2034,10 +2460,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getStatusDetails_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -2052,13 +2480,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getStatusDetails_result() {
       }
@@ -2145,6 +2586,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getCounters_args : TBase
     {
 
@@ -2207,10 +2649,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getCounters_result : TBase
     {
       private Dictionary<string, long> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, long> Success
       {
         get
@@ -2225,13 +2669,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getCounters_result() {
       }
@@ -2338,10 +2795,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getCounter_args : TBase
     {
       private string _key;
 
+      [DataMember(Order = 0)]
       public string Key
       {
         get
@@ -2356,13 +2815,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool key;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeKey()
+      {
+        return __isset.key;
+      }
+
+      #endregion XmlSerializer support
 
       public getCounter_args() {
       }
@@ -2446,10 +2918,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getCounter_result : TBase
     {
       private long _success;
 
+      [DataMember(Order = 0)]
       public long Success
       {
         get
@@ -2464,13 +2938,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getCounter_result() {
       }
@@ -2555,11 +3042,13 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class setOption_args : TBase
     {
       private string _key;
       private string _value;
 
+      [DataMember(Order = 0)]
       public string Key
       {
         get
@@ -2573,6 +3062,7 @@ namespace Facebook.FB303.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public string Value
       {
         get
@@ -2587,14 +3077,33 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool key;
+        [DataMember]
         public bool @value;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeKey()
+      {
+        return __isset.key;
+      }
+
+      public bool ShouldSerializeValue()
+      {
+        return __isset.@value;
+      }
+
+      #endregion XmlSerializer support
 
       public setOption_args() {
       }
@@ -2699,6 +3208,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class setOption_result : TBase
     {
 
@@ -2762,10 +3272,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getOption_args : TBase
     {
       private string _key;
 
+      [DataMember(Order = 0)]
       public string Key
       {
         get
@@ -2780,13 +3292,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool key;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeKey()
+      {
+        return __isset.key;
+      }
+
+      #endregion XmlSerializer support
 
       public getOption_args() {
       }
@@ -2870,10 +3395,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getOption_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -2888,13 +3415,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getOption_result() {
       }
@@ -2981,6 +3521,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getOptions_args : TBase
     {
 
@@ -3043,10 +3584,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getOptions_result : TBase
     {
       private Dictionary<string, string> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, string> Success
       {
         get
@@ -3061,13 +3604,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getOptions_result() {
       }
@@ -3174,10 +3730,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getCpuProfile_args : TBase
     {
       private int _profileDurationInSec;
 
+      [DataMember(Order = 0)]
       public int ProfileDurationInSec
       {
         get
@@ -3192,13 +3750,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool profileDurationInSec;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeProfileDurationInSec()
+      {
+        return __isset.profileDurationInSec;
+      }
+
+      #endregion XmlSerializer support
 
       public getCpuProfile_args() {
       }
@@ -3282,10 +3853,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class getCpuProfile_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -3300,13 +3873,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public getCpuProfile_result() {
       }
@@ -3393,6 +3979,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class aliveSince_args : TBase
     {
 
@@ -3455,10 +4042,12 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class aliveSince_result : TBase
     {
       private long _success;
 
+      [DataMember(Order = 0)]
       public long Success
       {
         get
@@ -3473,13 +4062,26 @@ namespace Facebook.FB303.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public aliveSince_result() {
       }
@@ -3564,6 +4166,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class reinitialize_args : TBase
     {
 
@@ -3626,6 +4229,7 @@ namespace Facebook.FB303.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class shutdown_args : TBase
     {
 

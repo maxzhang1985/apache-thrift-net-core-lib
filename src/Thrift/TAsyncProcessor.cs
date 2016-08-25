@@ -17,6 +17,7 @@
  * under the License.
  */
 
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift.Protocol;
 
@@ -33,7 +34,8 @@ namespace Thrift
         /// </summary>
         /// <param name="iprot">The input protocol.</param>
         /// <param name="oprot">The output protocol.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>true if there's more to process, false otherwise.</returns>
-        Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot);
+        Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken);
     }
 }

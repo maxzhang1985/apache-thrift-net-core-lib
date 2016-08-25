@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,11 +26,13 @@ namespace Thrift.Samples
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class SharedStruct : TBase
   {
     private int _Key;
     private string _Value;
 
+    [DataMember(Order = 0)]
     public int Key
     {
       get
@@ -40,6 +46,7 @@ namespace Thrift.Samples
       }
     }
 
+    [DataMember(Order = 0)]
     public string Value
     {
       get
@@ -54,14 +61,33 @@ namespace Thrift.Samples
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool Key;
+      [DataMember]
       public bool @Value;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeKey()
+    {
+      return __isset.Key;
+    }
+
+    public bool ShouldSerializeValue()
+    {
+      return __isset.@Value;
+    }
+
+    #endregion XmlSerializer support
 
     public SharedStruct() {
     }

@@ -76,16 +76,12 @@ namespace Thrift.Protocol
             _isDisposed = true;
         }
 
-        public abstract void WriteMessageBegin(TMessage message);
-
         public virtual async Task WriteMessageBeginAsync(TMessage message)
         {
             await WriteMessageBeginAsync(message, CancellationToken.None);
         }
 
         public abstract Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken);
-
-        public abstract void WriteMessageEnd();
 
         public virtual async Task WriteMessageEndAsync()
         {
@@ -94,16 +90,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteMessageEndAsync(CancellationToken cancellationToken);
 
-        public abstract void WriteStructBegin(TStruct struc);
-
         public virtual async Task WriteStructBeginAsync(TStruct struc)
         {
             await WriteStructBeginAsync(struc, CancellationToken.None);
         }
 
         public abstract Task WriteStructBeginAsync(TStruct struc, CancellationToken cancellationToken);
-
-        public abstract void WriteStructEnd();
 
         public virtual async Task WriteStructEndAsync()
         {
@@ -112,16 +104,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteStructEndAsync(CancellationToken cancellationToken);
 
-        public abstract void WriteFieldBegin(TField field);
-
         public virtual async Task WriteFieldBeginAsync(TField field)
         {
             await WriteFieldBeginAsync(field, CancellationToken.None);
         }
 
         public abstract Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken);
-
-        public abstract void WriteFieldEnd();
 
         public virtual async Task WriteFieldEndAsync()
         {
@@ -130,16 +118,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteFieldEndAsync(CancellationToken cancellationToken);
 
-        public abstract void WriteFieldStop();
-
         public virtual async Task WriteFieldStopAsync()
         {
             await WriteFieldStopAsync(CancellationToken.None);
         }
 
         public abstract Task WriteFieldStopAsync(CancellationToken cancellationToken);
-
-        public abstract void WriteMapBegin(TMap map);
 
         public virtual async Task WriteMapBeginAsync(TMap map)
         {
@@ -148,16 +132,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken);
 
-        public abstract void WriteMapEnd();
-
         public virtual async Task WriteMapEndAsync()
         {
             await WriteMapEndAsync(CancellationToken.None);
         }
 
         public abstract Task WriteMapEndAsync(CancellationToken cancellationToken);
-
-        public abstract void WriteListBegin(TList list);
 
         public virtual async Task WriteListBeginAsync(TList list)
         {
@@ -166,16 +146,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteListBeginAsync(TList list, CancellationToken cancellationToken);
 
-        public abstract void WriteListEnd();
-
         public virtual async Task WriteListEndAsync()
         {
             await WriteListEndAsync(CancellationToken.None);
         }
 
         public abstract Task WriteListEndAsync(CancellationToken cancellationToken);
-
-        public abstract void WriteSetBegin(TSet set);
 
         public virtual async Task WriteSetBeginAsync(TSet set)
         {
@@ -184,16 +160,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken);
 
-        public abstract void WriteSetEnd();
-
         public virtual async Task WriteSetEndAsync()
         {
             await WriteSetEndAsync(CancellationToken.None);
         }
 
         public abstract Task WriteSetEndAsync(CancellationToken cancellationToken);
-
-        public abstract void WriteBool(bool b);
 
         public virtual async Task WriteBoolAsync(bool b)
         {
@@ -202,16 +174,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteBoolAsync(bool b, CancellationToken cancellationToken);
 
-        public abstract void WriteByte(sbyte b);
-
         public virtual async Task WriteByteAsync(sbyte b)
         {
             await WriteByteAsync(b, CancellationToken.None);
         }
 
         public abstract Task WriteByteAsync(sbyte b, CancellationToken cancellationToken);
-
-        public abstract void WriteI16(short int16);
 
         public virtual async Task WriteI16Async(short i16)
         {
@@ -220,16 +188,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteI16Async(short i16, CancellationToken cancellationToken);
 
-        public abstract void WriteI32(int i32);
-
         public virtual async Task WriteI32Async(int i32)
         {
             await WriteI32Async(i32, CancellationToken.None);
         }
 
         public abstract Task WriteI32Async(int i32, CancellationToken cancellationToken);
-
-        public abstract void WriteI64(long i64);
 
         public virtual async Task WriteI64Async(long i64)
         {
@@ -238,19 +202,12 @@ namespace Thrift.Protocol
 
         public abstract Task WriteI64Async(long i64, CancellationToken cancellationToken);
 
-        public abstract void WriteDouble(double d);
-
         public virtual async Task WriteDoubleAsync(double d)
         {
             await WriteDoubleAsync(d, CancellationToken.None);
         }
 
         public abstract Task WriteDoubleAsync(double d, CancellationToken cancellationToken);
-
-        public virtual void WriteString(string s)
-        {
-            WriteBinary(Encoding.UTF8.GetBytes(s));
-        }
 
         public virtual async Task WriteStringAsync(string s)
         {
@@ -263,16 +220,12 @@ namespace Thrift.Protocol
             await WriteBinaryAsync(bytes, cancellationToken);
         }
 
-        public abstract void WriteBinary(byte[] b);
-
         public virtual async Task WriteBinaryAsync(byte[] b)
         {
             await WriteBinaryAsync(b, CancellationToken.None);
         }
 
         public abstract Task WriteBinaryAsync(byte[] b, CancellationToken cancellationToken);
-
-        public abstract TMessage ReadMessageBegin();
 
         public virtual async Task<TMessage> ReadMessageBeginAsync()
         {
@@ -281,16 +234,12 @@ namespace Thrift.Protocol
 
         public abstract Task<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken);
 
-        public abstract void ReadMessageEnd();
-
         public virtual async Task ReadMessageEndAsync()
         {
             await ReadMessageEndAsync(CancellationToken.None);
         }
 
         public abstract Task ReadMessageEndAsync(CancellationToken cancellationToken);
-
-        public abstract TStruct ReadStructBegin();
 
         public virtual async Task<TStruct> ReadStructBeginAsync()
         {
@@ -299,16 +248,12 @@ namespace Thrift.Protocol
 
         public abstract Task<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken);
 
-        public abstract void ReadStructEnd();
-
         public virtual async Task ReadStructEndAsync()
         {
             await ReadStructEndAsync(CancellationToken.None);
         }
 
         public abstract Task ReadStructEndAsync(CancellationToken cancellationToken);
-
-        public abstract TField ReadFieldBegin();
 
         public virtual async Task<TField> ReadFieldBeginAsync()
         {
@@ -317,16 +262,12 @@ namespace Thrift.Protocol
 
         public abstract Task<TField> ReadFieldBeginAsync(CancellationToken cancellationToken);
 
-        public abstract void ReadFieldEnd();
-
         public virtual async Task ReadFieldEndAsync()
         {
             await ReadFieldEndAsync(CancellationToken.None);
         }
 
         public abstract Task ReadFieldEndAsync(CancellationToken cancellationToken);
-
-        public abstract TMap ReadMapBegin();
 
         public virtual async Task<TMap> ReadMapBeginAsync()
         {
@@ -335,16 +276,12 @@ namespace Thrift.Protocol
 
         public abstract Task<TMap> ReadMapBeginAsync(CancellationToken cancellationToken);
 
-        public abstract void ReadMapEnd();
-
         public virtual async Task ReadMapEndAsync()
         {
             await ReadMapEndAsync(CancellationToken.None);
         }
 
         public abstract Task ReadMapEndAsync(CancellationToken cancellationToken);
-
-        public abstract TList ReadListBegin();
 
         public virtual async Task<TList> ReadListBeginAsync()
         {
@@ -353,16 +290,12 @@ namespace Thrift.Protocol
 
         public abstract Task<TList> ReadListBeginAsync(CancellationToken cancellationToken);
 
-        public abstract void ReadListEnd();
-
         public virtual async Task ReadListEndAsync()
         {
             await ReadListEndAsync(CancellationToken.None);
         }
 
         public abstract Task ReadListEndAsync(CancellationToken cancellationToken);
-
-        public abstract TSet ReadSetBegin();
 
         public virtual async Task<TSet> ReadSetBeginAsync()
         {
@@ -371,16 +304,12 @@ namespace Thrift.Protocol
 
         public abstract Task<TSet> ReadSetBeginAsync(CancellationToken cancellationToken);
 
-        public abstract void ReadSetEnd();
-
         public virtual async Task ReadSetEndAsync()
         {
             await ReadSetEndAsync(CancellationToken.None);
         }
 
         public abstract Task ReadSetEndAsync(CancellationToken cancellationToken);
-
-        public abstract bool ReadBool();
 
         public virtual async Task<bool> ReadBoolAsync()
         {
@@ -389,16 +318,12 @@ namespace Thrift.Protocol
 
         public abstract Task<bool> ReadBoolAsync(CancellationToken cancellationToken);
 
-        public abstract sbyte ReadByte();
-
         public virtual async Task<sbyte> ReadByteAsync()
         {
             return await ReadByteAsync(CancellationToken.None);
         }
 
         public abstract Task<sbyte> ReadByteAsync(CancellationToken cancellationToken);
-
-        public abstract short ReadI16();
 
         public virtual async Task<short> ReadI16Async()
         {
@@ -407,16 +332,12 @@ namespace Thrift.Protocol
 
         public abstract Task<short> ReadI16Async(CancellationToken cancellationToken);
 
-        public abstract int ReadI32();
-
         public virtual async Task<int> ReadI32Async()
         {
             return await ReadI32Async(CancellationToken.None);
         }
 
         public abstract Task<int> ReadI32Async(CancellationToken cancellationToken);
-
-        public abstract long ReadI64();
 
         public virtual async Task<long> ReadI64Async()
         {
@@ -425,20 +346,12 @@ namespace Thrift.Protocol
 
         public abstract Task<long> ReadI64Async(CancellationToken cancellationToken);
 
-        public abstract double ReadDouble();
-
         public virtual async Task<double> ReadDoubleAsync()
         {
             return await ReadDoubleAsync(CancellationToken.None);
         }
 
         public abstract Task<double> ReadDoubleAsync(CancellationToken cancellationToken);
-
-        public virtual string ReadString()
-        {
-            var buf = ReadBinary();
-            return Encoding.UTF8.GetString(buf, 0, buf.Length);
-        }
 
         public virtual async Task<string> ReadStringAsync()
         {
@@ -450,8 +363,6 @@ namespace Thrift.Protocol
             var buf = await ReadBinaryAsync(cancellationToken);
             return Encoding.UTF8.GetString(buf, 0, buf.Length);
         }
-
-        public abstract byte[] ReadBinary();
 
         public virtual async Task<byte[]> ReadBinaryAsync()
         {

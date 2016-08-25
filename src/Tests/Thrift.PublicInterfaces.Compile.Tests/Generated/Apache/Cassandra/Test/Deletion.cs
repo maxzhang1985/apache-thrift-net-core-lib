@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -24,12 +29,14 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Deletion : TBase
   {
     private long _timestamp;
     private byte[] _super_column;
     private SlicePredicate _predicate;
 
+    [DataMember(Order = 0)]
     public long Timestamp
     {
       get
@@ -43,6 +50,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public byte[] Super_column
     {
       get
@@ -56,6 +64,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public SlicePredicate Predicate
     {
       get
@@ -70,15 +79,40 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool timestamp;
+      [DataMember]
       public bool super_column;
+      [DataMember]
       public bool predicate;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeTimestamp()
+    {
+      return __isset.timestamp;
+    }
+
+    public bool ShouldSerializeSuper_column()
+    {
+      return __isset.super_column;
+    }
+
+    public bool ShouldSerializePredicate()
+    {
+      return __isset.predicate;
+    }
+
+    #endregion XmlSerializer support
 
     public Deletion() {
     }

@@ -77,7 +77,10 @@ namespace Thrift.Server
 
             Logger.LogTrace("Started listening at server");
 
-            ServerEventHandler?.PreServe();
+            if (ServerEventHandler != null)
+            {
+                await ServerEventHandler.PreServeAsync(cancellationToken);
+            }
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -137,19 +140,22 @@ namespace Thrift.Server
 
                 if (ServerEventHandler != null)
                 {
-                    connectionContext = ServerEventHandler.CreateContext(inputProtocol, outputProtocol);
+                    connectionContext = await ServerEventHandler.CreateContextAsync(inputProtocol, outputProtocol, cancellationToken);
                 }
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    if (!inputTransport.Peek())
+                    if (!await inputTransport.PeekAsync(cancellationToken))
                     {
                         break;
                     }
 
-                    ServerEventHandler?.ProcessContext(connectionContext, inputTransport);
+                    if (ServerEventHandler != null)
+                    {
+                        await ServerEventHandler.ProcessContextAsync(connectionContext, inputTransport, cancellationToken);
+                    }
 
-                    if (!await processor.ProcessAsync(inputProtocol, outputProtocol))
+                    if (!await processor.ProcessAsync(inputProtocol, outputProtocol, cancellationToken))
                     {
                         break;
                     }
@@ -164,7 +170,10 @@ namespace Thrift.Server
                 Logger.LogError($"Error: {x}");
             }
 
-            ServerEventHandler?.DeleteContext(connectionContext, inputProtocol, outputProtocol);
+            if (ServerEventHandler != null)
+            {
+                await ServerEventHandler.DeleteContextAsync(connectionContext, inputProtocol, outputProtocol, cancellationToken);
+            }
 
             inputTransport?.Close();
             outputTransport?.Close();

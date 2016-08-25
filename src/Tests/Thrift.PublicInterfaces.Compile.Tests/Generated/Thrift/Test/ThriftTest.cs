@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -18,10 +23,12 @@ using Thrift.Transport;
 namespace Thrift.Test
 {
   public partial class ThriftTest {
+    [ServiceContract(Namespace="")]
     public interface ISync {
       /// <summary>
       /// Prints "testVoid()" and returns nothing.
       /// </summary>
+      [OperationContract]
       void testVoid();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -29,6 +36,7 @@ namespace Thrift.Test
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       string testString(string thing);
       /// <summary>
       /// Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
@@ -36,6 +44,7 @@ namespace Thrift.Test
       /// @return bool  - returns the bool 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       bool testBool(bool thing);
       /// <summary>
       /// Prints 'testByte("%d")' with thing as '%d'
@@ -44,6 +53,7 @@ namespace Thrift.Test
       /// @return i8 - returns the i8/byte 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       sbyte testByte(sbyte thing);
       /// <summary>
       /// Prints 'testI32("%d")' with thing as '%d'
@@ -51,6 +61,7 @@ namespace Thrift.Test
       /// @return i32 - returns the i32 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       int testI32(int thing);
       /// <summary>
       /// Prints 'testI64("%d")' with thing as '%d'
@@ -58,6 +69,7 @@ namespace Thrift.Test
       /// @return i64 - returns the i64 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       long testI64(long thing);
       /// <summary>
       /// Prints 'testDouble("%f")' with thing as '%f'
@@ -65,6 +77,7 @@ namespace Thrift.Test
       /// @return double - returns the double 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       double testDouble(double thing);
       /// <summary>
       /// Prints 'testBinary("%s")' where '%s' is a hex-formatted string of thing's data
@@ -72,6 +85,7 @@ namespace Thrift.Test
       /// @return binary  - returns the binary 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       byte[] testBinary(byte[] thing);
       /// <summary>
       /// Prints 'testStruct("{%s}")' where thing has been formatted into a string of comma separated values
@@ -79,6 +93,7 @@ namespace Thrift.Test
       /// @return Xtruct - returns the Xtruct 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Xtruct testStruct(Xtruct thing);
       /// <summary>
       /// Prints 'testNest("{%s}")' where thing has been formatted into a string of the nested struct
@@ -86,6 +101,7 @@ namespace Thrift.Test
       /// @return Xtruct2 - returns the Xtruct2 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Xtruct2 testNest(Xtruct2 thing);
       /// <summary>
       /// Prints 'testMap("{%s")' where thing has been formatted into a string of  'key => value' pairs
@@ -94,6 +110,7 @@ namespace Thrift.Test
       /// @return map<i32,i32> - returns the map<i32,i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Dictionary<int, int> testMap(Dictionary<int, int> thing);
       /// <summary>
       /// Prints 'testStringMap("{%s}")' where thing has been formatted into a string of  'key => value' pairs
@@ -102,6 +119,7 @@ namespace Thrift.Test
       /// @return map<string,string> - returns the map<string,string> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Dictionary<string, string> testStringMap(Dictionary<string, string> thing);
       /// <summary>
       /// Prints 'testSet("{%s}")' where thing has been formatted into a string of  values
@@ -110,6 +128,7 @@ namespace Thrift.Test
       /// @return set<i32> - returns the set<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       THashSet<int> testSet(THashSet<int> thing);
       /// <summary>
       /// Prints 'testList("{%s}")' where thing has been formatted into a string of  values
@@ -118,6 +137,7 @@ namespace Thrift.Test
       /// @return list<i32> - returns the list<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       List<int> testList(List<int> thing);
       /// <summary>
       /// Prints 'testEnum("%d")' where thing has been formatted into it's numeric value
@@ -125,6 +145,7 @@ namespace Thrift.Test
       /// @return Numberz - returns the Numberz 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Numberz testEnum(Numberz thing);
       /// <summary>
       /// Prints 'testTypedef("%d")' with thing as '%d'
@@ -132,6 +153,7 @@ namespace Thrift.Test
       /// @return UserId - returns the UserId 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       long testTypedef(long thing);
       /// <summary>
       /// Prints 'testMapMap("%d")' with hello as '%d'
@@ -140,6 +162,7 @@ namespace Thrift.Test
       ///   {-4 => {-4 => -4, -3 => -3, -2 => -2, -1 => -1, }, 4 => {1 => 1, 2 => 2, 3 => 3, 4 => 4, }, }
       /// </summary>
       /// <param name="hello"></param>
+      [OperationContract]
       Dictionary<int, Dictionary<int, int>> testMapMap(int hello);
       /// <summary>
       /// So you think you've got this all worked, out eh?
@@ -153,6 +176,7 @@ namespace Thrift.Test
       /// @return map<UserId, map<Numberz,Insanity>> - a map with the above values
       /// </summary>
       /// <param name="argument"></param>
+      [OperationContract]
       Dictionary<long, Dictionary<Numberz, Insanity>> testInsanity(Insanity argument);
       /// <summary>
       /// Prints 'testMulti()'
@@ -171,6 +195,7 @@ namespace Thrift.Test
       /// <param name="arg3"></param>
       /// <param name="arg4"></param>
       /// <param name="arg5"></param>
+      [OperationContract]
       Xtruct testMulti(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5);
       /// <summary>
       /// Print 'testException(%s)' with arg as '%s'
@@ -180,6 +205,8 @@ namespace Thrift.Test
       /// else do not throw anything
       /// </summary>
       /// <param name="arg"></param>
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
       void testException(string arg);
       /// <summary>
       /// Print 'testMultiException(%s, %s)' with arg0 as '%s' and arg1 as '%s'
@@ -191,6 +218,9 @@ namespace Thrift.Test
       /// </summary>
       /// <param name="arg0"></param>
       /// <param name="arg1"></param>
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
+      [FaultContract(typeof(Xception2Fault))]
       Xtruct testMultiException(string arg0, string arg1);
       /// <summary>
       /// Print 'testOneway(%d): Sleeping...' with secondsToSleep as '%d'
@@ -199,37 +229,33 @@ namespace Thrift.Test
       /// @param i32 secondsToSleep - the number of seconds to sleep
       /// </summary>
       /// <param name="secondsToSleep"></param>
+      [OperationContract]
       void testOneway(int secondsToSleep);
     }
 
-    public interface Iface : ISync {
+    [ServiceContract(Namespace="")]
+    public interface IAsync {
       /// <summary>
       /// Prints "testVoid()" and returns nothing.
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testVoid(AsyncCallback callback, object state);
-      void End_testVoid(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task testVoidAsync();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
       /// @param string thing - the string to print
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testString(AsyncCallback callback, object state, string thing);
-      string End_testString(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> testStringAsync(string thing);
       /// <summary>
       /// Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
       /// @param bool  thing - the bool data to print
       /// @return bool  - returns the bool 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testBool(AsyncCallback callback, object state, bool thing);
-      bool End_testBool(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<bool> testBoolAsync(bool thing);
       /// <summary>
       /// Prints 'testByte("%d")' with thing as '%d'
       /// The types i8 and byte are synonyms, use of i8 is encouraged, byte still exists for the sake of compatibility.
@@ -237,70 +263,56 @@ namespace Thrift.Test
       /// @return i8 - returns the i8/byte 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testByte(AsyncCallback callback, object state, sbyte thing);
-      sbyte End_testByte(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<sbyte> testByteAsync(sbyte thing);
       /// <summary>
       /// Prints 'testI32("%d")' with thing as '%d'
       /// @param i32 thing - the i32 to print
       /// @return i32 - returns the i32 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testI32(AsyncCallback callback, object state, int thing);
-      int End_testI32(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<int> testI32Async(int thing);
       /// <summary>
       /// Prints 'testI64("%d")' with thing as '%d'
       /// @param i64 thing - the i64 to print
       /// @return i64 - returns the i64 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testI64(AsyncCallback callback, object state, long thing);
-      long End_testI64(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<long> testI64Async(long thing);
       /// <summary>
       /// Prints 'testDouble("%f")' with thing as '%f'
       /// @param double thing - the double to print
       /// @return double - returns the double 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testDouble(AsyncCallback callback, object state, double thing);
-      double End_testDouble(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<double> testDoubleAsync(double thing);
       /// <summary>
       /// Prints 'testBinary("%s")' where '%s' is a hex-formatted string of thing's data
       /// @param binary  thing - the binary data to print
       /// @return binary  - returns the binary 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testBinary(AsyncCallback callback, object state, byte[] thing);
-      byte[] End_testBinary(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<byte[]> testBinaryAsync(byte[] thing);
       /// <summary>
       /// Prints 'testStruct("{%s}")' where thing has been formatted into a string of comma separated values
       /// @param Xtruct thing - the Xtruct to print
       /// @return Xtruct - returns the Xtruct 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testStruct(AsyncCallback callback, object state, Xtruct thing);
-      Xtruct End_testStruct(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Xtruct> testStructAsync(Xtruct thing);
       /// <summary>
       /// Prints 'testNest("{%s}")' where thing has been formatted into a string of the nested struct
       /// @param Xtruct2 thing - the Xtruct2 to print
       /// @return Xtruct2 - returns the Xtruct2 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testNest(AsyncCallback callback, object state, Xtruct2 thing);
-      Xtruct2 End_testNest(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Xtruct2> testNestAsync(Xtruct2 thing);
       /// <summary>
       /// Prints 'testMap("{%s")' where thing has been formatted into a string of  'key => value' pairs
       ///  separated by commas and new lines
@@ -308,10 +320,8 @@ namespace Thrift.Test
       /// @return map<i32,i32> - returns the map<i32,i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testMap(AsyncCallback callback, object state, Dictionary<int, int> thing);
-      Dictionary<int, int> End_testMap(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Dictionary<int, int>> testMapAsync(Dictionary<int, int> thing);
       /// <summary>
       /// Prints 'testStringMap("{%s}")' where thing has been formatted into a string of  'key => value' pairs
       ///  separated by commas and new lines
@@ -319,10 +329,8 @@ namespace Thrift.Test
       /// @return map<string,string> - returns the map<string,string> 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testStringMap(AsyncCallback callback, object state, Dictionary<string, string> thing);
-      Dictionary<string, string> End_testStringMap(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Dictionary<string, string>> testStringMapAsync(Dictionary<string, string> thing);
       /// <summary>
       /// Prints 'testSet("{%s}")' where thing has been formatted into a string of  values
       ///  separated by commas and new lines
@@ -330,10 +338,8 @@ namespace Thrift.Test
       /// @return set<i32> - returns the set<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testSet(AsyncCallback callback, object state, THashSet<int> thing);
-      THashSet<int> End_testSet(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<THashSet<int>> testSetAsync(THashSet<int> thing);
       /// <summary>
       /// Prints 'testList("{%s}")' where thing has been formatted into a string of  values
       ///  separated by commas and new lines
@@ -341,30 +347,24 @@ namespace Thrift.Test
       /// @return list<i32> - returns the list<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testList(AsyncCallback callback, object state, List<int> thing);
-      List<int> End_testList(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<List<int>> testListAsync(List<int> thing);
       /// <summary>
       /// Prints 'testEnum("%d")' where thing has been formatted into it's numeric value
       /// @param Numberz thing - the Numberz to print
       /// @return Numberz - returns the Numberz 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testEnum(AsyncCallback callback, object state, Numberz thing);
-      Numberz End_testEnum(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Numberz> testEnumAsync(Numberz thing);
       /// <summary>
       /// Prints 'testTypedef("%d")' with thing as '%d'
       /// @param UserId thing - the UserId to print
       /// @return UserId - returns the UserId 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testTypedef(AsyncCallback callback, object state, long thing);
-      long End_testTypedef(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<long> testTypedefAsync(long thing);
       /// <summary>
       /// Prints 'testMapMap("%d")' with hello as '%d'
       /// @param i32 hello - the i32 to print
@@ -372,10 +372,8 @@ namespace Thrift.Test
       ///   {-4 => {-4 => -4, -3 => -3, -2 => -2, -1 => -1, }, 4 => {1 => 1, 2 => 2, 3 => 3, 4 => 4, }, }
       /// </summary>
       /// <param name="hello"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testMapMap(AsyncCallback callback, object state, int hello);
-      Dictionary<int, Dictionary<int, int>> End_testMapMap(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Dictionary<int, Dictionary<int, int>>> testMapMapAsync(int hello);
       /// <summary>
       /// So you think you've got this all worked, out eh?
       /// 
@@ -388,10 +386,8 @@ namespace Thrift.Test
       /// @return map<UserId, map<Numberz,Insanity>> - a map with the above values
       /// </summary>
       /// <param name="argument"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testInsanity(AsyncCallback callback, object state, Insanity argument);
-      Dictionary<long, Dictionary<Numberz, Insanity>> End_testInsanity(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Dictionary<long, Dictionary<Numberz, Insanity>>> testInsanityAsync(Insanity argument);
       /// <summary>
       /// Prints 'testMulti()'
       /// @param byte arg0 -
@@ -409,10 +405,8 @@ namespace Thrift.Test
       /// <param name="arg3"></param>
       /// <param name="arg4"></param>
       /// <param name="arg5"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testMulti(AsyncCallback callback, object state, sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5);
-      Xtruct End_testMulti(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<Xtruct> testMultiAsync(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5);
       /// <summary>
       /// Print 'testException(%s)' with arg as '%s'
       /// @param string arg - a string indication what type of exception to throw
@@ -421,10 +415,9 @@ namespace Thrift.Test
       /// else do not throw anything
       /// </summary>
       /// <param name="arg"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testException(AsyncCallback callback, object state, string arg);
-      void End_testException(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
+      Task testExceptionAsync(string arg);
       /// <summary>
       /// Print 'testMultiException(%s, %s)' with arg0 as '%s' and arg1 as '%s'
       /// @param string arg - a string indication what type of exception to throw
@@ -435,10 +428,10 @@ namespace Thrift.Test
       /// </summary>
       /// <param name="arg0"></param>
       /// <param name="arg1"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_testMultiException(AsyncCallback callback, object state, string arg0, string arg1);
-      Xtruct End_testMultiException(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
+      [FaultContract(typeof(Xception2Fault))]
+      Task<Xtruct> testMultiExceptionAsync(string arg0, string arg1);
       /// <summary>
       /// Print 'testOneway(%d): Sleeping...' with secondsToSleep as '%d'
       /// sleep 'secondsToSleep'
@@ -446,10 +439,215 @@ namespace Thrift.Test
       /// @param i32 secondsToSleep - the number of seconds to sleep
       /// </summary>
       /// <param name="secondsToSleep"></param>
-      #if SILVERLIGHT
+      [OperationContract]
+      Task testOnewayAsync(int secondsToSleep);
+    }
+
+    [ServiceContract(Namespace="")]
+    public interface Iface : ISync, IAsync {
+      /// <summary>
+      /// Prints "testVoid()" and returns nothing.
+      /// </summary>
+      IAsyncResult Begin_testVoid(AsyncCallback callback, object state);
+      void End_testVoid(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testString("%s")' with thing as '%s'
+      /// @param string thing - the string to print
+      /// @return string - returns the string 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testString(AsyncCallback callback, object state, string thing);
+      string End_testString(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
+      /// @param bool  thing - the bool data to print
+      /// @return bool  - returns the bool 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testBool(AsyncCallback callback, object state, bool thing);
+      bool End_testBool(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testByte("%d")' with thing as '%d'
+      /// The types i8 and byte are synonyms, use of i8 is encouraged, byte still exists for the sake of compatibility.
+      /// @param byte thing - the i8/byte to print
+      /// @return i8 - returns the i8/byte 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testByte(AsyncCallback callback, object state, sbyte thing);
+      sbyte End_testByte(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testI32("%d")' with thing as '%d'
+      /// @param i32 thing - the i32 to print
+      /// @return i32 - returns the i32 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testI32(AsyncCallback callback, object state, int thing);
+      int End_testI32(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testI64("%d")' with thing as '%d'
+      /// @param i64 thing - the i64 to print
+      /// @return i64 - returns the i64 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testI64(AsyncCallback callback, object state, long thing);
+      long End_testI64(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testDouble("%f")' with thing as '%f'
+      /// @param double thing - the double to print
+      /// @return double - returns the double 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testDouble(AsyncCallback callback, object state, double thing);
+      double End_testDouble(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testBinary("%s")' where '%s' is a hex-formatted string of thing's data
+      /// @param binary  thing - the binary data to print
+      /// @return binary  - returns the binary 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testBinary(AsyncCallback callback, object state, byte[] thing);
+      byte[] End_testBinary(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testStruct("{%s}")' where thing has been formatted into a string of comma separated values
+      /// @param Xtruct thing - the Xtruct to print
+      /// @return Xtruct - returns the Xtruct 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testStruct(AsyncCallback callback, object state, Xtruct thing);
+      Xtruct End_testStruct(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testNest("{%s}")' where thing has been formatted into a string of the nested struct
+      /// @param Xtruct2 thing - the Xtruct2 to print
+      /// @return Xtruct2 - returns the Xtruct2 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testNest(AsyncCallback callback, object state, Xtruct2 thing);
+      Xtruct2 End_testNest(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testMap("{%s")' where thing has been formatted into a string of  'key => value' pairs
+      ///  separated by commas and new lines
+      /// @param map<i32,i32> thing - the map<i32,i32> to print
+      /// @return map<i32,i32> - returns the map<i32,i32> 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testMap(AsyncCallback callback, object state, Dictionary<int, int> thing);
+      Dictionary<int, int> End_testMap(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testStringMap("{%s}")' where thing has been formatted into a string of  'key => value' pairs
+      ///  separated by commas and new lines
+      /// @param map<string,string> thing - the map<string,string> to print
+      /// @return map<string,string> - returns the map<string,string> 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testStringMap(AsyncCallback callback, object state, Dictionary<string, string> thing);
+      Dictionary<string, string> End_testStringMap(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testSet("{%s}")' where thing has been formatted into a string of  values
+      ///  separated by commas and new lines
+      /// @param set<i32> thing - the set<i32> to print
+      /// @return set<i32> - returns the set<i32> 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testSet(AsyncCallback callback, object state, THashSet<int> thing);
+      THashSet<int> End_testSet(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testList("{%s}")' where thing has been formatted into a string of  values
+      ///  separated by commas and new lines
+      /// @param list<i32> thing - the list<i32> to print
+      /// @return list<i32> - returns the list<i32> 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testList(AsyncCallback callback, object state, List<int> thing);
+      List<int> End_testList(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testEnum("%d")' where thing has been formatted into it's numeric value
+      /// @param Numberz thing - the Numberz to print
+      /// @return Numberz - returns the Numberz 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testEnum(AsyncCallback callback, object state, Numberz thing);
+      Numberz End_testEnum(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testTypedef("%d")' with thing as '%d'
+      /// @param UserId thing - the UserId to print
+      /// @return UserId - returns the UserId 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
+      IAsyncResult Begin_testTypedef(AsyncCallback callback, object state, long thing);
+      long End_testTypedef(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testMapMap("%d")' with hello as '%d'
+      /// @param i32 hello - the i32 to print
+      /// @return map<i32,map<i32,i32>> - returns a dictionary with these values:
+      ///   {-4 => {-4 => -4, -3 => -3, -2 => -2, -1 => -1, }, 4 => {1 => 1, 2 => 2, 3 => 3, 4 => 4, }, }
+      /// </summary>
+      /// <param name="hello"></param>
+      IAsyncResult Begin_testMapMap(AsyncCallback callback, object state, int hello);
+      Dictionary<int, Dictionary<int, int>> End_testMapMap(IAsyncResult asyncResult);
+      /// <summary>
+      /// So you think you've got this all worked, out eh?
+      /// 
+      /// Creates a the returned map with these values and prints it out:
+      ///   { 1 => { 2 => argument,
+      ///            3 => argument,
+      ///          },
+      ///     2 => { 6 => <empty Insanity struct>, },
+      ///   }
+      /// @return map<UserId, map<Numberz,Insanity>> - a map with the above values
+      /// </summary>
+      /// <param name="argument"></param>
+      IAsyncResult Begin_testInsanity(AsyncCallback callback, object state, Insanity argument);
+      Dictionary<long, Dictionary<Numberz, Insanity>> End_testInsanity(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testMulti()'
+      /// @param byte arg0 -
+      /// @param i32 arg1 -
+      /// @param i64 arg2 -
+      /// @param map<i16, string> arg3 -
+      /// @param Numberz arg4 -
+      /// @param UserId arg5 -
+      /// @return Xtruct - returns an Xtruct with string_thing = "Hello2, byte_thing = arg0, i32_thing = arg1
+      ///    and i64_thing = arg2
+      /// </summary>
+      /// <param name="arg0"></param>
+      /// <param name="arg1"></param>
+      /// <param name="arg2"></param>
+      /// <param name="arg3"></param>
+      /// <param name="arg4"></param>
+      /// <param name="arg5"></param>
+      IAsyncResult Begin_testMulti(AsyncCallback callback, object state, sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5);
+      Xtruct End_testMulti(IAsyncResult asyncResult);
+      /// <summary>
+      /// Print 'testException(%s)' with arg as '%s'
+      /// @param string arg - a string indication what type of exception to throw
+      /// if arg == "Xception" throw Xception with errorCode = 1001 and message = arg
+      /// elsen if arg == "TException" throw TException
+      /// else do not throw anything
+      /// </summary>
+      /// <param name="arg"></param>
+      IAsyncResult Begin_testException(AsyncCallback callback, object state, string arg);
+      void End_testException(IAsyncResult asyncResult);
+      /// <summary>
+      /// Print 'testMultiException(%s, %s)' with arg0 as '%s' and arg1 as '%s'
+      /// @param string arg - a string indication what type of exception to throw
+      /// if arg0 == "Xception" throw Xception with errorCode = 1001 and message = "This is an Xception"
+      /// elsen if arg0 == "Xception2" throw Xception2 with errorCode = 2002 and struct_thing.string_thing = "This is an Xception2"
+      /// else do not throw anything
+      /// @return Xtruct - an Xtruct with string_thing = arg1
+      /// </summary>
+      /// <param name="arg0"></param>
+      /// <param name="arg1"></param>
+      IAsyncResult Begin_testMultiException(AsyncCallback callback, object state, string arg0, string arg1);
+      Xtruct End_testMultiException(IAsyncResult asyncResult);
+      /// <summary>
+      /// Print 'testOneway(%d): Sleeping...' with secondsToSleep as '%d'
+      /// sleep 'secondsToSleep'
+      /// Print 'testOneway(%d): done sleeping!' with secondsToSleep as '%d'
+      /// @param i32 secondsToSleep - the number of seconds to sleep
+      /// </summary>
+      /// <param name="secondsToSleep"></param>
       IAsyncResult Begin_testOneway(AsyncCallback callback, object state, int secondsToSleep);
       void End_testOneway(IAsyncResult asyncResult);
-      #endif
     }
 
     public class Client : IDisposable, Iface {
@@ -509,7 +707,6 @@ namespace Thrift.Test
 
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testVoid(AsyncCallback callback, object state)
       {
         return send_testVoid(callback, state);
@@ -521,38 +718,30 @@ namespace Thrift.Test
         recv_testVoid();
       }
 
-      #endif
+      public async Task testVoidAsync()
+      {
+        await Task.Run(() =>
+        {
+          testVoid();
+        });
+      }
 
       /// <summary>
       /// Prints "testVoid()" and returns nothing.
       /// </summary>
       public void testVoid()
       {
-        #if !SILVERLIGHT
-        send_testVoid();
-        recv_testVoid();
-
-        #else
         var asyncResult = Begin_testVoid(null, null);
         End_testVoid(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testVoid(AsyncCallback callback, object state)
-      #else
-      public void send_testVoid()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testVoid", TMessageType.Call, seqid_));
         testVoid_args args = new testVoid_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_testVoid()
@@ -570,7 +759,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testString(AsyncCallback callback, object state, string thing)
       {
         return send_testString(callback, state, thing);
@@ -582,7 +770,15 @@ namespace Thrift.Test
         return recv_testString();
       }
 
-      #endif
+      public async Task<string> testStringAsync(string thing)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return testString(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -592,32 +788,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public string testString(string thing)
       {
-        #if !SILVERLIGHT
-        send_testString(thing);
-        return recv_testString();
-
-        #else
         var asyncResult = Begin_testString(null, null, thing);
         return End_testString(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testString(AsyncCallback callback, object state, string thing)
-      #else
-      public void send_testString(string thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testString", TMessageType.Call, seqid_));
         testString_args args = new testString_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_testString()
@@ -638,7 +820,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testBool(AsyncCallback callback, object state, bool thing)
       {
         return send_testBool(callback, state, thing);
@@ -650,7 +831,15 @@ namespace Thrift.Test
         return recv_testBool();
       }
 
-      #endif
+      public async Task<bool> testBoolAsync(bool thing)
+      {
+        bool retval;
+        retval = await Task.Run(() =>
+        {
+          return testBool(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
@@ -660,32 +849,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public bool testBool(bool thing)
       {
-        #if !SILVERLIGHT
-        send_testBool(thing);
-        return recv_testBool();
-
-        #else
         var asyncResult = Begin_testBool(null, null, thing);
         return End_testBool(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testBool(AsyncCallback callback, object state, bool thing)
-      #else
-      public void send_testBool(bool thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testBool", TMessageType.Call, seqid_));
         testBool_args args = new testBool_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public bool recv_testBool()
@@ -706,7 +881,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testByte(AsyncCallback callback, object state, sbyte thing)
       {
         return send_testByte(callback, state, thing);
@@ -718,7 +892,15 @@ namespace Thrift.Test
         return recv_testByte();
       }
 
-      #endif
+      public async Task<sbyte> testByteAsync(sbyte thing)
+      {
+        sbyte retval;
+        retval = await Task.Run(() =>
+        {
+          return testByte(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testByte("%d")' with thing as '%d'
@@ -729,32 +911,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public sbyte testByte(sbyte thing)
       {
-        #if !SILVERLIGHT
-        send_testByte(thing);
-        return recv_testByte();
-
-        #else
         var asyncResult = Begin_testByte(null, null, thing);
         return End_testByte(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testByte(AsyncCallback callback, object state, sbyte thing)
-      #else
-      public void send_testByte(sbyte thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testByte", TMessageType.Call, seqid_));
         testByte_args args = new testByte_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public sbyte recv_testByte()
@@ -775,7 +943,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testI32(AsyncCallback callback, object state, int thing)
       {
         return send_testI32(callback, state, thing);
@@ -787,7 +954,15 @@ namespace Thrift.Test
         return recv_testI32();
       }
 
-      #endif
+      public async Task<int> testI32Async(int thing)
+      {
+        int retval;
+        retval = await Task.Run(() =>
+        {
+          return testI32(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testI32("%d")' with thing as '%d'
@@ -797,32 +972,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public int testI32(int thing)
       {
-        #if !SILVERLIGHT
-        send_testI32(thing);
-        return recv_testI32();
-
-        #else
         var asyncResult = Begin_testI32(null, null, thing);
         return End_testI32(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testI32(AsyncCallback callback, object state, int thing)
-      #else
-      public void send_testI32(int thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testI32", TMessageType.Call, seqid_));
         testI32_args args = new testI32_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public int recv_testI32()
@@ -843,7 +1004,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testI64(AsyncCallback callback, object state, long thing)
       {
         return send_testI64(callback, state, thing);
@@ -855,7 +1015,15 @@ namespace Thrift.Test
         return recv_testI64();
       }
 
-      #endif
+      public async Task<long> testI64Async(long thing)
+      {
+        long retval;
+        retval = await Task.Run(() =>
+        {
+          return testI64(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testI64("%d")' with thing as '%d'
@@ -865,32 +1033,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public long testI64(long thing)
       {
-        #if !SILVERLIGHT
-        send_testI64(thing);
-        return recv_testI64();
-
-        #else
         var asyncResult = Begin_testI64(null, null, thing);
         return End_testI64(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testI64(AsyncCallback callback, object state, long thing)
-      #else
-      public void send_testI64(long thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testI64", TMessageType.Call, seqid_));
         testI64_args args = new testI64_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public long recv_testI64()
@@ -911,7 +1065,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testDouble(AsyncCallback callback, object state, double thing)
       {
         return send_testDouble(callback, state, thing);
@@ -923,7 +1076,15 @@ namespace Thrift.Test
         return recv_testDouble();
       }
 
-      #endif
+      public async Task<double> testDoubleAsync(double thing)
+      {
+        double retval;
+        retval = await Task.Run(() =>
+        {
+          return testDouble(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testDouble("%f")' with thing as '%f'
@@ -933,32 +1094,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public double testDouble(double thing)
       {
-        #if !SILVERLIGHT
-        send_testDouble(thing);
-        return recv_testDouble();
-
-        #else
         var asyncResult = Begin_testDouble(null, null, thing);
         return End_testDouble(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testDouble(AsyncCallback callback, object state, double thing)
-      #else
-      public void send_testDouble(double thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testDouble", TMessageType.Call, seqid_));
         testDouble_args args = new testDouble_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public double recv_testDouble()
@@ -979,7 +1126,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testBinary(AsyncCallback callback, object state, byte[] thing)
       {
         return send_testBinary(callback, state, thing);
@@ -991,7 +1137,15 @@ namespace Thrift.Test
         return recv_testBinary();
       }
 
-      #endif
+      public async Task<byte[]> testBinaryAsync(byte[] thing)
+      {
+        byte[] retval;
+        retval = await Task.Run(() =>
+        {
+          return testBinary(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testBinary("%s")' where '%s' is a hex-formatted string of thing's data
@@ -1001,32 +1155,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public byte[] testBinary(byte[] thing)
       {
-        #if !SILVERLIGHT
-        send_testBinary(thing);
-        return recv_testBinary();
-
-        #else
         var asyncResult = Begin_testBinary(null, null, thing);
         return End_testBinary(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testBinary(AsyncCallback callback, object state, byte[] thing)
-      #else
-      public void send_testBinary(byte[] thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testBinary", TMessageType.Call, seqid_));
         testBinary_args args = new testBinary_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public byte[] recv_testBinary()
@@ -1047,7 +1187,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testStruct(AsyncCallback callback, object state, Xtruct thing)
       {
         return send_testStruct(callback, state, thing);
@@ -1059,7 +1198,15 @@ namespace Thrift.Test
         return recv_testStruct();
       }
 
-      #endif
+      public async Task<Xtruct> testStructAsync(Xtruct thing)
+      {
+        Xtruct retval;
+        retval = await Task.Run(() =>
+        {
+          return testStruct(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testStruct("{%s}")' where thing has been formatted into a string of comma separated values
@@ -1069,32 +1216,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public Xtruct testStruct(Xtruct thing)
       {
-        #if !SILVERLIGHT
-        send_testStruct(thing);
-        return recv_testStruct();
-
-        #else
         var asyncResult = Begin_testStruct(null, null, thing);
         return End_testStruct(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testStruct(AsyncCallback callback, object state, Xtruct thing)
-      #else
-      public void send_testStruct(Xtruct thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testStruct", TMessageType.Call, seqid_));
         testStruct_args args = new testStruct_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Xtruct recv_testStruct()
@@ -1115,7 +1248,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testNest(AsyncCallback callback, object state, Xtruct2 thing)
       {
         return send_testNest(callback, state, thing);
@@ -1127,7 +1259,15 @@ namespace Thrift.Test
         return recv_testNest();
       }
 
-      #endif
+      public async Task<Xtruct2> testNestAsync(Xtruct2 thing)
+      {
+        Xtruct2 retval;
+        retval = await Task.Run(() =>
+        {
+          return testNest(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testNest("{%s}")' where thing has been formatted into a string of the nested struct
@@ -1137,32 +1277,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public Xtruct2 testNest(Xtruct2 thing)
       {
-        #if !SILVERLIGHT
-        send_testNest(thing);
-        return recv_testNest();
-
-        #else
         var asyncResult = Begin_testNest(null, null, thing);
         return End_testNest(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testNest(AsyncCallback callback, object state, Xtruct2 thing)
-      #else
-      public void send_testNest(Xtruct2 thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testNest", TMessageType.Call, seqid_));
         testNest_args args = new testNest_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Xtruct2 recv_testNest()
@@ -1183,7 +1309,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testMap(AsyncCallback callback, object state, Dictionary<int, int> thing)
       {
         return send_testMap(callback, state, thing);
@@ -1195,7 +1320,15 @@ namespace Thrift.Test
         return recv_testMap();
       }
 
-      #endif
+      public async Task<Dictionary<int, int>> testMapAsync(Dictionary<int, int> thing)
+      {
+        Dictionary<int, int> retval;
+        retval = await Task.Run(() =>
+        {
+          return testMap(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testMap("{%s")' where thing has been formatted into a string of  'key => value' pairs
@@ -1206,32 +1339,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public Dictionary<int, int> testMap(Dictionary<int, int> thing)
       {
-        #if !SILVERLIGHT
-        send_testMap(thing);
-        return recv_testMap();
-
-        #else
         var asyncResult = Begin_testMap(null, null, thing);
         return End_testMap(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testMap(AsyncCallback callback, object state, Dictionary<int, int> thing)
-      #else
-      public void send_testMap(Dictionary<int, int> thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testMap", TMessageType.Call, seqid_));
         testMap_args args = new testMap_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<int, int> recv_testMap()
@@ -1252,7 +1371,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testStringMap(AsyncCallback callback, object state, Dictionary<string, string> thing)
       {
         return send_testStringMap(callback, state, thing);
@@ -1264,7 +1382,15 @@ namespace Thrift.Test
         return recv_testStringMap();
       }
 
-      #endif
+      public async Task<Dictionary<string, string>> testStringMapAsync(Dictionary<string, string> thing)
+      {
+        Dictionary<string, string> retval;
+        retval = await Task.Run(() =>
+        {
+          return testStringMap(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testStringMap("{%s}")' where thing has been formatted into a string of  'key => value' pairs
@@ -1275,32 +1401,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public Dictionary<string, string> testStringMap(Dictionary<string, string> thing)
       {
-        #if !SILVERLIGHT
-        send_testStringMap(thing);
-        return recv_testStringMap();
-
-        #else
         var asyncResult = Begin_testStringMap(null, null, thing);
         return End_testStringMap(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testStringMap(AsyncCallback callback, object state, Dictionary<string, string> thing)
-      #else
-      public void send_testStringMap(Dictionary<string, string> thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testStringMap", TMessageType.Call, seqid_));
         testStringMap_args args = new testStringMap_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<string, string> recv_testStringMap()
@@ -1321,7 +1433,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testSet(AsyncCallback callback, object state, THashSet<int> thing)
       {
         return send_testSet(callback, state, thing);
@@ -1333,7 +1444,15 @@ namespace Thrift.Test
         return recv_testSet();
       }
 
-      #endif
+      public async Task<THashSet<int>> testSetAsync(THashSet<int> thing)
+      {
+        THashSet<int> retval;
+        retval = await Task.Run(() =>
+        {
+          return testSet(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testSet("{%s}")' where thing has been formatted into a string of  values
@@ -1344,32 +1463,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public THashSet<int> testSet(THashSet<int> thing)
       {
-        #if !SILVERLIGHT
-        send_testSet(thing);
-        return recv_testSet();
-
-        #else
         var asyncResult = Begin_testSet(null, null, thing);
         return End_testSet(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testSet(AsyncCallback callback, object state, THashSet<int> thing)
-      #else
-      public void send_testSet(THashSet<int> thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testSet", TMessageType.Call, seqid_));
         testSet_args args = new testSet_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public THashSet<int> recv_testSet()
@@ -1390,7 +1495,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testList(AsyncCallback callback, object state, List<int> thing)
       {
         return send_testList(callback, state, thing);
@@ -1402,7 +1506,15 @@ namespace Thrift.Test
         return recv_testList();
       }
 
-      #endif
+      public async Task<List<int>> testListAsync(List<int> thing)
+      {
+        List<int> retval;
+        retval = await Task.Run(() =>
+        {
+          return testList(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testList("{%s}")' where thing has been formatted into a string of  values
@@ -1413,32 +1525,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public List<int> testList(List<int> thing)
       {
-        #if !SILVERLIGHT
-        send_testList(thing);
-        return recv_testList();
-
-        #else
         var asyncResult = Begin_testList(null, null, thing);
         return End_testList(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testList(AsyncCallback callback, object state, List<int> thing)
-      #else
-      public void send_testList(List<int> thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testList", TMessageType.Call, seqid_));
         testList_args args = new testList_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<int> recv_testList()
@@ -1459,7 +1557,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testEnum(AsyncCallback callback, object state, Numberz thing)
       {
         return send_testEnum(callback, state, thing);
@@ -1471,7 +1568,15 @@ namespace Thrift.Test
         return recv_testEnum();
       }
 
-      #endif
+      public async Task<Numberz> testEnumAsync(Numberz thing)
+      {
+        Numberz retval;
+        retval = await Task.Run(() =>
+        {
+          return testEnum(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testEnum("%d")' where thing has been formatted into it's numeric value
@@ -1481,32 +1586,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public Numberz testEnum(Numberz thing)
       {
-        #if !SILVERLIGHT
-        send_testEnum(thing);
-        return recv_testEnum();
-
-        #else
         var asyncResult = Begin_testEnum(null, null, thing);
         return End_testEnum(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testEnum(AsyncCallback callback, object state, Numberz thing)
-      #else
-      public void send_testEnum(Numberz thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testEnum", TMessageType.Call, seqid_));
         testEnum_args args = new testEnum_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Numberz recv_testEnum()
@@ -1527,7 +1618,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testTypedef(AsyncCallback callback, object state, long thing)
       {
         return send_testTypedef(callback, state, thing);
@@ -1539,7 +1629,15 @@ namespace Thrift.Test
         return recv_testTypedef();
       }
 
-      #endif
+      public async Task<long> testTypedefAsync(long thing)
+      {
+        long retval;
+        retval = await Task.Run(() =>
+        {
+          return testTypedef(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testTypedef("%d")' with thing as '%d'
@@ -1549,32 +1647,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public long testTypedef(long thing)
       {
-        #if !SILVERLIGHT
-        send_testTypedef(thing);
-        return recv_testTypedef();
-
-        #else
         var asyncResult = Begin_testTypedef(null, null, thing);
         return End_testTypedef(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testTypedef(AsyncCallback callback, object state, long thing)
-      #else
-      public void send_testTypedef(long thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testTypedef", TMessageType.Call, seqid_));
         testTypedef_args args = new testTypedef_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public long recv_testTypedef()
@@ -1595,7 +1679,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testMapMap(AsyncCallback callback, object state, int hello)
       {
         return send_testMapMap(callback, state, hello);
@@ -1607,7 +1690,15 @@ namespace Thrift.Test
         return recv_testMapMap();
       }
 
-      #endif
+      public async Task<Dictionary<int, Dictionary<int, int>>> testMapMapAsync(int hello)
+      {
+        Dictionary<int, Dictionary<int, int>> retval;
+        retval = await Task.Run(() =>
+        {
+          return testMapMap(hello);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testMapMap("%d")' with hello as '%d'
@@ -1618,32 +1709,18 @@ namespace Thrift.Test
       /// <param name="hello"></param>
       public Dictionary<int, Dictionary<int, int>> testMapMap(int hello)
       {
-        #if !SILVERLIGHT
-        send_testMapMap(hello);
-        return recv_testMapMap();
-
-        #else
         var asyncResult = Begin_testMapMap(null, null, hello);
         return End_testMapMap(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testMapMap(AsyncCallback callback, object state, int hello)
-      #else
-      public void send_testMapMap(int hello)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testMapMap", TMessageType.Call, seqid_));
         testMapMap_args args = new testMapMap_args();
         args.Hello = hello;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<int, Dictionary<int, int>> recv_testMapMap()
@@ -1664,7 +1741,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testInsanity(AsyncCallback callback, object state, Insanity argument)
       {
         return send_testInsanity(callback, state, argument);
@@ -1676,7 +1752,15 @@ namespace Thrift.Test
         return recv_testInsanity();
       }
 
-      #endif
+      public async Task<Dictionary<long, Dictionary<Numberz, Insanity>>> testInsanityAsync(Insanity argument)
+      {
+        Dictionary<long, Dictionary<Numberz, Insanity>> retval;
+        retval = await Task.Run(() =>
+        {
+          return testInsanity(argument);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// So you think you've got this all worked, out eh?
@@ -1692,32 +1776,18 @@ namespace Thrift.Test
       /// <param name="argument"></param>
       public Dictionary<long, Dictionary<Numberz, Insanity>> testInsanity(Insanity argument)
       {
-        #if !SILVERLIGHT
-        send_testInsanity(argument);
-        return recv_testInsanity();
-
-        #else
         var asyncResult = Begin_testInsanity(null, null, argument);
         return End_testInsanity(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testInsanity(AsyncCallback callback, object state, Insanity argument)
-      #else
-      public void send_testInsanity(Insanity argument)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testInsanity", TMessageType.Call, seqid_));
         testInsanity_args args = new testInsanity_args();
         args.Argument = argument;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<long, Dictionary<Numberz, Insanity>> recv_testInsanity()
@@ -1738,7 +1808,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testMulti(AsyncCallback callback, object state, sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5)
       {
         return send_testMulti(callback, state, arg0, arg1, arg2, arg3, arg4, arg5);
@@ -1750,7 +1819,15 @@ namespace Thrift.Test
         return recv_testMulti();
       }
 
-      #endif
+      public async Task<Xtruct> testMultiAsync(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5)
+      {
+        Xtruct retval;
+        retval = await Task.Run(() =>
+        {
+          return testMulti(arg0, arg1, arg2, arg3, arg4, arg5);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testMulti()'
@@ -1771,21 +1848,11 @@ namespace Thrift.Test
       /// <param name="arg5"></param>
       public Xtruct testMulti(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5)
       {
-        #if !SILVERLIGHT
-        send_testMulti(arg0, arg1, arg2, arg3, arg4, arg5);
-        return recv_testMulti();
-
-        #else
         var asyncResult = Begin_testMulti(null, null, arg0, arg1, arg2, arg3, arg4, arg5);
         return End_testMulti(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testMulti(AsyncCallback callback, object state, sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5)
-      #else
-      public void send_testMulti(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testMulti", TMessageType.Call, seqid_));
         testMulti_args args = new testMulti_args();
@@ -1797,11 +1864,7 @@ namespace Thrift.Test
         args.Arg5 = arg5;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Xtruct recv_testMulti()
@@ -1822,7 +1885,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testException(AsyncCallback callback, object state, string arg)
       {
         return send_testException(callback, state, arg);
@@ -1834,7 +1896,13 @@ namespace Thrift.Test
         recv_testException();
       }
 
-      #endif
+      public async Task testExceptionAsync(string arg)
+      {
+        await Task.Run(() =>
+        {
+          testException(arg);
+        });
+      }
 
       /// <summary>
       /// Print 'testException(%s)' with arg as '%s'
@@ -1846,32 +1914,18 @@ namespace Thrift.Test
       /// <param name="arg"></param>
       public void testException(string arg)
       {
-        #if !SILVERLIGHT
-        send_testException(arg);
-        recv_testException();
-
-        #else
         var asyncResult = Begin_testException(null, null, arg);
         End_testException(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testException(AsyncCallback callback, object state, string arg)
-      #else
-      public void send_testException(string arg)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testException", TMessageType.Call, seqid_));
         testException_args args = new testException_args();
         args.Arg = arg;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_testException()
@@ -1892,7 +1946,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testMultiException(AsyncCallback callback, object state, string arg0, string arg1)
       {
         return send_testMultiException(callback, state, arg0, arg1);
@@ -1904,7 +1957,15 @@ namespace Thrift.Test
         return recv_testMultiException();
       }
 
-      #endif
+      public async Task<Xtruct> testMultiExceptionAsync(string arg0, string arg1)
+      {
+        Xtruct retval;
+        retval = await Task.Run(() =>
+        {
+          return testMultiException(arg0, arg1);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Print 'testMultiException(%s, %s)' with arg0 as '%s' and arg1 as '%s'
@@ -1918,21 +1979,11 @@ namespace Thrift.Test
       /// <param name="arg1"></param>
       public Xtruct testMultiException(string arg0, string arg1)
       {
-        #if !SILVERLIGHT
-        send_testMultiException(arg0, arg1);
-        return recv_testMultiException();
-
-        #else
         var asyncResult = Begin_testMultiException(null, null, arg0, arg1);
         return End_testMultiException(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testMultiException(AsyncCallback callback, object state, string arg0, string arg1)
-      #else
-      public void send_testMultiException(string arg0, string arg1)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testMultiException", TMessageType.Call, seqid_));
         testMultiException_args args = new testMultiException_args();
@@ -1940,11 +1991,7 @@ namespace Thrift.Test
         args.Arg1 = arg1;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Xtruct recv_testMultiException()
@@ -1971,7 +2018,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_testOneway(AsyncCallback callback, object state, int secondsToSleep)
       {
         return send_testOneway(callback, state, secondsToSleep);
@@ -1982,7 +2028,13 @@ namespace Thrift.Test
         oprot_.Transport.EndFlush(asyncResult);
       }
 
-      #endif
+      public async Task testOnewayAsync(int secondsToSleep)
+      {
+        await Task.Run(() =>
+        {
+          testOneway(secondsToSleep);
+        });
+      }
 
       /// <summary>
       /// Print 'testOneway(%d): Sleeping...' with secondsToSleep as '%d'
@@ -1993,33 +2045,706 @@ namespace Thrift.Test
       /// <param name="secondsToSleep"></param>
       public void testOneway(int secondsToSleep)
       {
-        #if !SILVERLIGHT
-        send_testOneway(secondsToSleep);
-
-        #else
         var asyncResult = Begin_testOneway(null, null, secondsToSleep);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_testOneway(AsyncCallback callback, object state, int secondsToSleep)
-      #else
-      public void send_testOneway(int secondsToSleep)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("testOneway", TMessageType.Oneway, seqid_));
         testOneway_args args = new testOneway_args();
         args.SecondsToSleep = secondsToSleep;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
     }
+    public class AsyncProcessor : TAsyncProcessor {
+      public AsyncProcessor(IAsync iface)
+      {
+        iface_ = iface;
+        processMap_["testVoid"] = testVoid_ProcessAsync;
+        processMap_["testString"] = testString_ProcessAsync;
+        processMap_["testBool"] = testBool_ProcessAsync;
+        processMap_["testByte"] = testByte_ProcessAsync;
+        processMap_["testI32"] = testI32_ProcessAsync;
+        processMap_["testI64"] = testI64_ProcessAsync;
+        processMap_["testDouble"] = testDouble_ProcessAsync;
+        processMap_["testBinary"] = testBinary_ProcessAsync;
+        processMap_["testStruct"] = testStruct_ProcessAsync;
+        processMap_["testNest"] = testNest_ProcessAsync;
+        processMap_["testMap"] = testMap_ProcessAsync;
+        processMap_["testStringMap"] = testStringMap_ProcessAsync;
+        processMap_["testSet"] = testSet_ProcessAsync;
+        processMap_["testList"] = testList_ProcessAsync;
+        processMap_["testEnum"] = testEnum_ProcessAsync;
+        processMap_["testTypedef"] = testTypedef_ProcessAsync;
+        processMap_["testMapMap"] = testMapMap_ProcessAsync;
+        processMap_["testInsanity"] = testInsanity_ProcessAsync;
+        processMap_["testMulti"] = testMulti_ProcessAsync;
+        processMap_["testException"] = testException_ProcessAsync;
+        processMap_["testMultiException"] = testMultiException_ProcessAsync;
+        processMap_["testOneway"] = testOneway_ProcessAsync;
+      }
+
+      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
+      private IAsync iface_;
+      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
+
+      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+      {
+        try
+        {
+          TMessage msg = iprot.ReadMessageBegin();
+          ProcessFunction fn;
+          processMap_.TryGetValue(msg.Name, out fn);
+          if (fn == null) {
+            TProtocolUtil.Skip(iprot, TType.Struct);
+            iprot.ReadMessageEnd();
+            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
+            x.Write(oprot);
+            oprot.WriteMessageEnd();
+            oprot.Transport.Flush();
+            return true;
+          }
+          await fn(msg.SeqID, iprot, oprot);
+        }
+        catch (IOException)
+        {
+          return false;
+        }
+        return true;
+      }
+
+      public async Task testVoid_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testVoid_args args = new testVoid_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testVoid_result result = new testVoid_result();
+        try
+        {
+          await iface_.testVoidAsync();
+          oprot.WriteMessageBegin(new TMessage("testVoid", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testVoid", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testString_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testString_args args = new testString_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testString_result result = new testString_result();
+        try
+        {
+          result.Success = await iface_.testStringAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testString", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testString", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testBool_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testBool_args args = new testBool_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testBool_result result = new testBool_result();
+        try
+        {
+          result.Success = await iface_.testBoolAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testBool", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testBool", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testByte_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testByte_args args = new testByte_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testByte_result result = new testByte_result();
+        try
+        {
+          result.Success = await iface_.testByteAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testByte", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testByte", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testI32_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testI32_args args = new testI32_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testI32_result result = new testI32_result();
+        try
+        {
+          result.Success = await iface_.testI32Async(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testI32", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testI32", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testI64_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testI64_args args = new testI64_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testI64_result result = new testI64_result();
+        try
+        {
+          result.Success = await iface_.testI64Async(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testI64", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testI64", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testDouble_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testDouble_args args = new testDouble_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testDouble_result result = new testDouble_result();
+        try
+        {
+          result.Success = await iface_.testDoubleAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testDouble", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testDouble", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testBinary_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testBinary_args args = new testBinary_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testBinary_result result = new testBinary_result();
+        try
+        {
+          result.Success = await iface_.testBinaryAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testBinary", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testBinary", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testStruct_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testStruct_args args = new testStruct_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testStruct_result result = new testStruct_result();
+        try
+        {
+          result.Success = await iface_.testStructAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testStruct", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testStruct", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testNest_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testNest_args args = new testNest_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testNest_result result = new testNest_result();
+        try
+        {
+          result.Success = await iface_.testNestAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testNest", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testNest", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testMap_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testMap_args args = new testMap_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testMap_result result = new testMap_result();
+        try
+        {
+          result.Success = await iface_.testMapAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testMap", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testMap", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testStringMap_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testStringMap_args args = new testStringMap_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testStringMap_result result = new testStringMap_result();
+        try
+        {
+          result.Success = await iface_.testStringMapAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testStringMap", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testStringMap", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testSet_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testSet_args args = new testSet_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testSet_result result = new testSet_result();
+        try
+        {
+          result.Success = await iface_.testSetAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testSet", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testSet", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testList_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testList_args args = new testList_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testList_result result = new testList_result();
+        try
+        {
+          result.Success = await iface_.testListAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testList", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testList", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testEnum_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testEnum_args args = new testEnum_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testEnum_result result = new testEnum_result();
+        try
+        {
+          result.Success = await iface_.testEnumAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testEnum", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testEnum", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testTypedef_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testTypedef_args args = new testTypedef_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testTypedef_result result = new testTypedef_result();
+        try
+        {
+          result.Success = await iface_.testTypedefAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("testTypedef", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testTypedef", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testMapMap_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testMapMap_args args = new testMapMap_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testMapMap_result result = new testMapMap_result();
+        try
+        {
+          result.Success = await iface_.testMapMapAsync(args.Hello);
+          oprot.WriteMessageBegin(new TMessage("testMapMap", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testMapMap", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testInsanity_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testInsanity_args args = new testInsanity_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testInsanity_result result = new testInsanity_result();
+        try
+        {
+          result.Success = await iface_.testInsanityAsync(args.Argument);
+          oprot.WriteMessageBegin(new TMessage("testInsanity", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testInsanity", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testMulti_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testMulti_args args = new testMulti_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testMulti_result result = new testMulti_result();
+        try
+        {
+          result.Success = await iface_.testMultiAsync(args.Arg0, args.Arg1, args.Arg2, args.Arg3, args.Arg4, args.Arg5);
+          oprot.WriteMessageBegin(new TMessage("testMulti", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testMulti", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testException_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testException_args args = new testException_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testException_result result = new testException_result();
+        try
+        {
+          try
+          {
+            await iface_.testExceptionAsync(args.Arg);
+          }
+          catch (Xception err1)
+          {
+            result.Err1 = err1;
+          }
+          oprot.WriteMessageBegin(new TMessage("testException", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testException", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testMultiException_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testMultiException_args args = new testMultiException_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        testMultiException_result result = new testMultiException_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.testMultiExceptionAsync(args.Arg0, args.Arg1);
+          }
+          catch (Xception err1)
+          {
+            result.Err1 = err1;
+          }
+          catch (Xception2 err2)
+          {
+            result.Err2 = err2;
+          }
+          oprot.WriteMessageBegin(new TMessage("testMultiException", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("testMultiException", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task testOneway_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        testOneway_args args = new testOneway_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        try
+        {
+          await iface_.testOnewayAsync(args.SecondsToSleep);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+        }
+      }
+
+    }
+
     public class Processor : TProcessor {
       public Processor(ISync iface)
       {
@@ -2710,6 +3435,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testVoid_args : TBase
     {
 
@@ -2772,6 +3498,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testVoid_result : TBase
     {
 
@@ -2835,10 +3562,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testString_args : TBase
     {
       private string _thing;
 
+      [DataMember(Order = 0)]
       public string Thing
       {
         get
@@ -2853,13 +3582,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testString_args() {
       }
@@ -2943,10 +3685,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testString_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -2961,13 +3705,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testString_result() {
       }
@@ -3054,10 +3811,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBool_args : TBase
     {
       private bool _thing;
 
+      [DataMember(Order = 0)]
       public bool Thing
       {
         get
@@ -3072,13 +3831,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testBool_args() {
       }
@@ -3162,10 +3934,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBool_result : TBase
     {
       private bool _success;
 
+      [DataMember(Order = 0)]
       public bool Success
       {
         get
@@ -3180,13 +3954,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testBool_result() {
       }
@@ -3271,10 +4058,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testByte_args : TBase
     {
       private sbyte _thing;
 
+      [DataMember(Order = 0)]
       public sbyte Thing
       {
         get
@@ -3289,13 +4078,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testByte_args() {
       }
@@ -3379,10 +4181,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testByte_result : TBase
     {
       private sbyte _success;
 
+      [DataMember(Order = 0)]
       public sbyte Success
       {
         get
@@ -3397,13 +4201,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testByte_result() {
       }
@@ -3488,10 +4305,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI32_args : TBase
     {
       private int _thing;
 
+      [DataMember(Order = 0)]
       public int Thing
       {
         get
@@ -3506,13 +4325,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testI32_args() {
       }
@@ -3596,10 +4428,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI32_result : TBase
     {
       private int _success;
 
+      [DataMember(Order = 0)]
       public int Success
       {
         get
@@ -3614,13 +4448,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testI32_result() {
       }
@@ -3705,10 +4552,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI64_args : TBase
     {
       private long _thing;
 
+      [DataMember(Order = 0)]
       public long Thing
       {
         get
@@ -3723,13 +4572,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testI64_args() {
       }
@@ -3813,10 +4675,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI64_result : TBase
     {
       private long _success;
 
+      [DataMember(Order = 0)]
       public long Success
       {
         get
@@ -3831,13 +4695,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testI64_result() {
       }
@@ -3922,10 +4799,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testDouble_args : TBase
     {
       private double _thing;
 
+      [DataMember(Order = 0)]
       public double Thing
       {
         get
@@ -3940,13 +4819,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testDouble_args() {
       }
@@ -4030,10 +4922,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testDouble_result : TBase
     {
       private double _success;
 
+      [DataMember(Order = 0)]
       public double Success
       {
         get
@@ -4048,13 +4942,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testDouble_result() {
       }
@@ -4139,10 +5046,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBinary_args : TBase
     {
       private byte[] _thing;
 
+      [DataMember(Order = 0)]
       public byte[] Thing
       {
         get
@@ -4157,13 +5066,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testBinary_args() {
       }
@@ -4247,10 +5169,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBinary_result : TBase
     {
       private byte[] _success;
 
+      [DataMember(Order = 0)]
       public byte[] Success
       {
         get
@@ -4265,13 +5189,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testBinary_result() {
       }
@@ -4358,10 +5295,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStruct_args : TBase
     {
       private Xtruct _thing;
 
+      [DataMember(Order = 0)]
       public Xtruct Thing
       {
         get
@@ -4376,13 +5315,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testStruct_args() {
       }
@@ -4467,10 +5419,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStruct_result : TBase
     {
       private Xtruct _success;
 
+      [DataMember(Order = 0)]
       public Xtruct Success
       {
         get
@@ -4485,13 +5439,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testStruct_result() {
       }
@@ -4579,10 +5546,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testNest_args : TBase
     {
       private Xtruct2 _thing;
 
+      [DataMember(Order = 0)]
       public Xtruct2 Thing
       {
         get
@@ -4597,13 +5566,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testNest_args() {
       }
@@ -4688,10 +5670,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testNest_result : TBase
     {
       private Xtruct2 _success;
 
+      [DataMember(Order = 0)]
       public Xtruct2 Success
       {
         get
@@ -4706,13 +5690,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testNest_result() {
       }
@@ -4800,10 +5797,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMap_args : TBase
     {
       private Dictionary<int, int> _thing;
 
+      [DataMember(Order = 0)]
       public Dictionary<int, int> Thing
       {
         get
@@ -4818,13 +5817,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testMap_args() {
       }
@@ -4928,10 +5940,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMap_result : TBase
     {
       private Dictionary<int, int> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<int, int> Success
       {
         get
@@ -4946,13 +5960,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testMap_result() {
       }
@@ -5059,10 +6086,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStringMap_args : TBase
     {
       private Dictionary<string, string> _thing;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, string> Thing
       {
         get
@@ -5077,13 +6106,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testStringMap_args() {
       }
@@ -5187,10 +6229,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStringMap_result : TBase
     {
       private Dictionary<string, string> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, string> Success
       {
         get
@@ -5205,13 +6249,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testStringMap_result() {
       }
@@ -5318,10 +6375,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testSet_args : TBase
     {
       private THashSet<int> _thing;
 
+      [DataMember(Order = 0)]
       public THashSet<int> Thing
       {
         get
@@ -5336,13 +6395,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testSet_args() {
       }
@@ -5443,10 +6515,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testSet_result : TBase
     {
       private THashSet<int> _success;
 
+      [DataMember(Order = 0)]
       public THashSet<int> Success
       {
         get
@@ -5461,13 +6535,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testSet_result() {
       }
@@ -5571,10 +6658,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testList_args : TBase
     {
       private List<int> _thing;
 
+      [DataMember(Order = 0)]
       public List<int> Thing
       {
         get
@@ -5589,13 +6678,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testList_args() {
       }
@@ -5696,10 +6798,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testList_result : TBase
     {
       private List<int> _success;
 
+      [DataMember(Order = 0)]
       public List<int> Success
       {
         get
@@ -5714,13 +6818,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testList_result() {
       }
@@ -5824,6 +6941,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testEnum_args : TBase
     {
       private Numberz _thing;
@@ -5832,6 +6950,7 @@ namespace Thrift.Test
       /// 
       /// <seealso cref="Numberz"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Numberz Thing
       {
         get
@@ -5846,13 +6965,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testEnum_args() {
       }
@@ -5936,6 +7068,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testEnum_result : TBase
     {
       private Numberz _success;
@@ -5944,6 +7077,7 @@ namespace Thrift.Test
       /// 
       /// <seealso cref="Numberz"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Numberz Success
       {
         get
@@ -5958,13 +7092,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testEnum_result() {
       }
@@ -6049,10 +7196,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testTypedef_args : TBase
     {
       private long _thing;
 
+      [DataMember(Order = 0)]
       public long Thing
       {
         get
@@ -6067,13 +7216,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testTypedef_args() {
       }
@@ -6157,10 +7319,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testTypedef_result : TBase
     {
       private long _success;
 
+      [DataMember(Order = 0)]
       public long Success
       {
         get
@@ -6175,13 +7339,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testTypedef_result() {
       }
@@ -6266,10 +7443,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMapMap_args : TBase
     {
       private int _hello;
 
+      [DataMember(Order = 0)]
       public int Hello
       {
         get
@@ -6284,13 +7463,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool hello;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeHello()
+      {
+        return __isset.hello;
+      }
+
+      #endregion XmlSerializer support
 
       public testMapMap_args() {
       }
@@ -6374,10 +7566,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMapMap_result : TBase
     {
       private Dictionary<int, Dictionary<int, int>> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<int, Dictionary<int, int>> Success
       {
         get
@@ -6392,13 +7586,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testMapMap_result() {
       }
@@ -6525,10 +7732,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testInsanity_args : TBase
     {
       private Insanity _argument;
 
+      [DataMember(Order = 0)]
       public Insanity Argument
       {
         get
@@ -6543,13 +7752,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool argument;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArgument()
+      {
+        return __isset.argument;
+      }
+
+      #endregion XmlSerializer support
 
       public testInsanity_args() {
       }
@@ -6634,10 +7856,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testInsanity_result : TBase
     {
       private Dictionary<long, Dictionary<Numberz, Insanity>> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<long, Dictionary<Numberz, Insanity>> Success
       {
         get
@@ -6652,13 +7876,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testInsanity_result() {
       }
@@ -6786,6 +8023,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMulti_args : TBase
     {
       private sbyte _arg0;
@@ -6795,6 +8033,7 @@ namespace Thrift.Test
       private Numberz _arg4;
       private long _arg5;
 
+      [DataMember(Order = 0)]
       public sbyte Arg0
       {
         get
@@ -6808,6 +8047,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public int Arg1
       {
         get
@@ -6821,6 +8061,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public long Arg2
       {
         get
@@ -6834,6 +8075,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public Dictionary<short, string> Arg3
       {
         get
@@ -6851,6 +8093,7 @@ namespace Thrift.Test
       /// 
       /// <seealso cref="Numberz"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Numberz Arg4
       {
         get
@@ -6864,6 +8107,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public long Arg5
       {
         get
@@ -6878,18 +8122,61 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool arg0;
+        [DataMember]
         public bool arg1;
+        [DataMember]
         public bool arg2;
+        [DataMember]
         public bool arg3;
+        [DataMember]
         public bool arg4;
+        [DataMember]
         public bool arg5;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArg0()
+      {
+        return __isset.arg0;
+      }
+
+      public bool ShouldSerializeArg1()
+      {
+        return __isset.arg1;
+      }
+
+      public bool ShouldSerializeArg2()
+      {
+        return __isset.arg2;
+      }
+
+      public bool ShouldSerializeArg3()
+      {
+        return __isset.arg3;
+      }
+
+      public bool ShouldSerializeArg4()
+      {
+        return __isset.arg4;
+      }
+
+      public bool ShouldSerializeArg5()
+      {
+        return __isset.arg5;
+      }
+
+      #endregion XmlSerializer support
 
       public testMulti_args() {
       }
@@ -7098,10 +8385,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMulti_result : TBase
     {
       private Xtruct _success;
 
+      [DataMember(Order = 0)]
       public Xtruct Success
       {
         get
@@ -7116,13 +8405,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testMulti_result() {
       }
@@ -7210,10 +8512,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testException_args : TBase
     {
       private string _arg;
 
+      [DataMember(Order = 0)]
       public string Arg
       {
         get
@@ -7228,13 +8532,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool arg;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArg()
+      {
+        return __isset.arg;
+      }
+
+      #endregion XmlSerializer support
 
       public testException_args() {
       }
@@ -7318,10 +8635,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testException_result : TBase
     {
       private Xception _err1;
 
+      [DataMember(Order = 0)]
       public Xception Err1
       {
         get
@@ -7336,13 +8655,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool err1;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeErr1()
+      {
+        return __isset.err1;
+      }
+
+      #endregion XmlSerializer support
 
       public testException_result() {
       }
@@ -7430,11 +8762,13 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMultiException_args : TBase
     {
       private string _arg0;
       private string _arg1;
 
+      [DataMember(Order = 0)]
       public string Arg0
       {
         get
@@ -7448,6 +8782,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public string Arg1
       {
         get
@@ -7462,14 +8797,33 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool arg0;
+        [DataMember]
         public bool arg1;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArg0()
+      {
+        return __isset.arg0;
+      }
+
+      public bool ShouldSerializeArg1()
+      {
+        return __isset.arg1;
+      }
+
+      #endregion XmlSerializer support
 
       public testMultiException_args() {
       }
@@ -7574,12 +8928,14 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMultiException_result : TBase
     {
       private Xtruct _success;
       private Xception _err1;
       private Xception2 _err2;
 
+      [DataMember(Order = 0)]
       public Xtruct Success
       {
         get
@@ -7593,6 +8949,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public Xception Err1
       {
         get
@@ -7606,6 +8963,7 @@ namespace Thrift.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public Xception2 Err2
       {
         get
@@ -7620,15 +8978,40 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool err1;
+        [DataMember]
         public bool err2;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeErr1()
+      {
+        return __isset.err1;
+      }
+
+      public bool ShouldSerializeErr2()
+      {
+        return __isset.err2;
+      }
+
+      #endregion XmlSerializer support
 
       public testMultiException_result() {
       }
@@ -7762,10 +9145,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testOneway_args : TBase
     {
       private int _secondsToSleep;
 
+      [DataMember(Order = 0)]
       public int SecondsToSleep
       {
         get
@@ -7780,13 +9165,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool secondsToSleep;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSecondsToSleep()
+      {
+        return __isset.secondsToSleep;
+      }
+
+      #endregion XmlSerializer support
 
       public testOneway_args() {
       }

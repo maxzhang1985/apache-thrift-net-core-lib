@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -19,10 +23,12 @@ using Thrift.Transport;
 namespace ThriftAsync.Test
 {
   public partial class ThriftTest {
+    [ServiceContract(Namespace="")]
     public interface ISync {
       /// <summary>
       /// Prints "testVoid()" and returns nothing.
       /// </summary>
+      [OperationContract]
       void testVoid();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -30,6 +36,7 @@ namespace ThriftAsync.Test
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       string testString(string thing);
       /// <summary>
       /// Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
@@ -37,6 +44,7 @@ namespace ThriftAsync.Test
       /// @return bool  - returns the bool 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       bool testBool(bool thing);
       /// <summary>
       /// Prints 'testByte("%d")' with thing as '%d'
@@ -45,6 +53,7 @@ namespace ThriftAsync.Test
       /// @return i8 - returns the i8/byte 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       sbyte testByte(sbyte thing);
       /// <summary>
       /// Prints 'testI32("%d")' with thing as '%d'
@@ -52,6 +61,7 @@ namespace ThriftAsync.Test
       /// @return i32 - returns the i32 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       int testI32(int thing);
       /// <summary>
       /// Prints 'testI64("%d")' with thing as '%d'
@@ -59,6 +69,7 @@ namespace ThriftAsync.Test
       /// @return i64 - returns the i64 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       long testI64(long thing);
       /// <summary>
       /// Prints 'testDouble("%f")' with thing as '%f'
@@ -66,6 +77,7 @@ namespace ThriftAsync.Test
       /// @return double - returns the double 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       double testDouble(double thing);
       /// <summary>
       /// Prints 'testBinary("%s")' where '%s' is a hex-formatted string of thing's data
@@ -73,6 +85,7 @@ namespace ThriftAsync.Test
       /// @return binary  - returns the binary 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       byte[] testBinary(byte[] thing);
       /// <summary>
       /// Prints 'testStruct("{%s}")' where thing has been formatted into a string of comma separated values
@@ -80,6 +93,7 @@ namespace ThriftAsync.Test
       /// @return Xtruct - returns the Xtruct 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Xtruct testStruct(Xtruct thing);
       /// <summary>
       /// Prints 'testNest("{%s}")' where thing has been formatted into a string of the nested struct
@@ -87,6 +101,7 @@ namespace ThriftAsync.Test
       /// @return Xtruct2 - returns the Xtruct2 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Xtruct2 testNest(Xtruct2 thing);
       /// <summary>
       /// Prints 'testMap("{%s")' where thing has been formatted into a string of  'key => value' pairs
@@ -95,6 +110,7 @@ namespace ThriftAsync.Test
       /// @return map<i32,i32> - returns the map<i32,i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Dictionary<int, int> testMap(Dictionary<int, int> thing);
       /// <summary>
       /// Prints 'testStringMap("{%s}")' where thing has been formatted into a string of  'key => value' pairs
@@ -103,6 +119,7 @@ namespace ThriftAsync.Test
       /// @return map<string,string> - returns the map<string,string> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Dictionary<string, string> testStringMap(Dictionary<string, string> thing);
       /// <summary>
       /// Prints 'testSet("{%s}")' where thing has been formatted into a string of  values
@@ -111,6 +128,7 @@ namespace ThriftAsync.Test
       /// @return set<i32> - returns the set<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       THashSet<int> testSet(THashSet<int> thing);
       /// <summary>
       /// Prints 'testList("{%s}")' where thing has been formatted into a string of  values
@@ -119,6 +137,7 @@ namespace ThriftAsync.Test
       /// @return list<i32> - returns the list<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       List<int> testList(List<int> thing);
       /// <summary>
       /// Prints 'testEnum("%d")' where thing has been formatted into it's numeric value
@@ -126,6 +145,7 @@ namespace ThriftAsync.Test
       /// @return Numberz - returns the Numberz 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Numberz testEnum(Numberz thing);
       /// <summary>
       /// Prints 'testTypedef("%d")' with thing as '%d'
@@ -133,6 +153,7 @@ namespace ThriftAsync.Test
       /// @return UserId - returns the UserId 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       long testTypedef(long thing);
       /// <summary>
       /// Prints 'testMapMap("%d")' with hello as '%d'
@@ -141,6 +162,7 @@ namespace ThriftAsync.Test
       ///   {-4 => {-4 => -4, -3 => -3, -2 => -2, -1 => -1, }, 4 => {1 => 1, 2 => 2, 3 => 3, 4 => 4, }, }
       /// </summary>
       /// <param name="hello"></param>
+      [OperationContract]
       Dictionary<int, Dictionary<int, int>> testMapMap(int hello);
       /// <summary>
       /// So you think you've got this all worked, out eh?
@@ -154,6 +176,7 @@ namespace ThriftAsync.Test
       /// @return map<UserId, map<Numberz,Insanity>> - a map with the above values
       /// </summary>
       /// <param name="argument"></param>
+      [OperationContract]
       Dictionary<long, Dictionary<Numberz, Insanity>> testInsanity(Insanity argument);
       /// <summary>
       /// Prints 'testMulti()'
@@ -172,6 +195,7 @@ namespace ThriftAsync.Test
       /// <param name="arg3"></param>
       /// <param name="arg4"></param>
       /// <param name="arg5"></param>
+      [OperationContract]
       Xtruct testMulti(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5);
       /// <summary>
       /// Print 'testException(%s)' with arg as '%s'
@@ -181,6 +205,8 @@ namespace ThriftAsync.Test
       /// else do not throw anything
       /// </summary>
       /// <param name="arg"></param>
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
       void testException(string arg);
       /// <summary>
       /// Print 'testMultiException(%s, %s)' with arg0 as '%s' and arg1 as '%s'
@@ -192,6 +218,9 @@ namespace ThriftAsync.Test
       /// </summary>
       /// <param name="arg0"></param>
       /// <param name="arg1"></param>
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
+      [FaultContract(typeof(Xception2Fault))]
       Xtruct testMultiException(string arg0, string arg1);
       /// <summary>
       /// Print 'testOneway(%d): Sleeping...' with secondsToSleep as '%d'
@@ -200,13 +229,16 @@ namespace ThriftAsync.Test
       /// @param i32 secondsToSleep - the number of seconds to sleep
       /// </summary>
       /// <param name="secondsToSleep"></param>
+      [OperationContract]
       void testOneway(int secondsToSleep);
     }
 
+    [ServiceContract(Namespace="")]
     public interface IAsync {
       /// <summary>
       /// Prints "testVoid()" and returns nothing.
       /// </summary>
+      [OperationContract]
       Task testVoidAsync();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -214,6 +246,7 @@ namespace ThriftAsync.Test
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<string> testStringAsync(string thing);
       /// <summary>
       /// Prints 'testBool("%s")' where '%s' with thing as 'true' or 'false'
@@ -221,6 +254,7 @@ namespace ThriftAsync.Test
       /// @return bool  - returns the bool 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<bool> testBoolAsync(bool thing);
       /// <summary>
       /// Prints 'testByte("%d")' with thing as '%d'
@@ -229,6 +263,7 @@ namespace ThriftAsync.Test
       /// @return i8 - returns the i8/byte 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<sbyte> testByteAsync(sbyte thing);
       /// <summary>
       /// Prints 'testI32("%d")' with thing as '%d'
@@ -236,6 +271,7 @@ namespace ThriftAsync.Test
       /// @return i32 - returns the i32 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<int> testI32Async(int thing);
       /// <summary>
       /// Prints 'testI64("%d")' with thing as '%d'
@@ -243,6 +279,7 @@ namespace ThriftAsync.Test
       /// @return i64 - returns the i64 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<long> testI64Async(long thing);
       /// <summary>
       /// Prints 'testDouble("%f")' with thing as '%f'
@@ -250,6 +287,7 @@ namespace ThriftAsync.Test
       /// @return double - returns the double 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<double> testDoubleAsync(double thing);
       /// <summary>
       /// Prints 'testBinary("%s")' where '%s' is a hex-formatted string of thing's data
@@ -257,6 +295,7 @@ namespace ThriftAsync.Test
       /// @return binary  - returns the binary 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<byte[]> testBinaryAsync(byte[] thing);
       /// <summary>
       /// Prints 'testStruct("{%s}")' where thing has been formatted into a string of comma separated values
@@ -264,6 +303,7 @@ namespace ThriftAsync.Test
       /// @return Xtruct - returns the Xtruct 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<Xtruct> testStructAsync(Xtruct thing);
       /// <summary>
       /// Prints 'testNest("{%s}")' where thing has been formatted into a string of the nested struct
@@ -271,6 +311,7 @@ namespace ThriftAsync.Test
       /// @return Xtruct2 - returns the Xtruct2 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<Xtruct2> testNestAsync(Xtruct2 thing);
       /// <summary>
       /// Prints 'testMap("{%s")' where thing has been formatted into a string of  'key => value' pairs
@@ -279,6 +320,7 @@ namespace ThriftAsync.Test
       /// @return map<i32,i32> - returns the map<i32,i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<Dictionary<int, int>> testMapAsync(Dictionary<int, int> thing);
       /// <summary>
       /// Prints 'testStringMap("{%s}")' where thing has been formatted into a string of  'key => value' pairs
@@ -287,6 +329,7 @@ namespace ThriftAsync.Test
       /// @return map<string,string> - returns the map<string,string> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<Dictionary<string, string>> testStringMapAsync(Dictionary<string, string> thing);
       /// <summary>
       /// Prints 'testSet("{%s}")' where thing has been formatted into a string of  values
@@ -295,6 +338,7 @@ namespace ThriftAsync.Test
       /// @return set<i32> - returns the set<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<THashSet<int>> testSetAsync(THashSet<int> thing);
       /// <summary>
       /// Prints 'testList("{%s}")' where thing has been formatted into a string of  values
@@ -303,6 +347,7 @@ namespace ThriftAsync.Test
       /// @return list<i32> - returns the list<i32> 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<List<int>> testListAsync(List<int> thing);
       /// <summary>
       /// Prints 'testEnum("%d")' where thing has been formatted into it's numeric value
@@ -310,6 +355,7 @@ namespace ThriftAsync.Test
       /// @return Numberz - returns the Numberz 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<Numberz> testEnumAsync(Numberz thing);
       /// <summary>
       /// Prints 'testTypedef("%d")' with thing as '%d'
@@ -317,6 +363,7 @@ namespace ThriftAsync.Test
       /// @return UserId - returns the UserId 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<long> testTypedefAsync(long thing);
       /// <summary>
       /// Prints 'testMapMap("%d")' with hello as '%d'
@@ -325,6 +372,7 @@ namespace ThriftAsync.Test
       ///   {-4 => {-4 => -4, -3 => -3, -2 => -2, -1 => -1, }, 4 => {1 => 1, 2 => 2, 3 => 3, 4 => 4, }, }
       /// </summary>
       /// <param name="hello"></param>
+      [OperationContract]
       Task<Dictionary<int, Dictionary<int, int>>> testMapMapAsync(int hello);
       /// <summary>
       /// So you think you've got this all worked, out eh?
@@ -338,6 +386,7 @@ namespace ThriftAsync.Test
       /// @return map<UserId, map<Numberz,Insanity>> - a map with the above values
       /// </summary>
       /// <param name="argument"></param>
+      [OperationContract]
       Task<Dictionary<long, Dictionary<Numberz, Insanity>>> testInsanityAsync(Insanity argument);
       /// <summary>
       /// Prints 'testMulti()'
@@ -356,6 +405,7 @@ namespace ThriftAsync.Test
       /// <param name="arg3"></param>
       /// <param name="arg4"></param>
       /// <param name="arg5"></param>
+      [OperationContract]
       Task<Xtruct> testMultiAsync(sbyte arg0, int arg1, long arg2, Dictionary<short, string> arg3, Numberz arg4, long arg5);
       /// <summary>
       /// Print 'testException(%s)' with arg as '%s'
@@ -365,6 +415,8 @@ namespace ThriftAsync.Test
       /// else do not throw anything
       /// </summary>
       /// <param name="arg"></param>
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
       Task testExceptionAsync(string arg);
       /// <summary>
       /// Print 'testMultiException(%s, %s)' with arg0 as '%s' and arg1 as '%s'
@@ -376,6 +428,9 @@ namespace ThriftAsync.Test
       /// </summary>
       /// <param name="arg0"></param>
       /// <param name="arg1"></param>
+      [OperationContract]
+      [FaultContract(typeof(XceptionFault))]
+      [FaultContract(typeof(Xception2Fault))]
       Task<Xtruct> testMultiExceptionAsync(string arg0, string arg1);
       /// <summary>
       /// Print 'testOneway(%d): Sleeping...' with secondsToSleep as '%d'
@@ -384,9 +439,11 @@ namespace ThriftAsync.Test
       /// @param i32 secondsToSleep - the number of seconds to sleep
       /// </summary>
       /// <param name="secondsToSleep"></param>
+      [OperationContract]
       Task testOnewayAsync(int secondsToSleep);
     }
 
+    [ServiceContract(Namespace="")]
     public interface Iface : ISync, IAsync {
       /// <summary>
       /// Prints "testVoid()" and returns nothing.
@@ -3378,6 +3435,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testVoid_args : TBase
     {
 
@@ -3440,6 +3498,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testVoid_result : TBase
     {
 
@@ -3503,10 +3562,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testString_args : TBase
     {
       private string _thing;
 
+      [DataMember(Order = 0)]
       public string Thing
       {
         get
@@ -3521,13 +3582,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testString_args() {
       }
@@ -3611,10 +3685,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testString_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -3629,13 +3705,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testString_result() {
       }
@@ -3722,10 +3811,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBool_args : TBase
     {
       private bool _thing;
 
+      [DataMember(Order = 0)]
       public bool Thing
       {
         get
@@ -3740,13 +3831,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testBool_args() {
       }
@@ -3830,10 +3934,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBool_result : TBase
     {
       private bool _success;
 
+      [DataMember(Order = 0)]
       public bool Success
       {
         get
@@ -3848,13 +3954,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testBool_result() {
       }
@@ -3939,10 +4058,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testByte_args : TBase
     {
       private sbyte _thing;
 
+      [DataMember(Order = 0)]
       public sbyte Thing
       {
         get
@@ -3957,13 +4078,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testByte_args() {
       }
@@ -4047,10 +4181,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testByte_result : TBase
     {
       private sbyte _success;
 
+      [DataMember(Order = 0)]
       public sbyte Success
       {
         get
@@ -4065,13 +4201,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testByte_result() {
       }
@@ -4156,10 +4305,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI32_args : TBase
     {
       private int _thing;
 
+      [DataMember(Order = 0)]
       public int Thing
       {
         get
@@ -4174,13 +4325,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testI32_args() {
       }
@@ -4264,10 +4428,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI32_result : TBase
     {
       private int _success;
 
+      [DataMember(Order = 0)]
       public int Success
       {
         get
@@ -4282,13 +4448,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testI32_result() {
       }
@@ -4373,10 +4552,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI64_args : TBase
     {
       private long _thing;
 
+      [DataMember(Order = 0)]
       public long Thing
       {
         get
@@ -4391,13 +4572,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testI64_args() {
       }
@@ -4481,10 +4675,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testI64_result : TBase
     {
       private long _success;
 
+      [DataMember(Order = 0)]
       public long Success
       {
         get
@@ -4499,13 +4695,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testI64_result() {
       }
@@ -4590,10 +4799,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testDouble_args : TBase
     {
       private double _thing;
 
+      [DataMember(Order = 0)]
       public double Thing
       {
         get
@@ -4608,13 +4819,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testDouble_args() {
       }
@@ -4698,10 +4922,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testDouble_result : TBase
     {
       private double _success;
 
+      [DataMember(Order = 0)]
       public double Success
       {
         get
@@ -4716,13 +4942,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testDouble_result() {
       }
@@ -4807,10 +5046,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBinary_args : TBase
     {
       private byte[] _thing;
 
+      [DataMember(Order = 0)]
       public byte[] Thing
       {
         get
@@ -4825,13 +5066,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testBinary_args() {
       }
@@ -4915,10 +5169,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testBinary_result : TBase
     {
       private byte[] _success;
 
+      [DataMember(Order = 0)]
       public byte[] Success
       {
         get
@@ -4933,13 +5189,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testBinary_result() {
       }
@@ -5026,10 +5295,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStruct_args : TBase
     {
       private Xtruct _thing;
 
+      [DataMember(Order = 0)]
       public Xtruct Thing
       {
         get
@@ -5044,13 +5315,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testStruct_args() {
       }
@@ -5135,10 +5419,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStruct_result : TBase
     {
       private Xtruct _success;
 
+      [DataMember(Order = 0)]
       public Xtruct Success
       {
         get
@@ -5153,13 +5439,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testStruct_result() {
       }
@@ -5247,10 +5546,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testNest_args : TBase
     {
       private Xtruct2 _thing;
 
+      [DataMember(Order = 0)]
       public Xtruct2 Thing
       {
         get
@@ -5265,13 +5566,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testNest_args() {
       }
@@ -5356,10 +5670,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testNest_result : TBase
     {
       private Xtruct2 _success;
 
+      [DataMember(Order = 0)]
       public Xtruct2 Success
       {
         get
@@ -5374,13 +5690,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testNest_result() {
       }
@@ -5468,10 +5797,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMap_args : TBase
     {
       private Dictionary<int, int> _thing;
 
+      [DataMember(Order = 0)]
       public Dictionary<int, int> Thing
       {
         get
@@ -5486,13 +5817,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testMap_args() {
       }
@@ -5596,10 +5940,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMap_result : TBase
     {
       private Dictionary<int, int> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<int, int> Success
       {
         get
@@ -5614,13 +5960,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testMap_result() {
       }
@@ -5727,10 +6086,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStringMap_args : TBase
     {
       private Dictionary<string, string> _thing;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, string> Thing
       {
         get
@@ -5745,13 +6106,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testStringMap_args() {
       }
@@ -5855,10 +6229,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testStringMap_result : TBase
     {
       private Dictionary<string, string> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, string> Success
       {
         get
@@ -5873,13 +6249,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testStringMap_result() {
       }
@@ -5986,10 +6375,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testSet_args : TBase
     {
       private THashSet<int> _thing;
 
+      [DataMember(Order = 0)]
       public THashSet<int> Thing
       {
         get
@@ -6004,13 +6395,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testSet_args() {
       }
@@ -6111,10 +6515,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testSet_result : TBase
     {
       private THashSet<int> _success;
 
+      [DataMember(Order = 0)]
       public THashSet<int> Success
       {
         get
@@ -6129,13 +6535,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testSet_result() {
       }
@@ -6239,10 +6658,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testList_args : TBase
     {
       private List<int> _thing;
 
+      [DataMember(Order = 0)]
       public List<int> Thing
       {
         get
@@ -6257,13 +6678,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testList_args() {
       }
@@ -6364,10 +6798,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testList_result : TBase
     {
       private List<int> _success;
 
+      [DataMember(Order = 0)]
       public List<int> Success
       {
         get
@@ -6382,13 +6818,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testList_result() {
       }
@@ -6492,6 +6941,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testEnum_args : TBase
     {
       private Numberz _thing;
@@ -6500,6 +6950,7 @@ namespace ThriftAsync.Test
       /// 
       /// <seealso cref="Numberz"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Numberz Thing
       {
         get
@@ -6514,13 +6965,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testEnum_args() {
       }
@@ -6604,6 +7068,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testEnum_result : TBase
     {
       private Numberz _success;
@@ -6612,6 +7077,7 @@ namespace ThriftAsync.Test
       /// 
       /// <seealso cref="Numberz"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Numberz Success
       {
         get
@@ -6626,13 +7092,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testEnum_result() {
       }
@@ -6717,10 +7196,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testTypedef_args : TBase
     {
       private long _thing;
 
+      [DataMember(Order = 0)]
       public long Thing
       {
         get
@@ -6735,13 +7216,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public testTypedef_args() {
       }
@@ -6825,10 +7319,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testTypedef_result : TBase
     {
       private long _success;
 
+      [DataMember(Order = 0)]
       public long Success
       {
         get
@@ -6843,13 +7339,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testTypedef_result() {
       }
@@ -6934,10 +7443,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMapMap_args : TBase
     {
       private int _hello;
 
+      [DataMember(Order = 0)]
       public int Hello
       {
         get
@@ -6952,13 +7463,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool hello;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeHello()
+      {
+        return __isset.hello;
+      }
+
+      #endregion XmlSerializer support
 
       public testMapMap_args() {
       }
@@ -7042,10 +7566,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMapMap_result : TBase
     {
       private Dictionary<int, Dictionary<int, int>> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<int, Dictionary<int, int>> Success
       {
         get
@@ -7060,13 +7586,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testMapMap_result() {
       }
@@ -7193,10 +7732,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testInsanity_args : TBase
     {
       private Insanity _argument;
 
+      [DataMember(Order = 0)]
       public Insanity Argument
       {
         get
@@ -7211,13 +7752,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool argument;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArgument()
+      {
+        return __isset.argument;
+      }
+
+      #endregion XmlSerializer support
 
       public testInsanity_args() {
       }
@@ -7302,10 +7856,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testInsanity_result : TBase
     {
       private Dictionary<long, Dictionary<Numberz, Insanity>> _success;
 
+      [DataMember(Order = 0)]
       public Dictionary<long, Dictionary<Numberz, Insanity>> Success
       {
         get
@@ -7320,13 +7876,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testInsanity_result() {
       }
@@ -7454,6 +8023,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMulti_args : TBase
     {
       private sbyte _arg0;
@@ -7463,6 +8033,7 @@ namespace ThriftAsync.Test
       private Numberz _arg4;
       private long _arg5;
 
+      [DataMember(Order = 0)]
       public sbyte Arg0
       {
         get
@@ -7476,6 +8047,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public int Arg1
       {
         get
@@ -7489,6 +8061,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public long Arg2
       {
         get
@@ -7502,6 +8075,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public Dictionary<short, string> Arg3
       {
         get
@@ -7519,6 +8093,7 @@ namespace ThriftAsync.Test
       /// 
       /// <seealso cref="Numberz"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Numberz Arg4
       {
         get
@@ -7532,6 +8107,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public long Arg5
       {
         get
@@ -7546,18 +8122,61 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool arg0;
+        [DataMember]
         public bool arg1;
+        [DataMember]
         public bool arg2;
+        [DataMember]
         public bool arg3;
+        [DataMember]
         public bool arg4;
+        [DataMember]
         public bool arg5;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArg0()
+      {
+        return __isset.arg0;
+      }
+
+      public bool ShouldSerializeArg1()
+      {
+        return __isset.arg1;
+      }
+
+      public bool ShouldSerializeArg2()
+      {
+        return __isset.arg2;
+      }
+
+      public bool ShouldSerializeArg3()
+      {
+        return __isset.arg3;
+      }
+
+      public bool ShouldSerializeArg4()
+      {
+        return __isset.arg4;
+      }
+
+      public bool ShouldSerializeArg5()
+      {
+        return __isset.arg5;
+      }
+
+      #endregion XmlSerializer support
 
       public testMulti_args() {
       }
@@ -7766,10 +8385,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMulti_result : TBase
     {
       private Xtruct _success;
 
+      [DataMember(Order = 0)]
       public Xtruct Success
       {
         get
@@ -7784,13 +8405,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public testMulti_result() {
       }
@@ -7878,10 +8512,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testException_args : TBase
     {
       private string _arg;
 
+      [DataMember(Order = 0)]
       public string Arg
       {
         get
@@ -7896,13 +8532,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool arg;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArg()
+      {
+        return __isset.arg;
+      }
+
+      #endregion XmlSerializer support
 
       public testException_args() {
       }
@@ -7986,10 +8635,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testException_result : TBase
     {
       private Xception _err1;
 
+      [DataMember(Order = 0)]
       public Xception Err1
       {
         get
@@ -8004,13 +8655,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool err1;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeErr1()
+      {
+        return __isset.err1;
+      }
+
+      #endregion XmlSerializer support
 
       public testException_result() {
       }
@@ -8098,11 +8762,13 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMultiException_args : TBase
     {
       private string _arg0;
       private string _arg1;
 
+      [DataMember(Order = 0)]
       public string Arg0
       {
         get
@@ -8116,6 +8782,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public string Arg1
       {
         get
@@ -8130,14 +8797,33 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool arg0;
+        [DataMember]
         public bool arg1;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeArg0()
+      {
+        return __isset.arg0;
+      }
+
+      public bool ShouldSerializeArg1()
+      {
+        return __isset.arg1;
+      }
+
+      #endregion XmlSerializer support
 
       public testMultiException_args() {
       }
@@ -8242,12 +8928,14 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testMultiException_result : TBase
     {
       private Xtruct _success;
       private Xception _err1;
       private Xception2 _err2;
 
+      [DataMember(Order = 0)]
       public Xtruct Success
       {
         get
@@ -8261,6 +8949,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public Xception Err1
       {
         get
@@ -8274,6 +8963,7 @@ namespace ThriftAsync.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public Xception2 Err2
       {
         get
@@ -8288,15 +8978,40 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool err1;
+        [DataMember]
         public bool err2;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeErr1()
+      {
+        return __isset.err1;
+      }
+
+      public bool ShouldSerializeErr2()
+      {
+        return __isset.err2;
+      }
+
+      #endregion XmlSerializer support
 
       public testMultiException_result() {
       }
@@ -8430,10 +9145,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class testOneway_args : TBase
     {
       private int _secondsToSleep;
 
+      [DataMember(Order = 0)]
       public int SecondsToSleep
       {
         get
@@ -8448,13 +9165,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool secondsToSleep;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSecondsToSleep()
+      {
+        return __isset.secondsToSleep;
+      }
+
+      #endregion XmlSerializer support
 
       public testOneway_args() {
       }

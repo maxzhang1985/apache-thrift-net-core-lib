@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,6 +26,7 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class EmptyStruct : TBase
   {
 

@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,20 +26,24 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class ColumnDef : TBase
   {
     private IndexType _index_type;
     private string _index_name;
     private Dictionary<string, string> _index_options;
 
+    [DataMember(Order = 0)]
     public byte[] Name { get; set; }
 
+    [DataMember(Order = 0)]
     public string Validation_class { get; set; }
 
     /// <summary>
     /// 
     /// <seealso cref="IndexType"/>
     /// </summary>
+    [DataMember(Order = 0)]
     public IndexType Index_type
     {
       get
@@ -48,6 +57,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Index_name
     {
       get
@@ -61,6 +71,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Dictionary<string, string> Index_options
     {
       get
@@ -75,15 +86,40 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool index_type;
+      [DataMember]
       public bool index_name;
+      [DataMember]
       public bool index_options;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeIndex_type()
+    {
+      return __isset.index_type;
+    }
+
+    public bool ShouldSerializeIndex_name()
+    {
+      return __isset.index_name;
+    }
+
+    public bool ShouldSerializeIndex_options()
+    {
+      return __isset.index_options;
+    }
+
+    #endregion XmlSerializer support
 
     public ColumnDef() {
     }

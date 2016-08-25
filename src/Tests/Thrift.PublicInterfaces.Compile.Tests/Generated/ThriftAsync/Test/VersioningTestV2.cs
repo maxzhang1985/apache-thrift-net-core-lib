@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,6 +26,7 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class VersioningTestV2 : TBase
   {
     private int _begin_in_both;
@@ -37,6 +42,7 @@ namespace ThriftAsync.Test
     private string _newstring;
     private int _end_in_both;
 
+    [DataMember(Order = 0)]
     public int Begin_in_both
     {
       get
@@ -50,6 +56,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Newint
     {
       get
@@ -63,6 +70,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public sbyte Newbyte
     {
       get
@@ -76,6 +84,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public short Newshort
     {
       get
@@ -89,6 +98,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public long Newlong
     {
       get
@@ -102,6 +112,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public double Newdouble
     {
       get
@@ -115,6 +126,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Bonk Newstruct
     {
       get
@@ -128,6 +140,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<int> Newlist
     {
       get
@@ -141,6 +154,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public THashSet<int> Newset
     {
       get
@@ -154,6 +168,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Dictionary<int, int> Newmap
     {
       get
@@ -167,6 +182,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Newstring
     {
       get
@@ -180,6 +196,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int End_in_both
     {
       get
@@ -194,24 +211,103 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool begin_in_both;
+      [DataMember]
       public bool newint;
+      [DataMember]
       public bool newbyte;
+      [DataMember]
       public bool newshort;
+      [DataMember]
       public bool newlong;
+      [DataMember]
       public bool newdouble;
+      [DataMember]
       public bool newstruct;
+      [DataMember]
       public bool newlist;
+      [DataMember]
       public bool newset;
+      [DataMember]
       public bool newmap;
+      [DataMember]
       public bool newstring;
+      [DataMember]
       public bool end_in_both;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeBegin_in_both()
+    {
+      return __isset.begin_in_both;
+    }
+
+    public bool ShouldSerializeNewint()
+    {
+      return __isset.newint;
+    }
+
+    public bool ShouldSerializeNewbyte()
+    {
+      return __isset.newbyte;
+    }
+
+    public bool ShouldSerializeNewshort()
+    {
+      return __isset.newshort;
+    }
+
+    public bool ShouldSerializeNewlong()
+    {
+      return __isset.newlong;
+    }
+
+    public bool ShouldSerializeNewdouble()
+    {
+      return __isset.newdouble;
+    }
+
+    public bool ShouldSerializeNewstruct()
+    {
+      return __isset.newstruct;
+    }
+
+    public bool ShouldSerializeNewlist()
+    {
+      return __isset.newlist;
+    }
+
+    public bool ShouldSerializeNewset()
+    {
+      return __isset.newset;
+    }
+
+    public bool ShouldSerializeNewmap()
+    {
+      return __isset.newmap;
+    }
+
+    public bool ShouldSerializeNewstring()
+    {
+      return __isset.newstring;
+    }
+
+    public bool ShouldSerializeEnd_in_both()
+    {
+      return __isset.end_in_both;
+    }
+
+    #endregion XmlSerializer support
 
     public VersioningTestV2() {
     }

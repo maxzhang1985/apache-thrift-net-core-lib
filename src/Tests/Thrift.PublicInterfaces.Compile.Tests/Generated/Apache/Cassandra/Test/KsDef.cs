@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,16 +26,20 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class KsDef : TBase
   {
     private Dictionary<string, string> _strategy_options;
     private int _replication_factor;
     private bool _durable_writes;
 
+    [DataMember(Order = 0)]
     public string Name { get; set; }
 
+    [DataMember(Order = 0)]
     public string Strategy_class { get; set; }
 
+    [DataMember(Order = 0)]
     public Dictionary<string, string> Strategy_options
     {
       get
@@ -47,6 +56,7 @@ namespace Apache.Cassandra.Test
     /// <summary>
     /// @deprecated
     /// </summary>
+    [DataMember(Order = 0)]
     public int Replication_factor
     {
       get
@@ -60,8 +70,10 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<CfDef> Cf_defs { get; set; }
 
+    [DataMember(Order = 0)]
     public bool Durable_writes
     {
       get
@@ -76,15 +88,40 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool strategy_options;
+      [DataMember]
       public bool replication_factor;
+      [DataMember]
       public bool durable_writes;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeStrategy_options()
+    {
+      return __isset.strategy_options;
+    }
+
+    public bool ShouldSerializeReplication_factor()
+    {
+      return __isset.replication_factor;
+    }
+
+    public bool ShouldSerializeDurable_writes()
+    {
+      return __isset.durable_writes;
+    }
+
+    #endregion XmlSerializer support
 
     public KsDef() {
       this._durable_writes = true;

@@ -22,6 +22,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
@@ -88,10 +89,10 @@ namespace Thrift.Transport
         public async Task Invoke(HttpContext context)
         {
             context.Response.ContentType = ContentType;
-            await ProcessRequestAsync(context);
+            await ProcessRequestAsync(context, context.RequestAborted); //TODO: check for correct logic
         }
 
-        public async Task ProcessRequestAsync(HttpContext context)
+        public async Task ProcessRequestAsync(HttpContext context, CancellationToken cancellationToken)
         {
             var transport = new TStreamTransport(context.Request.Body, context.Response.Body);
 
@@ -100,7 +101,7 @@ namespace Thrift.Transport
                 var input = InputProtocolFactory.GetProtocol(transport);
                 var output = OutputProtocolFactory.GetProtocol(transport);
 
-                while (await Processor.ProcessAsync(input, output))
+                while (await Processor.ProcessAsync(input, output, cancellationToken))
                 {
                 }
             }

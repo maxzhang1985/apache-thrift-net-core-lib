@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -23,6 +27,7 @@ namespace Thrift.Samples
     /// Ahh, now onto the cool part, defining a service. Services just need a name
     /// and can optionally inherit from another service using the extends keyword.
     /// </summary>
+    [ServiceContract(Namespace="")]
     public interface ISync : Thrift.Samples.SharedService.ISync {
       /// <summary>
       /// A method definition looks like C code. It has a return type, arguments,
@@ -30,14 +35,19 @@ namespace Thrift.Samples
       /// lists and exception lists are specified using the exact same syntax as
       /// field lists in struct or exception definitions.
       /// </summary>
+      [OperationContract]
       void Ping();
+      [OperationContract]
       int @Add(int num1, int num2);
+      [OperationContract]
+      [FaultContract(typeof(InvalidOperationFault))]
       int Calculate(int logid, Work w);
       /// <summary>
       /// This method has a oneway modifier. That means the client only makes
       /// a request and does not listen for any response at all. Oneway methods
       /// must be void.
       /// </summary>
+      [OperationContract]
       void Zip();
     }
 
@@ -45,6 +55,7 @@ namespace Thrift.Samples
     /// Ahh, now onto the cool part, defining a service. Services just need a name
     /// and can optionally inherit from another service using the extends keyword.
     /// </summary>
+    [ServiceContract(Namespace="")]
     public interface IAsync : Thrift.Samples.SharedService.IAsync {
       /// <summary>
       /// A method definition looks like C code. It has a return type, arguments,
@@ -52,14 +63,19 @@ namespace Thrift.Samples
       /// lists and exception lists are specified using the exact same syntax as
       /// field lists in struct or exception definitions.
       /// </summary>
+      [OperationContract]
       Task PingAsync();
+      [OperationContract]
       Task<int> @AddAsync(int num1, int num2);
+      [OperationContract]
+      [FaultContract(typeof(InvalidOperationFault))]
       Task<int> CalculateAsync(int logid, Work w);
       /// <summary>
       /// This method has a oneway modifier. That means the client only makes
       /// a request and does not listen for any response at all. Oneway methods
       /// must be void.
       /// </summary>
+      [OperationContract]
       Task ZipAsync();
     }
 
@@ -67,6 +83,7 @@ namespace Thrift.Samples
     /// Ahh, now onto the cool part, defining a service. Services just need a name
     /// and can optionally inherit from another service using the extends keyword.
     /// </summary>
+    [ServiceContract(Namespace="")]
     public interface Iface : ISync, IAsync {
       /// <summary>
       /// A method definition looks like C code. It has a return type, arguments,
@@ -311,9 +328,7 @@ namespace Thrift.Samples
       }
 
     }
-
-      //TODO: check for generation of AsyncProcessor from Sync version of processor
-      public class AsyncProcessor : Thrift.Samples.SharedService.AsyncProcessor, TAsyncProcessor {
+    public class AsyncProcessor : Thrift.Samples.SharedService.Processor, TAsyncProcessor {
       public AsyncProcessor(IAsync iface) : base(iface)
       {
         iface_ = iface;
@@ -619,6 +634,7 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Ping_args : TBase
     {
 
@@ -681,6 +697,7 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Ping_result : TBase
     {
 
@@ -744,11 +761,13 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Add_args : TBase
     {
       private int _num1;
       private int _num2;
 
+      [DataMember(Order = 0)]
       public int Num1
       {
         get
@@ -762,6 +781,7 @@ namespace Thrift.Samples
         }
       }
 
+      [DataMember(Order = 0)]
       public int Num2
       {
         get
@@ -776,14 +796,33 @@ namespace Thrift.Samples
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool num1;
+        [DataMember]
         public bool num2;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeNum1()
+      {
+        return __isset.num1;
+      }
+
+      public bool ShouldSerializeNum2()
+      {
+        return __isset.num2;
+      }
+
+      #endregion XmlSerializer support
 
       public Add_args() {
       }
@@ -888,10 +927,12 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Add_result : TBase
     {
       private int _success;
 
+      [DataMember(Order = 0)]
       public int Success
       {
         get
@@ -906,13 +947,26 @@ namespace Thrift.Samples
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public Add_result() {
       }
@@ -997,11 +1051,13 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Calculate_args : TBase
     {
       private int _logid;
       private Work _w;
 
+      [DataMember(Order = 0)]
       public int Logid
       {
         get
@@ -1015,6 +1071,7 @@ namespace Thrift.Samples
         }
       }
 
+      [DataMember(Order = 0)]
       public Work W
       {
         get
@@ -1029,14 +1086,33 @@ namespace Thrift.Samples
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool logid;
+        [DataMember]
         public bool w;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeLogid()
+      {
+        return __isset.logid;
+      }
+
+      public bool ShouldSerializeW()
+      {
+        return __isset.w;
+      }
+
+      #endregion XmlSerializer support
 
       public Calculate_args() {
       }
@@ -1142,11 +1218,13 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Calculate_result : TBase
     {
       private int _success;
       private InvalidOperation _ouch;
 
+      [DataMember(Order = 0)]
       public int Success
       {
         get
@@ -1160,6 +1238,7 @@ namespace Thrift.Samples
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidOperation Ouch
       {
         get
@@ -1174,14 +1253,33 @@ namespace Thrift.Samples
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ouch;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeOuch()
+      {
+        return __isset.ouch;
+      }
+
+      #endregion XmlSerializer support
 
       public Calculate_result() {
       }
@@ -1289,6 +1387,7 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class Zip_args : TBase
     {
 

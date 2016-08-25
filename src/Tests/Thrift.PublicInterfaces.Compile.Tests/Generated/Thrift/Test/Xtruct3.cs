@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,6 +26,7 @@ namespace Thrift.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Xtruct3 : TBase
   {
     private string _string_thing;
@@ -28,6 +34,7 @@ namespace Thrift.Test
     private int _i32_thing;
     private long _i64_thing;
 
+    [DataMember(Order = 0)]
     public string String_thing
     {
       get
@@ -41,6 +48,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Changed
     {
       get
@@ -54,6 +62,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int I32_thing
     {
       get
@@ -67,6 +76,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public long I64_thing
     {
       get
@@ -81,16 +91,47 @@ namespace Thrift.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool string_thing;
+      [DataMember]
       public bool changed;
+      [DataMember]
       public bool i32_thing;
+      [DataMember]
       public bool i64_thing;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeString_thing()
+    {
+      return __isset.string_thing;
+    }
+
+    public bool ShouldSerializeChanged()
+    {
+      return __isset.changed;
+    }
+
+    public bool ShouldSerializeI32_thing()
+    {
+      return __isset.i32_thing;
+    }
+
+    public bool ShouldSerializeI64_thing()
+    {
+      return __isset.i64_thing;
+    }
+
+    #endregion XmlSerializer support
 
     public Xtruct3() {
     }

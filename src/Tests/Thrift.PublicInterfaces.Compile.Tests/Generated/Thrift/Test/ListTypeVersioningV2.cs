@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,11 +26,13 @@ namespace Thrift.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class ListTypeVersioningV2 : TBase
   {
     private List<string> _strings;
     private string _hello;
 
+    [DataMember(Order = 0)]
     public List<string> Strings
     {
       get
@@ -39,6 +46,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Hello
     {
       get
@@ -53,14 +61,33 @@ namespace Thrift.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool strings;
+      [DataMember]
       public bool hello;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeStrings()
+    {
+      return __isset.strings;
+    }
+
+    public bool ShouldSerializeHello()
+    {
+      return __isset.hello;
+    }
+
+    #endregion XmlSerializer support
 
     public ListTypeVersioningV2() {
     }

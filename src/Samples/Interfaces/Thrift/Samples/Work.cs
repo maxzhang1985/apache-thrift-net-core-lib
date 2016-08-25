@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -31,6 +35,7 @@ namespace Thrift.Samples
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Work : TBase
   {
     private int _Num1;
@@ -38,6 +43,7 @@ namespace Thrift.Samples
     private Operation _Op;
     private string _Comment;
 
+    [DataMember(Order = 0)]
     public int Num1
     {
       get
@@ -51,6 +57,7 @@ namespace Thrift.Samples
       }
     }
 
+    [DataMember(Order = 0)]
     public int Num2
     {
       get
@@ -68,6 +75,7 @@ namespace Thrift.Samples
     /// 
     /// <seealso cref="Operation"/>
     /// </summary>
+    [DataMember(Order = 0)]
     public Operation Op
     {
       get
@@ -81,6 +89,7 @@ namespace Thrift.Samples
       }
     }
 
+    [DataMember(Order = 0)]
     public string Comment
     {
       get
@@ -95,16 +104,47 @@ namespace Thrift.Samples
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool Num1;
+      [DataMember]
       public bool Num2;
+      [DataMember]
       public bool Op;
+      [DataMember]
       public bool Comment;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeNum1()
+    {
+      return __isset.Num1;
+    }
+
+    public bool ShouldSerializeNum2()
+    {
+      return __isset.Num2;
+    }
+
+    public bool ShouldSerializeOp()
+    {
+      return __isset.Op;
+    }
+
+    public bool ShouldSerializeComment()
+    {
+      return __isset.Comment;
+    }
+
+    #endregion XmlSerializer support
 
     public Work() {
       this._Num1 = 0;

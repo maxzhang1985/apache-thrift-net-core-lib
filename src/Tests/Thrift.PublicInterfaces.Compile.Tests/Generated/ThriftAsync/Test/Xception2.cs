@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -27,6 +31,7 @@ namespace ThriftAsync.Test
     private int _errorCode;
     private Xtruct _struct_thing;
 
+    [DataMember(Order = 0)]
     public int ErrorCode
     {
       get
@@ -40,6 +45,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Xtruct Struct_thing
     {
       get
@@ -54,14 +60,33 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool errorCode;
+      [DataMember]
       public bool struct_thing;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeErrorCode()
+    {
+      return __isset.errorCode;
+    }
+
+    public bool ShouldSerializeStruct_thing()
+    {
+      return __isset.struct_thing;
+    }
+
+    #endregion XmlSerializer support
 
     public Xception2() {
     }
@@ -159,6 +184,44 @@ namespace ThriftAsync.Test
       }
       __sb.Append(")");
       return __sb.ToString();
+    }
+
+  }
+
+
+  #if !SILVERLIGHT
+  [Serializable]
+  #endif
+  [DataContract]
+  public partial class Xception2Fault
+  {
+    private int _errorCode;
+    private Xtruct _struct_thing;
+
+    [DataMember(Order = 0)]
+    public int ErrorCode
+    {
+      get
+      {
+        return _errorCode;
+      }
+      set
+      {
+        this._errorCode = value;
+      }
+    }
+
+    [DataMember(Order = 0)]
+    public Xtruct Struct_thing
+    {
+      get
+      {
+        return _struct_thing;
+      }
+      set
+      {
+        this._struct_thing = value;
+      }
     }
 
   }

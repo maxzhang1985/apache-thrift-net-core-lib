@@ -64,10 +64,6 @@ namespace Thrift.Transport
 
         public override bool IsOpen => true;
 
-        public override void Open()
-        {
-        }
-
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -87,30 +83,6 @@ namespace Thrift.Transport
             {
                 _outputStream.Dispose();
                 _outputStream = null;
-            }
-        }
-
-        public override int Read(byte[] buffer, int offset, int length)
-        {
-            if (_inputStream == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No request has been sent");
-            }
-
-            try
-            {
-                var ret = _inputStream.Read(buffer, offset, length);
-
-                if (ret == -1)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "No more data available");
-                }
-
-                return ret;
-            }
-            catch (IOException iox)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown, iox.ToString());
             }
         }
 
@@ -143,11 +115,6 @@ namespace Thrift.Transport
             }
         }
 
-        public override void Write(byte[] buffer, int offset, int length)
-        {
-            _outputStream.Write(buffer, offset, length);
-        }
-
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -156,45 +123,6 @@ namespace Thrift.Transport
             }
 
             await _outputStream.WriteAsync(buffer, offset, length,cancellationToken);
-        }
-
-        public override void Flush()
-        {
-            try
-            {
-                try
-                {
-                    var httpClient = CreateClient();
-
-                    using (var outStream = new StreamContent(_outputStream))
-                    {
-                        var msg = httpClient.PostAsync(_uri, outStream).GetAwaiter().GetResult();
-                        msg.EnsureSuccessStatusCode();
-
-                        _inputStream.Dispose();
-                        _inputStream = null;
-
-                        _inputStream = msg.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-
-                        if (_inputStream.CanSeek)
-                        {
-                            _inputStream.Seek(0, SeekOrigin.Begin);
-                        }
-                    }
-                }
-                catch (IOException iox)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.Unknown, iox.ToString());
-                }
-                catch (WebException wx)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.Unknown, "Couldn't connect to server: " + wx);
-                }
-            }
-            finally
-            {
-                _outputStream = new MemoryStream();
-            }
         }
 
         private HttpClient CreateClient()
@@ -260,133 +188,7 @@ namespace Thrift.Transport
                 _outputStream = new MemoryStream();
             }
         }
-
-        public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
-        {
-            try
-            {
-                // Create connection object
-                var faResult = new FlushAsyncResult(callback, state)
-                {
-                    HttpClient = CreateClient()
-                };
-
-                try
-                {
-                    _outputStream.Seek(0, SeekOrigin.Begin);
-
-                    using (var outStream = new StreamContent(_outputStream))
-                    {
-                        var msg = faResult.HttpClient.PostAsync(_uri, outStream).GetAwaiter().GetResult();
-                        msg.EnsureSuccessStatusCode();
-
-                        if (_inputStream != null)
-                        {
-                            _inputStream.Dispose();
-                            _inputStream = null;
-                        }
-
-                        _inputStream = msg.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
-
-                        if (_inputStream != null && _inputStream.CanSeek)
-                        {
-                            _inputStream.Seek(0, SeekOrigin.Begin);
-                        }
-
-                        faResult.UpdateStatusToComplete();
-                        faResult.NotifyCallbackWhenAvailable();
-                    }
-                }
-                catch (Exception exception)
-                {
-                    faResult.AsyncException = new TTransportException(exception.ToString());
-                    faResult.UpdateStatusToComplete();
-                    faResult.NotifyCallbackWhenAvailable();
-                }
-                
-                return faResult;
-
-            }
-            catch (IOException iox)
-            {
-                throw new TTransportException(iox.ToString());
-            }
-        }
-
-        public override void EndFlush(IAsyncResult asyncResult)
-        {
-            try
-            {
-                var flushAsyncResult = (FlushAsyncResult) asyncResult;
-
-                if (!flushAsyncResult.IsCompleted)
-                {
-                    var waitHandle = flushAsyncResult.AsyncWaitHandle;
-                    waitHandle.WaitOne(); 
-                    waitHandle.Dispose();
-                }
-
-                if (flushAsyncResult.AsyncException != null)
-                {
-                    throw flushAsyncResult.AsyncException;
-                }
-            }
-            finally
-            {
-                _outputStream = new MemoryStream();
-            }
-        }
-
-        class FlushAsyncResult : IAsyncResult
-        {
-            private volatile bool _isCompleted;
-            private ManualResetEvent _evt;
-            private readonly AsyncCallback _cbMethod;
-
-            public FlushAsyncResult(AsyncCallback cbMethod, object state)
-            {
-                _cbMethod = cbMethod;
-                AsyncState = state;
-            }
-            internal HttpClient HttpClient { get; set; }
-            internal TTransportException AsyncException { get; set; }
-            public object AsyncState { get; }
-            public WaitHandle AsyncWaitHandle => GetEvtHandle();
-            public bool CompletedSynchronously => false;
-            public bool IsCompleted => _isCompleted;
-
-            private readonly object _locker = new object();
-            private ManualResetEvent GetEvtHandle()
-            {
-                lock (_locker)
-                {
-                    if (_evt == null)
-                    {
-                        _evt = new ManualResetEvent(false);
-                    }
-                    if (_isCompleted)
-                    {
-                        _evt.Set();
-                    }
-                }
-                return _evt;
-            }
-
-            internal void UpdateStatusToComplete()
-            {
-                _isCompleted = true; //1. set _iscompleted to true
-                lock (_locker)
-                {
-                    _evt?.Set(); //2. set the event, when it exists
-                }
-            }
-
-            internal void NotifyCallbackWhenAvailable()
-            {
-                _cbMethod?.Invoke(this);
-            }
-        }
-
+        
         private bool _isDisposed;
 
         // IDisposable

@@ -21,78 +21,86 @@
  * details.
  */
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public static class TProtocolUtil
     {
-        public static void Skip(TProtocol prot, TType type)
+        public static async Task SkipAsync(TProtocol prot, TType type, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
             prot.IncrementRecursionDepth();
             try
             {
                 switch (type)
                 {
                     case TType.Bool:
-                        prot.ReadBool();
+                        await prot.ReadBoolAsync(cancellationToken);
                         break;
                     case TType.Byte:
-                        prot.ReadByte();
+                        await prot.ReadByteAsync(cancellationToken);
                         break;
                     case TType.I16:
-                        prot.ReadI16();
+                        await prot.ReadI16Async(cancellationToken);
                         break;
                     case TType.I32:
-                        prot.ReadI32();
+                        await prot.ReadI32Async(cancellationToken);
                         break;
                     case TType.I64:
-                        prot.ReadI64();
+                        await prot.ReadI64Async(cancellationToken);
                         break;
                     case TType.Double:
-                        prot.ReadDouble();
+                        await prot.ReadDoubleAsync(cancellationToken);
                         break;
                     case TType.String:
                         // Don't try to decode the string, just skip it.
-                        prot.ReadBinary();
+                        await prot.ReadBinaryAsync(cancellationToken);
                         break;
                     case TType.Struct:
-                        prot.ReadStructBegin();
+                        await prot.ReadStructBeginAsync(cancellationToken);
                         while (true)
                         {
-                            var field = prot.ReadFieldBegin();
+                            var field = await prot.ReadFieldBeginAsync(cancellationToken);
                             if (field.Type == TType.Stop)
                             {
                                 break;
                             }
-                            Skip(prot, field.Type);
-                            prot.ReadFieldEnd();
+                            await SkipAsync(prot, field.Type, cancellationToken);
+                            await prot.ReadFieldEndAsync(cancellationToken);
                         }
-                        prot.ReadStructEnd();
+                        await prot.ReadStructEndAsync(cancellationToken);
                         break;
                     case TType.Map:
-                        var map = prot.ReadMapBegin();
+                        var map = await prot.ReadMapBeginAsync(cancellationToken);
                         for (var i = 0; i < map.Count; i++)
                         {
-                            Skip(prot, map.KeyType);
-                            Skip(prot, map.ValueType);
+                            await SkipAsync(prot, map.KeyType, cancellationToken);
+                            await SkipAsync(prot, map.ValueType, cancellationToken);
                         }
-                        prot.ReadMapEnd();
+                        await prot.ReadMapEndAsync(cancellationToken);
                         break;
                     case TType.Set:
-                        var set = prot.ReadSetBegin();
+                        var set = await prot.ReadSetBeginAsync(cancellationToken);
                         for (var i = 0; i < set.Count; i++)
                         {
-                            Skip(prot, set.ElementType);
+                            await SkipAsync(prot, set.ElementType, cancellationToken);
                         }
-                        prot.ReadSetEnd();
+                        await prot.ReadSetEndAsync(cancellationToken);
                         break;
                     case TType.List:
-                        var list = prot.ReadListBegin();
+                        var list = await prot.ReadListBeginAsync(cancellationToken);
                         for (var i = 0; i < list.Count; i++)
                         {
-                            Skip(prot, list.ElementType);
+                            await SkipAsync(prot, list.ElementType, cancellationToken);
                         }
-                        prot.ReadListEnd();
+                        await prot.ReadListEndAsync(cancellationToken);
                         break;
                 }
             }

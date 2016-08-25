@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -26,11 +31,13 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Mutation : TBase
   {
     private ColumnOrSuperColumn _column_or_supercolumn;
     private Deletion _deletion;
 
+    [DataMember(Order = 0)]
     public ColumnOrSuperColumn Column_or_supercolumn
     {
       get
@@ -44,6 +51,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Deletion Deletion
     {
       get
@@ -58,14 +66,33 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool column_or_supercolumn;
+      [DataMember]
       public bool deletion;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeColumn_or_supercolumn()
+    {
+      return __isset.column_or_supercolumn;
+    }
+
+    public bool ShouldSerializeDeletion()
+    {
+      return __isset.deletion;
+    }
+
+    #endregion XmlSerializer support
 
     public Mutation() {
     }

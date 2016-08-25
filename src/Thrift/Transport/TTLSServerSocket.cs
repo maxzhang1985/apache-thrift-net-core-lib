@@ -164,43 +164,6 @@ namespace Thrift.Transport
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Callback for Accept Implementation
-        /// </summary>
-        /// <returns>
-        /// TTransport-object.
-        /// </returns>
-        protected override TTransport AcceptImpl()
-        {
-            if (_server == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
-            }
-
-            try
-            {
-                var client = _server.AcceptTcpClientAsync().Result;
-                client.SendTimeout = client.ReceiveTimeout = _clientTimeout;
-
-                //wrap the client in an SSL Socket passing in the SSL cert
-                var socket = new TTLSSocket(client, _serverCertificate, true, _clientCertValidator, _localCertificateSelectionCallback, _sslProtocols);
-
-                socket.SetupTls();
-
-                if (_useBufferedSockets)
-                {
-                    var trans = new TBufferedTransport(socket);
-                    return trans;
-                }
-
-                return socket;
-            }
-            catch (Exception ex)
-            {
-                throw new TTransportException(ex.ToString());
-            }
-        }
-
         protected override async Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -221,7 +184,7 @@ namespace Thrift.Transport
                 //wrap the client in an SSL Socket passing in the SSL cert
                 var tTlsSocket = new TTLSSocket(client, _serverCertificate, true, _clientCertValidator, _localCertificateSelectionCallback, _sslProtocols);
 
-                tTlsSocket.SetupTls();
+                await tTlsSocket.SetupTlsAsync();
 
                 if (_useBufferedSockets)
                 {

@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -33,11 +38,13 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class SlicePredicate : TBase
   {
     private List<byte[]> _column_names;
     private SliceRange _slice_range;
 
+    [DataMember(Order = 0)]
     public List<byte[]> Column_names
     {
       get
@@ -51,6 +58,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public SliceRange Slice_range
     {
       get
@@ -65,14 +73,33 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool column_names;
+      [DataMember]
       public bool slice_range;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeColumn_names()
+    {
+      return __isset.column_names;
+    }
+
+    public bool ShouldSerializeSlice_range()
+    {
+      return __isset.slice_range;
+    }
+
+    #endregion XmlSerializer support
 
     public SlicePredicate() {
     }

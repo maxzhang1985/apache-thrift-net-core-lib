@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,17 +26,21 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class IndexExpression : TBase
   {
 
+    [DataMember(Order = 0)]
     public byte[] Column_name { get; set; }
 
     /// <summary>
     /// 
     /// <seealso cref="IndexOperator"/>
     /// </summary>
+    [DataMember(Order = 0)]
     public IndexOperator Op { get; set; }
 
+    [DataMember(Order = 0)]
     public byte[] Value { get; set; }
 
     public IndexExpression() {

@@ -21,37 +21,39 @@
  * details.
  */
 
+using System.Threading;
+using System.Threading.Tasks;
 using Thrift.Protocol;
 using Thrift.Transport;
 
 namespace Thrift.Server
 {
+    //TODO: replacement by event?
+
     /// <summary>
     /// Interface implemented by server users to handle events from the server
     /// </summary>
     // ReSharper disable once InconsistentNaming
     public interface TServerEventHandler
     {
-        //TODO: check method names 
-
         /// <summary>
         /// Called before the server begins */
         /// </summary>
-        void PreServe();
+        Task PreServeAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Called when a new client has connected and is about to being processing */
         /// </summary>
-        object CreateContext(TProtocol input, TProtocol output);
+        Task<object> CreateContextAsync(TProtocol input, TProtocol output, CancellationToken cancellationToken);
 
         /// <summary>
         /// Called when a client has finished request-handling to delete server context */
         /// </summary>
-        void DeleteContext(object serverContext, TProtocol input, TProtocol output);
+        Task DeleteContextAsync(object serverContext, TProtocol input, TProtocol output, CancellationToken cancellationToken);
 
         /// <summary>
         /// Called when a client is about to call the processor */
         /// </summary>
-        void ProcessContext(object serverContext, TTransport transport);
+        Task ProcessContextAsync(object serverContext, TTransport transport, CancellationToken cancellationToken);
     }
 }

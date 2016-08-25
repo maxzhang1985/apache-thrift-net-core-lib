@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -28,14 +33,17 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Column : TBase
   {
     private byte[] _value;
     private long _timestamp;
     private int _ttl;
 
+    [DataMember(Order = 0)]
     public byte[] Name { get; set; }
 
+    [DataMember(Order = 0)]
     public byte[] Value
     {
       get
@@ -49,6 +57,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public long Timestamp
     {
       get
@@ -62,6 +71,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Ttl
     {
       get
@@ -76,15 +86,40 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool @value;
+      [DataMember]
       public bool timestamp;
+      [DataMember]
       public bool ttl;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeValue()
+    {
+      return __isset.@value;
+    }
+
+    public bool ShouldSerializeTimestamp()
+    {
+      return __isset.timestamp;
+    }
+
+    public bool ShouldSerializeTtl()
+    {
+      return __isset.ttl;
+    }
+
+    #endregion XmlSerializer support
 
     public Column() {
     }

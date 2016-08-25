@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -18,7 +23,9 @@ using Thrift.Transport;
 namespace Thrift.Test
 {
   public partial class SecondService {
+    [ServiceContract(Namespace="")]
     public interface ISync {
+      [OperationContract]
       void blahBlah();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -26,24 +33,36 @@ namespace Thrift.Test
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       string secondtestString(string thing);
     }
 
-    public interface Iface : ISync {
-      #if SILVERLIGHT
-      IAsyncResult Begin_blahBlah(AsyncCallback callback, object state);
-      void End_blahBlah(IAsyncResult asyncResult);
-      #endif
+    [ServiceContract(Namespace="")]
+    public interface IAsync {
+      [OperationContract]
+      Task blahBlahAsync();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
       /// @param string thing - the string to print
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
-      #if SILVERLIGHT
+      [OperationContract]
+      Task<string> secondtestStringAsync(string thing);
+    }
+
+    [ServiceContract(Namespace="")]
+    public interface Iface : ISync, IAsync {
+      IAsyncResult Begin_blahBlah(AsyncCallback callback, object state);
+      void End_blahBlah(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prints 'testString("%s")' with thing as '%s'
+      /// @param string thing - the string to print
+      /// @return string - returns the string 'thing'
+      /// </summary>
+      /// <param name="thing"></param>
       IAsyncResult Begin_secondtestString(AsyncCallback callback, object state, string thing);
       string End_secondtestString(IAsyncResult asyncResult);
-      #endif
     }
 
     public class Client : IDisposable, Iface {
@@ -103,7 +122,6 @@ namespace Thrift.Test
 
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_blahBlah(AsyncCallback callback, object state)
       {
         return send_blahBlah(callback, state);
@@ -115,35 +133,27 @@ namespace Thrift.Test
         recv_blahBlah();
       }
 
-      #endif
+      public async Task blahBlahAsync()
+      {
+        await Task.Run(() =>
+        {
+          blahBlah();
+        });
+      }
 
       public void blahBlah()
       {
-        #if !SILVERLIGHT
-        send_blahBlah();
-        recv_blahBlah();
-
-        #else
         var asyncResult = Begin_blahBlah(null, null);
         End_blahBlah(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_blahBlah(AsyncCallback callback, object state)
-      #else
-      public void send_blahBlah()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("blahBlah", TMessageType.Call, seqid_));
         blahBlah_args args = new blahBlah_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_blahBlah()
@@ -161,7 +171,6 @@ namespace Thrift.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_secondtestString(AsyncCallback callback, object state, string thing)
       {
         return send_secondtestString(callback, state, thing);
@@ -173,7 +182,15 @@ namespace Thrift.Test
         return recv_secondtestString();
       }
 
-      #endif
+      public async Task<string> secondtestStringAsync(string thing)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return secondtestString(thing);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -183,32 +200,18 @@ namespace Thrift.Test
       /// <param name="thing"></param>
       public string secondtestString(string thing)
       {
-        #if !SILVERLIGHT
-        send_secondtestString(thing);
-        return recv_secondtestString();
-
-        #else
         var asyncResult = Begin_secondtestString(null, null, thing);
         return End_secondtestString(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_secondtestString(AsyncCallback callback, object state, string thing)
-      #else
-      public void send_secondtestString(string thing)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("secondtestString", TMessageType.Call, seqid_));
         secondtestString_args args = new secondtestString_args();
         args.Thing = thing;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_secondtestString()
@@ -229,6 +232,102 @@ namespace Thrift.Test
       }
 
     }
+    public class AsyncProcessor : TAsyncProcessor {
+      public AsyncProcessor(IAsync iface)
+      {
+        iface_ = iface;
+        processMap_["blahBlah"] = blahBlah_ProcessAsync;
+        processMap_["secondtestString"] = secondtestString_ProcessAsync;
+      }
+
+      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
+      private IAsync iface_;
+      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
+
+      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+      {
+        try
+        {
+          TMessage msg = iprot.ReadMessageBegin();
+          ProcessFunction fn;
+          processMap_.TryGetValue(msg.Name, out fn);
+          if (fn == null) {
+            TProtocolUtil.Skip(iprot, TType.Struct);
+            iprot.ReadMessageEnd();
+            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
+            x.Write(oprot);
+            oprot.WriteMessageEnd();
+            oprot.Transport.Flush();
+            return true;
+          }
+          await fn(msg.SeqID, iprot, oprot);
+        }
+        catch (IOException)
+        {
+          return false;
+        }
+        return true;
+      }
+
+      public async Task blahBlah_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        blahBlah_args args = new blahBlah_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        blahBlah_result result = new blahBlah_result();
+        try
+        {
+          await iface_.blahBlahAsync();
+          oprot.WriteMessageBegin(new TMessage("blahBlah", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("blahBlah", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task secondtestString_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        secondtestString_args args = new secondtestString_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        secondtestString_result result = new secondtestString_result();
+        try
+        {
+          result.Success = await iface_.secondtestStringAsync(args.Thing);
+          oprot.WriteMessageBegin(new TMessage("secondtestString", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("secondtestString", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+    }
+
     public class Processor : TProcessor {
       public Processor(ISync iface)
       {
@@ -329,6 +428,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class blahBlah_args : TBase
     {
 
@@ -391,6 +491,7 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class blahBlah_result : TBase
     {
 
@@ -454,10 +555,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class secondtestString_args : TBase
     {
       private string _thing;
 
+      [DataMember(Order = 0)]
       public string Thing
       {
         get
@@ -472,13 +575,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public secondtestString_args() {
       }
@@ -562,10 +678,12 @@ namespace Thrift.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class secondtestString_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -580,13 +698,26 @@ namespace Thrift.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public secondtestString_result() {
       }

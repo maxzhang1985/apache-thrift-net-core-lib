@@ -36,39 +36,7 @@ namespace Thrift.Transport
 
         private readonly byte[] _peekBuffer = new byte[1];
         private bool _hasPeekByte;
-
-        public bool Peek()
-        {
-            //If we already have a byte read but not consumed, do nothing.
-            if (_hasPeekByte)
-            {
-                return true;
-            }
-
-            //If transport closed we can't peek.
-            if (!IsOpen)
-            {
-                return false;
-            }
-
-            //Try to read one byte. If succeeds we will need to store it for the next read.
-            try
-            {
-                var bytes = Read(_peekBuffer, 0, 1);
-                if (bytes == 0)
-                {
-                    return false;
-                }
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-
-            _hasPeekByte = true;
-            return true;
-        }
-
+        
         public async Task<bool> PeekAsync(CancellationToken cancellationToken)
         {
             //If we already have a byte read but not consumed, do nothing.
@@ -100,8 +68,6 @@ namespace Thrift.Transport
             _hasPeekByte = true;
             return true;
         }
-
-        public abstract void Open();
 
         public virtual async Task OpenAsync()
         {
@@ -135,38 +101,12 @@ namespace Thrift.Transport
             }
         }
 
-        public abstract int Read(byte[] buffer, int offset, int length);
-
         public virtual async Task<int> ReadAsync(byte[] buffer, int offset, int length)
         {
             return await ReadAsync(buffer, offset, length, CancellationToken.None);
         }
 
         public abstract Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
-
-        public int ReadAll(byte[] buffer, int offset, int length)
-        {
-            ValidateBufferArgs(buffer, offset, length);
-            var retrieved = 0;
-
-            //If we previously peeked a byte, we need to use that first.
-            if (_hasPeekByte)
-            {
-                buffer[offset + retrieved++] = _peekBuffer[0];
-                _hasPeekByte = false;
-            }
-
-            while (retrieved < length)
-            {
-                var returnedCount = Read(buffer, offset + retrieved, length - retrieved);
-                if (returnedCount <= 0)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "Cannot read, Remote side has closed");
-                }
-                retrieved += returnedCount;
-            }
-            return retrieved;
-        }
 
         public virtual async Task<int> ReadAllAsync(byte[] buffer, int offset, int length)
         {
@@ -208,11 +148,6 @@ namespace Thrift.Transport
             return retrieved;
         }
 
-        public virtual void Write(byte[] buffer)
-        {
-            Write(buffer, 0, buffer.Length);
-        }
-
         public virtual async Task WriteAsync(byte[] buffer)
         {
             await WriteAsync(buffer, CancellationToken.None);
@@ -223,8 +158,6 @@ namespace Thrift.Transport
             await WriteAsync(buffer, 0, buffer.Length, CancellationToken.None);
         }
 
-        public abstract void Write(byte[] buffer, int offset, int length);
-
         public virtual async Task WriteAsync(byte[] buffer, int offset, int length)
         {
             await WriteAsync(buffer, offset, length, CancellationToken.None);
@@ -232,26 +165,12 @@ namespace Thrift.Transport
 
         public abstract Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
 
-        public virtual void Flush()
-        {
-        }
-
         public virtual async Task FlushAsync()
         {
             await FlushAsync(CancellationToken.None);
         }
 
         public abstract Task FlushAsync(CancellationToken cancellationToken);
-
-        public virtual IAsyncResult BeginFlush(AsyncCallback callback, object state)
-        {
-            throw new TTransportException(TTransportException.ExceptionType.Unknown, "Asynchronous operations are not supported by this transport.");
-        }
-
-        public virtual void EndFlush(IAsyncResult asyncResult)
-        {
-            throw new TTransportException(TTransportException.ExceptionType.Unknown, "Asynchronous operations are not supported by this transport.");
-        }
 
         protected abstract void Dispose(bool disposing);
 

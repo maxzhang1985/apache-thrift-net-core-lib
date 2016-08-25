@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,12 +26,14 @@ namespace Thrift.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Xtruct2 : TBase
   {
     private sbyte _byte_thing;
     private Xtruct _struct_thing;
     private int _i32_thing;
 
+    [DataMember(Order = 0)]
     public sbyte Byte_thing
     {
       get
@@ -40,6 +47,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Xtruct Struct_thing
     {
       get
@@ -53,6 +61,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int I32_thing
     {
       get
@@ -67,15 +76,40 @@ namespace Thrift.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool byte_thing;
+      [DataMember]
       public bool struct_thing;
+      [DataMember]
       public bool i32_thing;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeByte_thing()
+    {
+      return __isset.byte_thing;
+    }
+
+    public bool ShouldSerializeStruct_thing()
+    {
+      return __isset.struct_thing;
+    }
+
+    public bool ShouldSerializeI32_thing()
+    {
+      return __isset.i32_thing;
+    }
+
+    #endregion XmlSerializer support
 
     public Xtruct2() {
     }

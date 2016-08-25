@@ -18,7 +18,7 @@ namespace Client
                 TProtocol protocol = new TBinaryProtocol(transport);
                 var client = new Calculator.Client(protocol);
 
-                transport.Open();
+                transport.OpenAsync().GetAwaiter().GetResult();
                 try
                 {
                     // Async version

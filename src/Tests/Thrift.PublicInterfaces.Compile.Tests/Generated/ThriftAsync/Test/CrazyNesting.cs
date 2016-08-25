@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,12 +26,14 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class CrazyNesting : TBase
   {
     private string _string_field;
     private THashSet<Insanity> _set_field;
     private byte[] _binary_field;
 
+    [DataMember(Order = 0)]
     public string String_field
     {
       get
@@ -41,6 +47,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public THashSet<Insanity> Set_field
     {
       get
@@ -54,8 +61,10 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<Dictionary<THashSet<int>, Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>>>> List_field { get; set; }
 
+    [DataMember(Order = 0)]
     public byte[] Binary_field
     {
       get
@@ -70,15 +79,40 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool string_field;
+      [DataMember]
       public bool set_field;
+      [DataMember]
       public bool binary_field;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeString_field()
+    {
+      return __isset.string_field;
+    }
+
+    public bool ShouldSerializeSet_field()
+    {
+      return __isset.set_field;
+    }
+
+    public bool ShouldSerializeBinary_field()
+    {
+      return __isset.binary_field;
+    }
+
+    #endregion XmlSerializer support
 
     public CrazyNesting() {
     }

@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -30,6 +34,7 @@ namespace Thrift.Samples
     private int _WhatOp;
     private string _Why;
 
+    [DataMember(Order = 0)]
     public int WhatOp
     {
       get
@@ -43,6 +48,7 @@ namespace Thrift.Samples
       }
     }
 
+    [DataMember(Order = 0)]
     public string Why
     {
       get
@@ -57,14 +63,33 @@ namespace Thrift.Samples
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool WhatOp;
+      [DataMember]
       public bool Why;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeWhatOp()
+    {
+      return __isset.WhatOp;
+    }
+
+    public bool ShouldSerializeWhy()
+    {
+      return __isset.Why;
+    }
+
+    #endregion XmlSerializer support
 
     public InvalidOperation() {
     }
@@ -161,6 +186,44 @@ namespace Thrift.Samples
       }
       __sb.Append(")");
       return __sb.ToString();
+    }
+
+  }
+
+
+  #if !SILVERLIGHT
+  [Serializable]
+  #endif
+  [DataContract]
+  public partial class InvalidOperationFault
+  {
+    private int _WhatOp;
+    private string _Why;
+
+    [DataMember(Order = 0)]
+    public int WhatOp
+    {
+      get
+      {
+        return _WhatOp;
+      }
+      set
+      {
+        this._WhatOp = value;
+      }
+    }
+
+    [DataMember(Order = 0)]
+    public string Why
+    {
+      get
+      {
+        return _Why;
+      }
+      set
+      {
+        this._Why = value;
+      }
     }
 
   }

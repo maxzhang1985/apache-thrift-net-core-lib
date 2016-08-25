@@ -21,6 +21,8 @@
  * details.
  */
 
+using System.Threading;
+using System.Threading.Tasks;
 using Thrift.Protocol;
 
 namespace Thrift
@@ -48,15 +50,15 @@ namespace Thrift
             Type = type;
         }
 
-        public static TApplicationException Read(TProtocol iprot)
+        public static async Task<TApplicationException> ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
         {
             string message = null;
             var type = ExceptionType.Unknown;
 
-            iprot.ReadStructBegin();
+            await iprot.ReadStructBeginAsync(cancellationToken);
             while (true)
             {
-                var field = iprot.ReadFieldBegin();
+                var field = await iprot.ReadFieldBeginAsync(cancellationToken);
                 if (field.Type == TType.Stop)
                 {
                     break;
@@ -67,38 +69,43 @@ namespace Thrift
                     case MessageTypeFieldId:
                         if (field.Type == TType.String)
                         {
-                            message = iprot.ReadString();
+                            message = await iprot.ReadStringAsync(cancellationToken);
                         }
                         else
                         {
-                            TProtocolUtil.Skip(iprot, field.Type);
+                            await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                         }
                         break;
                     case ExTypeFieldId:
                         if (field.Type == TType.I32)
                         {
-                            type = (ExceptionType) iprot.ReadI32();
+                            type = (ExceptionType)await iprot.ReadI32Async(cancellationToken);
                         }
                         else
                         {
-                            TProtocolUtil.Skip(iprot, field.Type);
+                            await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                         }
                         break;
                     default:
-                        TProtocolUtil.Skip(iprot, field.Type);
+                        await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                         break;
                 }
 
-                iprot.ReadFieldEnd();
+                await iprot.ReadFieldEndAsync(cancellationToken);
             }
 
-            iprot.ReadStructEnd();
+            await iprot.ReadStructEndAsync(cancellationToken);
 
             return new TApplicationException(type, message);
         }
 
-        public void Write(TProtocol oprot)
+        public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await Task.FromCanceled(cancellationToken);
+            }
+
             const string messageTypeFieldName = "message";
             const string exTypeFieldName = "exType";
             const string structApplicationExceptionName = "TApplicationException";
@@ -106,26 +113,27 @@ namespace Thrift
             var struc = new TStruct(structApplicationExceptionName);
             var field = new TField();
 
-            oprot.WriteStructBegin(struc);
+            await oprot.WriteStructBeginAsync(struc, cancellationToken);
 
             if (!string.IsNullOrEmpty(Message))
             {
                 field.Name = messageTypeFieldName;
                 field.Type = TType.String;
                 field.ID = MessageTypeFieldId;
-                oprot.WriteFieldBegin(field);
-                oprot.WriteString(Message);
-                oprot.WriteFieldEnd();
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteStringAsync(Message, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
             }
 
             field.Name = exTypeFieldName;
             field.Type = TType.I32;
             field.ID = ExTypeFieldId;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32((int) Type);
-            oprot.WriteFieldEnd();
-            oprot.WriteFieldStop();
-            oprot.WriteStructEnd();
+
+            await oprot.WriteFieldBeginAsync(field, cancellationToken);
+            await oprot.WriteI32Async((int) Type, cancellationToken);
+            await oprot.WriteFieldEndAsync(cancellationToken);
+            await oprot.WriteFieldStopAsync(cancellationToken);
+            await oprot.WriteStructEndAsync(cancellationToken);
         }
 
         public enum ExceptionType

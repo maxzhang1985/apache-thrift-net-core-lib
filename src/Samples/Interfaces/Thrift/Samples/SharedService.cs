@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -19,14 +23,19 @@ using Thrift.Transport;
 namespace Thrift.Samples
 {
   public partial class SharedService {
+    [ServiceContract(Namespace="")]
     public interface ISync {
+      [OperationContract]
       SharedStruct GetStruct(int key);
     }
 
+    [ServiceContract(Namespace="")]
     public interface IAsync {
+      [OperationContract]
       Task<SharedStruct> GetStructAsync(int key);
     }
 
+    [ServiceContract(Namespace="")]
     public interface Iface : ISync, IAsync {
       IAsyncResult Begin_GetStruct(AsyncCallback callback, object state, int key);
       SharedStruct End_GetStruct(IAsyncResult asyncResult);
@@ -282,10 +291,12 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class GetStruct_args : TBase
     {
       private int _key;
 
+      [DataMember(Order = 0)]
       public int Key
       {
         get
@@ -300,13 +311,26 @@ namespace Thrift.Samples
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool key;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeKey()
+      {
+        return __isset.key;
+      }
+
+      #endregion XmlSerializer support
 
       public GetStruct_args() {
       }
@@ -390,10 +414,12 @@ namespace Thrift.Samples
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class GetStruct_result : TBase
     {
       private SharedStruct _success;
 
+      [DataMember(Order = 0)]
       public SharedStruct Success
       {
         get
@@ -408,13 +434,26 @@ namespace Thrift.Samples
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public GetStruct_result() {
       }

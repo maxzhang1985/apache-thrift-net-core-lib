@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,12 +26,14 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class EndpointDetails : TBase
   {
     private string _host;
     private string _datacenter;
     private string _rack;
 
+    [DataMember(Order = 0)]
     public string Host
     {
       get
@@ -40,6 +47,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Datacenter
     {
       get
@@ -53,6 +61,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Rack
     {
       get
@@ -67,15 +76,40 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool host;
+      [DataMember]
       public bool datacenter;
+      [DataMember]
       public bool rack;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeHost()
+    {
+      return __isset.host;
+    }
+
+    public bool ShouldSerializeDatacenter()
+    {
+      return __isset.datacenter;
+    }
+
+    public bool ShouldSerializeRack()
+    {
+      return __isset.rack;
+    }
+
+    #endregion XmlSerializer support
 
     public EndpointDetails() {
     }

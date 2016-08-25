@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,12 +26,14 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class NestedMixedx2 : TBase
   {
     private List<THashSet<int>> _int_set_list;
     private Dictionary<int, THashSet<string>> _map_int_strset;
     private List<Dictionary<int, THashSet<string>>> _map_int_strset_list;
 
+    [DataMember(Order = 0)]
     public List<THashSet<int>> Int_set_list
     {
       get
@@ -41,6 +47,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Dictionary<int, THashSet<string>> Map_int_strset
     {
       get
@@ -54,6 +61,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<Dictionary<int, THashSet<string>>> Map_int_strset_list
     {
       get
@@ -68,15 +76,40 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool int_set_list;
+      [DataMember]
       public bool map_int_strset;
+      [DataMember]
       public bool map_int_strset_list;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeInt_set_list()
+    {
+      return __isset.int_set_list;
+    }
+
+    public bool ShouldSerializeMap_int_strset()
+    {
+      return __isset.map_int_strset;
+    }
+
+    public bool ShouldSerializeMap_int_strset_list()
+    {
+      return __isset.map_int_strset_list;
+    }
+
+    #endregion XmlSerializer support
 
     public NestedMixedx2() {
     }

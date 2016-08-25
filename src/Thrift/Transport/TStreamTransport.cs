@@ -31,6 +31,8 @@ namespace Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TStreamTransport : TTransport
     {
+        private bool _isDisposed;
+
         protected TStreamTransport()
         {
         }
@@ -46,10 +48,6 @@ namespace Thrift.Transport
         protected Stream InputStream { get; set; }
 
         public override bool IsOpen => true;
-
-        public override void Open()
-        {
-        }
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
@@ -74,16 +72,6 @@ namespace Thrift.Transport
             }
         }
 
-        public override int Read(byte[] buffer, int offset, int length)
-        {
-            if (InputStream == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot read from null inputstream");
-            }
-            
-            return InputStream.Read(buffer, offset, length);
-        }
-
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             if (InputStream == null)
@@ -92,16 +80,6 @@ namespace Thrift.Transport
             }
 
             return await InputStream.ReadAsync(buffer, offset, length, cancellationToken);
-        }
-
-        public override void Write(byte[] buffer, int offset, int length)
-        {
-            if (OutputStream == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot write to null outputstream");
-            }
-
-            OutputStream.Write(buffer, offset, length);
         }
 
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -114,32 +92,10 @@ namespace Thrift.Transport
             await InputStream.WriteAsync(buffer, offset, length, cancellationToken);
         }
 
-        public override void Flush()
-        {
-            if (OutputStream == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot flush null outputstream");
-            }
-
-            OutputStream.Flush();
-        }
-
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
             await OutputStream.FlushAsync(cancellationToken);
         }
-
-        public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
-        {
-            return OutputStream.FlushAsync(CancellationToken.None);
-        }
-
-        public override void EndFlush(IAsyncResult asyncResult)
-        {
-            ((Task)asyncResult).GetAwaiter().GetResult();
-        }
-
-        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)

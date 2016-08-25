@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,6 +26,7 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class LargeDeltas : TBase
   {
     private Bools _b1;
@@ -35,6 +40,7 @@ namespace ThriftAsync.Test
     private VersioningTestV2 _vertwo3000;
     private List<int> _big_numbers;
 
+    [DataMember(Order = 0)]
     public Bools B1
     {
       get
@@ -48,6 +54,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Bools B10
     {
       get
@@ -61,6 +68,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Bools B100
     {
       get
@@ -74,6 +82,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public bool Check_true
     {
       get
@@ -87,6 +96,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Bools B1000
     {
       get
@@ -100,6 +110,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public bool Check_false
     {
       get
@@ -113,6 +124,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public VersioningTestV2 Vertwo2000
     {
       get
@@ -126,6 +138,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public THashSet<string> A_set2500
     {
       get
@@ -139,6 +152,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public VersioningTestV2 Vertwo3000
     {
       get
@@ -152,6 +166,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<int> Big_numbers
     {
       get
@@ -166,22 +181,89 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool b1;
+      [DataMember]
       public bool b10;
+      [DataMember]
       public bool b100;
+      [DataMember]
       public bool check_true;
+      [DataMember]
       public bool b1000;
+      [DataMember]
       public bool check_false;
+      [DataMember]
       public bool vertwo2000;
+      [DataMember]
       public bool a_set2500;
+      [DataMember]
       public bool vertwo3000;
+      [DataMember]
       public bool big_numbers;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeB1()
+    {
+      return __isset.b1;
+    }
+
+    public bool ShouldSerializeB10()
+    {
+      return __isset.b10;
+    }
+
+    public bool ShouldSerializeB100()
+    {
+      return __isset.b100;
+    }
+
+    public bool ShouldSerializeCheck_true()
+    {
+      return __isset.check_true;
+    }
+
+    public bool ShouldSerializeB1000()
+    {
+      return __isset.b1000;
+    }
+
+    public bool ShouldSerializeCheck_false()
+    {
+      return __isset.check_false;
+    }
+
+    public bool ShouldSerializeVertwo2000()
+    {
+      return __isset.vertwo2000;
+    }
+
+    public bool ShouldSerializeA_set2500()
+    {
+      return __isset.a_set2500;
+    }
+
+    public bool ShouldSerializeVertwo3000()
+    {
+      return __isset.vertwo3000;
+    }
+
+    public bool ShouldSerializeBig_numbers()
+    {
+      return __isset.big_numbers;
+    }
+
+    #endregion XmlSerializer support
 
     public LargeDeltas() {
     }

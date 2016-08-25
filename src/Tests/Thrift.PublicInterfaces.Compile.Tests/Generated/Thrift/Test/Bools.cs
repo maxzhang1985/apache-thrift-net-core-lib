@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,11 +26,13 @@ namespace Thrift.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Bools : TBase
   {
     private bool _im_true;
     private bool _im_false;
 
+    [DataMember(Order = 0)]
     public bool Im_true
     {
       get
@@ -39,6 +46,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public bool Im_false
     {
       get
@@ -53,14 +61,33 @@ namespace Thrift.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool im_true;
+      [DataMember]
       public bool im_false;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeIm_true()
+    {
+      return __isset.im_true;
+    }
+
+    public bool ShouldSerializeIm_false()
+    {
+      return __isset.im_false;
+    }
+
+    #endregion XmlSerializer support
 
     public Bools() {
     }

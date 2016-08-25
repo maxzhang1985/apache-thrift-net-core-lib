@@ -31,6 +31,7 @@ namespace Thrift.Transport
         private readonly MemoryStream _inputBuffer = new MemoryStream(0);
         private readonly MemoryStream _outputBuffer = new MemoryStream(0);
         private readonly TTransport _transport;
+        private bool _isDisposed;
 
         //TODO: should support only specified input transport?
         public TBufferedTransport(TTransport transport, int bufSize = 1024)
@@ -61,13 +62,6 @@ namespace Thrift.Transport
 
         public override bool IsOpen => !_isDisposed && _transport.IsOpen;
 
-        public override void Open()
-        {
-            CheckNotDisposed();
-
-            _transport.Open();
-        }
-
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
             CheckNotDisposed();
@@ -80,45 +74,6 @@ namespace Thrift.Transport
             CheckNotDisposed();
 
             _transport.Close();
-        }
-
-        public override int Read(byte[] buffer, int offset, int length)
-        {
-            CheckNotDisposed();
-
-            ValidateBufferArgs(buffer, offset, length);
-
-            if (!IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            if (_inputBuffer.Capacity < _bufSize)
-            {
-                _inputBuffer.Capacity = _bufSize;
-            }
-
-            var got = _inputBuffer.Read(buffer, offset, length);
-            if (got > 0)
-            {
-                return got;
-            }
-
-            _inputBuffer.Seek(0, SeekOrigin.Begin);
-            _inputBuffer.SetLength(_inputBuffer.Capacity);
-
-            ArraySegment<byte> bufSegment;
-            _inputBuffer.TryGetBuffer(out bufSegment);
-
-            var filled = _transport.Read(bufSegment.Array, 0, (int) _inputBuffer.Length);
-            _inputBuffer.SetLength(filled);
-
-            if (filled == 0)
-            {
-                return 0;
-            }
-
-            return Read(buffer, offset, length);
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -159,54 +114,7 @@ namespace Thrift.Transport
 
             return await ReadAsync(buffer, offset, length, cancellationToken);
         }
-
-        public override void Write(byte[] buffer, int offset, int length)
-        {
-            CheckNotDisposed();
-
-            ValidateBufferArgs(buffer, offset, length);
-
-            if (!IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            // Relative offset from "off" argument
-            var writtenCount = 0;
-            if (_outputBuffer.Length > 0)
-            {
-                var capa = (int) (_outputBuffer.Capacity - _outputBuffer.Length);
-                var writeSize = capa <= length ? capa : length;
-                _outputBuffer.Write(buffer, offset, writeSize);
-
-                writtenCount += writeSize;
-                if (writeSize == capa)
-                {
-                    ArraySegment<byte> bufSegment;
-                    _outputBuffer.TryGetBuffer(out bufSegment);
-
-                    _transport.Write(bufSegment.Array, 0, (int) _outputBuffer.Length);
-                    _outputBuffer.SetLength(0);
-                }
-            }
-
-            while (length - writtenCount >= _bufSize)
-            {
-                _transport.Write(buffer, offset + writtenCount, _bufSize);
-                writtenCount += _bufSize;
-            }
-
-            var remain = length - writtenCount;
-            if (remain > 0)
-            {
-                if (_outputBuffer.Capacity < _bufSize)
-                {
-                    _outputBuffer.Capacity = _bufSize;
-                }
-                _outputBuffer.Write(buffer, offset + writtenCount, remain);
-            }
-        }
-
+        
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             CheckNotDisposed();
@@ -253,26 +161,6 @@ namespace Thrift.Transport
             }
         }
 
-        public override void Flush()
-        {
-            CheckNotDisposed();
-
-            if (!IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            if (_outputBuffer.Length > 0)
-            {
-                ArraySegment<byte> bufSegment;
-                _outputBuffer.TryGetBuffer(out bufSegment);
-                _transport.Write(bufSegment.Array, 0, (int) _outputBuffer.Length);
-                _outputBuffer.SetLength(0);
-            }
-
-            _transport.Flush();
-        }
-
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
             CheckNotDisposed();
@@ -301,8 +189,6 @@ namespace Thrift.Transport
                 throw new ObjectDisposedException(nameof(_transport));
             }
         }
-
-        private bool _isDisposed;
 
         // IDisposable
         protected override void Dispose(bool disposing)

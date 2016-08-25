@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -19,7 +23,9 @@ using Thrift.Transport;
 namespace ThriftAsync.Test
 {
   public partial class SecondService {
+    [ServiceContract(Namespace="")]
     public interface ISync {
+      [OperationContract]
       void blahBlah();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -27,10 +33,13 @@ namespace ThriftAsync.Test
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       string secondtestString(string thing);
     }
 
+    [ServiceContract(Namespace="")]
     public interface IAsync {
+      [OperationContract]
       Task blahBlahAsync();
       /// <summary>
       /// Prints 'testString("%s")' with thing as '%s'
@@ -38,9 +47,11 @@ namespace ThriftAsync.Test
       /// @return string - returns the string 'thing'
       /// </summary>
       /// <param name="thing"></param>
+      [OperationContract]
       Task<string> secondtestStringAsync(string thing);
     }
 
+    [ServiceContract(Namespace="")]
     public interface Iface : ISync, IAsync {
       IAsyncResult Begin_blahBlah(AsyncCallback callback, object state);
       void End_blahBlah(IAsyncResult asyncResult);
@@ -417,6 +428,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class blahBlah_args : TBase
     {
 
@@ -479,6 +491,7 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class blahBlah_result : TBase
     {
 
@@ -542,10 +555,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class secondtestString_args : TBase
     {
       private string _thing;
 
+      [DataMember(Order = 0)]
       public string Thing
       {
         get
@@ -560,13 +575,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool thing;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeThing()
+      {
+        return __isset.thing;
+      }
+
+      #endregion XmlSerializer support
 
       public secondtestString_args() {
       }
@@ -650,10 +678,12 @@ namespace ThriftAsync.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class secondtestString_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -668,13 +698,26 @@ namespace ThriftAsync.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public secondtestString_result() {
       }

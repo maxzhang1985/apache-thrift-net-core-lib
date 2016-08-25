@@ -105,33 +105,6 @@ namespace Thrift.Transport
             }
         }
 
-        protected override TTransport AcceptImpl()
-        {
-            try
-            {
-                EnsurePipeInstance();
-
-                _stream.WaitForConnection();
-                
-                var trans = new ServerTransport(_stream);
-                _stream = null; // pass ownership to ServerTransport
-
-                //_isPending = false;
-
-                return trans;
-            }
-            catch (TTransportException)
-            {
-                Close();
-                throw;
-            }
-            catch (Exception e)
-            {
-                Close();
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, e.Message);
-            }
-        }
-
         protected override async Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
         {
             try
@@ -170,10 +143,6 @@ namespace Thrift.Transport
 
             public override bool IsOpen => _stream != null && _stream.IsConnected;
 
-            public override void Open()
-            {
-            }
-
             public override async Task OpenAsync(CancellationToken cancellationToken)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -187,16 +156,6 @@ namespace Thrift.Transport
                 _stream?.Dispose();
             }
 
-            public override int Read(byte[] buffer, int offset, int length)
-            {
-                if (_stream == null)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-                }
-
-                return _stream.Read(buffer, offset, length);
-            }
-
             public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
             {
                 if (_stream == null)
@@ -205,16 +164,6 @@ namespace Thrift.Transport
                 }
 
                 return await _stream.ReadAsync(buffer, offset, length, cancellationToken);
-            }
-
-            public override void Write(byte[] buffer, int offset, int length)
-            {
-                if (_stream == null)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-                }
-
-                _stream.Write(buffer, offset, length);
             }
 
             public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -233,16 +182,6 @@ namespace Thrift.Transport
                 {
                     await Task.FromCanceled(cancellationToken);
                 }
-            }
-
-            public override IAsyncResult BeginFlush(AsyncCallback callback, object state)
-            {
-                return _stream.FlushAsync();
-            }
-
-            public override void EndFlush(IAsyncResult asyncResult)
-            {
-                asyncResult.AsyncWaitHandle.WaitOne();
             }
 
             protected override void Dispose(bool disposing)

@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -18,8 +23,14 @@ using Thrift.Transport;
 namespace Apache.Cassandra.Test
 {
   public partial class Cassandra {
+    [ServiceContract(Namespace="")]
     public interface ISync {
+      [OperationContract]
+      [FaultContract(typeof(AuthenticationExceptionFault))]
+      [FaultContract(typeof(AuthorizationExceptionFault))]
       void login(AuthenticationRequest auth_request);
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       void set_keyspace(string keyspace);
       /// <summary>
       /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
@@ -28,6 +39,11 @@ namespace Apache.Cassandra.Test
       /// <param name="key"></param>
       /// <param name="column_path"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(NotFoundExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       ColumnOrSuperColumn @get(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
       /// <summary>
       /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
@@ -37,6 +53,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       List<ColumnOrSuperColumn> get_slice(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
@@ -46,6 +66,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       int get_count(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
@@ -54,6 +78,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       Dictionary<byte[], List<ColumnOrSuperColumn>> multiget_slice(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
@@ -62,6 +90,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       Dictionary<byte[], int> multiget_count(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// returns a subset of columns for a contiguous range of keys.
@@ -70,6 +102,10 @@ namespace Apache.Cassandra.Test
       /// <param name="predicate"></param>
       /// <param name="range"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       List<KeySlice> get_range_slices(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
       /// <summary>
       /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
@@ -78,6 +114,10 @@ namespace Apache.Cassandra.Test
       /// <param name="index_clause"></param>
       /// <param name="column_predicate"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       List<KeySlice> get_indexed_slices(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
@@ -86,6 +126,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="column"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       void insert(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
       /// <summary>
       /// Increment or decrement a counter.
@@ -94,6 +138,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="column"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       void @add(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
       /// <summary>
       /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
@@ -104,6 +152,10 @@ namespace Apache.Cassandra.Test
       /// <param name="column_path"></param>
       /// <param name="timestamp"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       void @remove(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
       /// <summary>
       /// Remove a counter at the specified location.
@@ -113,6 +165,10 @@ namespace Apache.Cassandra.Test
       /// <param name="key"></param>
       /// <param name="path"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       void remove_counter(byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
       /// <summary>
       ///   Mutate many columns or super columns for many row keys. See also: Mutation.
@@ -122,6 +178,10 @@ namespace Apache.Cassandra.Test
       /// </summary>
       /// <param name="mutation_map"></param>
       /// <param name="consistency_level"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       void batch_mutate(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
       /// <summary>
       /// Truncate will mark and entire column family as deleted.
@@ -132,24 +192,34 @@ namespace Apache.Cassandra.Test
       /// some hosts are down.
       /// </summary>
       /// <param name="cfname"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
       void truncate(string cfname);
       /// <summary>
       /// for each schema version present in the cluster, returns a list of nodes at that version.
       /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
       /// the cluster is all on the same version if the size of the map is 1.
       /// </summary>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       Dictionary<string, List<string>> describe_schema_versions();
       /// <summary>
       /// list the defined keyspaces in this cluster
       /// </summary>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       List<KsDef> describe_keyspaces();
       /// <summary>
       /// get the cluster name
       /// </summary>
+      [OperationContract]
       string describe_cluster_name();
       /// <summary>
       /// get the thrift api version
       /// </summary>
+      [OperationContract]
       string describe_version();
       /// <summary>
       /// get the token ring: a map of ranges to host addresses,
@@ -162,19 +232,26 @@ namespace Apache.Cassandra.Test
       /// order is neither important nor predictable.
       /// </summary>
       /// <param name="keyspace"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       List<TokenRange> describe_ring(string keyspace);
       /// <summary>
       /// returns the partitioner used by this cluster
       /// </summary>
+      [OperationContract]
       string describe_partitioner();
       /// <summary>
       /// returns the snitch used by this cluster
       /// </summary>
+      [OperationContract]
       string describe_snitch();
       /// <summary>
       /// describe specified keyspace
       /// </summary>
       /// <param name="keyspace"></param>
+      [OperationContract]
+      [FaultContract(typeof(NotFoundExceptionFault))]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       KsDef describe_keyspace(string keyspace);
       /// <summary>
       /// experimental API for hadoop/parallel query support.
@@ -187,36 +264,56 @@ namespace Apache.Cassandra.Test
       /// <param name="start_token"></param>
       /// <param name="end_token"></param>
       /// <param name="keys_per_split"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       List<string> describe_splits(string cfName, string start_token, string end_token, int keys_per_split);
       /// <summary>
       /// adds a column family. returns the new schema id.
       /// </summary>
       /// <param name="cf_def"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       string system_add_column_family(CfDef cf_def);
       /// <summary>
       /// drops a column family. returns the new schema id.
       /// </summary>
       /// <param name="column_family"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       string system_drop_column_family(string column_family);
       /// <summary>
       /// adds a keyspace and any column families that are part of it. returns the new schema id.
       /// </summary>
       /// <param name="ks_def"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       string system_add_keyspace(KsDef ks_def);
       /// <summary>
       /// drops a keyspace and any column families that are part of it. returns the new schema id.
       /// </summary>
       /// <param name="keyspace"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       string system_drop_keyspace(string keyspace);
       /// <summary>
       /// updates properties of a keyspace. returns the new schema id.
       /// </summary>
       /// <param name="ks_def"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       string system_update_keyspace(KsDef ks_def);
       /// <summary>
       /// updates properties of a column family. returns the new schema id.
       /// </summary>
       /// <param name="cf_def"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       string system_update_column_family(CfDef cf_def);
       /// <summary>
       /// Executes a CQL (Cassandra Query Language) statement and returns a
@@ -224,6 +321,11 @@ namespace Apache.Cassandra.Test
       /// </summary>
       /// <param name="query"></param>
       /// <param name="compression"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       CqlResult execute_cql_query(byte[] query, Compression compression);
       /// <summary>
       /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
@@ -233,6 +335,8 @@ namespace Apache.Cassandra.Test
       /// </summary>
       /// <param name="query"></param>
       /// <param name="compression"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
       CqlPreparedResult prepare_cql_query(byte[] query, Compression compression);
       /// <summary>
       /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
@@ -240,18 +344,23 @@ namespace Apache.Cassandra.Test
       /// </summary>
       /// <param name="itemId"></param>
       /// <param name="values"></param>
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
       CqlResult execute_prepared_cql_query(int itemId, List<string> values);
     }
 
-    public interface Iface : ISync {
-      #if SILVERLIGHT
-      IAsyncResult Begin_login(AsyncCallback callback, object state, AuthenticationRequest auth_request);
-      void End_login(IAsyncResult asyncResult);
-      #endif
-      #if SILVERLIGHT
-      IAsyncResult Begin_set_keyspace(AsyncCallback callback, object state, string keyspace);
-      void End_set_keyspace(IAsyncResult asyncResult);
-      #endif
+    [ServiceContract(Namespace="")]
+    public interface IAsync {
+      [OperationContract]
+      [FaultContract(typeof(AuthenticationExceptionFault))]
+      [FaultContract(typeof(AuthorizationExceptionFault))]
+      Task loginAsync(AuthenticationRequest auth_request);
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task set_keyspaceAsync(string keyspace);
       /// <summary>
       /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
       /// the only method that can throw an exception under non-failure conditions.)
@@ -259,10 +368,12 @@ namespace Apache.Cassandra.Test
       /// <param name="key"></param>
       /// <param name="column_path"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
-      ColumnOrSuperColumn End_get(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(NotFoundExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<ColumnOrSuperColumn> @getAsync(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
       /// <summary>
       /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
       /// pair) specified by the given SlicePredicate. If no matching values are found, an empty list is returned.
@@ -271,10 +382,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      List<ColumnOrSuperColumn> End_get_slice(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<List<ColumnOrSuperColumn>> get_sliceAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
       /// <code>ColumnFamily</code> and optionally <code>SuperColumn</code>.
@@ -283,10 +395,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      int End_get_count(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<int> get_countAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
       /// </summary>
@@ -294,10 +407,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      Dictionary<byte[], List<ColumnOrSuperColumn>> End_multiget_slice(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<Dictionary<byte[], List<ColumnOrSuperColumn>>> multiget_sliceAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
       /// </summary>
@@ -305,10 +419,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="predicate"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      Dictionary<byte[], int> End_multiget_count(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<Dictionary<byte[], int>> multiget_countAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// returns a subset of columns for a contiguous range of keys.
       /// </summary>
@@ -316,10 +431,11 @@ namespace Apache.Cassandra.Test
       /// <param name="predicate"></param>
       /// <param name="range"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
-      List<KeySlice> End_get_range_slices(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<List<KeySlice>> get_range_slicesAsync(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
       /// <summary>
       /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
       /// </summary>
@@ -327,10 +443,11 @@ namespace Apache.Cassandra.Test
       /// <param name="index_clause"></param>
       /// <param name="column_predicate"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
-      List<KeySlice> End_get_indexed_slices(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task<List<KeySlice>> get_indexed_slicesAsync(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
       /// <summary>
       /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
       /// </summary>
@@ -338,10 +455,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="column"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
-      void End_insert(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task insertAsync(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
       /// <summary>
       /// Increment or decrement a counter.
       /// </summary>
@@ -349,10 +467,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_parent"></param>
       /// <param name="column"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
-      void End_add(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task @addAsync(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
       /// <summary>
       /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
       /// that all the values in column_path besides column_path.column_family are truly optional: you can remove the entire
@@ -362,10 +481,11 @@ namespace Apache.Cassandra.Test
       /// <param name="column_path"></param>
       /// <param name="timestamp"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
-      void End_remove(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task @removeAsync(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
       /// <summary>
       /// Remove a counter at the specified location.
       /// Note that counters have limited support for deletes: if you remove a counter, you must wait to issue any following update
@@ -374,10 +494,11 @@ namespace Apache.Cassandra.Test
       /// <param name="key"></param>
       /// <param name="path"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
-      void End_remove_counter(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task remove_counterAsync(byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
       /// <summary>
       ///   Mutate many columns or super columns for many row keys. See also: Mutation.
       /// 
@@ -386,10 +507,11 @@ namespace Apache.Cassandra.Test
       /// </summary>
       /// <param name="mutation_map"></param>
       /// <param name="consistency_level"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
-      void End_batch_mutate(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task batch_mutateAsync(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
       /// <summary>
       /// Truncate will mark and entire column family as deleted.
       /// From the user's perspective a successful call to truncate will result complete data deletion from cfname.
@@ -399,40 +521,35 @@ namespace Apache.Cassandra.Test
       /// some hosts are down.
       /// </summary>
       /// <param name="cfname"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_truncate(AsyncCallback callback, object state, string cfname);
-      void End_truncate(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      Task truncateAsync(string cfname);
       /// <summary>
       /// for each schema version present in the cluster, returns a list of nodes at that version.
       /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
       /// the cluster is all on the same version if the size of the map is 1.
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_schema_versions(AsyncCallback callback, object state);
-      Dictionary<string, List<string>> End_describe_schema_versions(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task<Dictionary<string, List<string>>> describe_schema_versionsAsync();
       /// <summary>
       /// list the defined keyspaces in this cluster
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_keyspaces(AsyncCallback callback, object state);
-      List<KsDef> End_describe_keyspaces(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task<List<KsDef>> describe_keyspacesAsync();
       /// <summary>
       /// get the cluster name
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_cluster_name(AsyncCallback callback, object state);
-      string End_describe_cluster_name(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> describe_cluster_nameAsync();
       /// <summary>
       /// get the thrift api version
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_version(AsyncCallback callback, object state);
-      string End_describe_version(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> describe_versionAsync();
       /// <summary>
       /// get the token ring: a map of ranges to host addresses,
       /// represented as a set of TokenRange instead of a map from range
@@ -444,32 +561,27 @@ namespace Apache.Cassandra.Test
       /// order is neither important nor predictable.
       /// </summary>
       /// <param name="keyspace"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_ring(AsyncCallback callback, object state, string keyspace);
-      List<TokenRange> End_describe_ring(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task<List<TokenRange>> describe_ringAsync(string keyspace);
       /// <summary>
       /// returns the partitioner used by this cluster
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_partitioner(AsyncCallback callback, object state);
-      string End_describe_partitioner(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> describe_partitionerAsync();
       /// <summary>
       /// returns the snitch used by this cluster
       /// </summary>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_snitch(AsyncCallback callback, object state);
-      string End_describe_snitch(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      Task<string> describe_snitchAsync();
       /// <summary>
       /// describe specified keyspace
       /// </summary>
       /// <param name="keyspace"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_keyspace(AsyncCallback callback, object state, string keyspace);
-      KsDef End_describe_keyspace(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(NotFoundExceptionFault))]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task<KsDef> describe_keyspaceAsync(string keyspace);
       /// <summary>
       /// experimental API for hadoop/parallel query support.
       /// may change violently and without warning.
@@ -481,68 +593,69 @@ namespace Apache.Cassandra.Test
       /// <param name="start_token"></param>
       /// <param name="end_token"></param>
       /// <param name="keys_per_split"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split);
-      List<string> End_describe_splits(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task<List<string>> describe_splitsAsync(string cfName, string start_token, string end_token, int keys_per_split);
       /// <summary>
       /// adds a column family. returns the new schema id.
       /// </summary>
       /// <param name="cf_def"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def);
-      string End_system_add_column_family(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<string> system_add_column_familyAsync(CfDef cf_def);
       /// <summary>
       /// drops a column family. returns the new schema id.
       /// </summary>
       /// <param name="column_family"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_system_drop_column_family(AsyncCallback callback, object state, string column_family);
-      string End_system_drop_column_family(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<string> system_drop_column_familyAsync(string column_family);
       /// <summary>
       /// adds a keyspace and any column families that are part of it. returns the new schema id.
       /// </summary>
       /// <param name="ks_def"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def);
-      string End_system_add_keyspace(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<string> system_add_keyspaceAsync(KsDef ks_def);
       /// <summary>
       /// drops a keyspace and any column families that are part of it. returns the new schema id.
       /// </summary>
       /// <param name="keyspace"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_system_drop_keyspace(AsyncCallback callback, object state, string keyspace);
-      string End_system_drop_keyspace(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<string> system_drop_keyspaceAsync(string keyspace);
       /// <summary>
       /// updates properties of a keyspace. returns the new schema id.
       /// </summary>
       /// <param name="ks_def"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def);
-      string End_system_update_keyspace(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<string> system_update_keyspaceAsync(KsDef ks_def);
       /// <summary>
       /// updates properties of a column family. returns the new schema id.
       /// </summary>
       /// <param name="cf_def"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def);
-      string End_system_update_column_family(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<string> system_update_column_familyAsync(CfDef cf_def);
       /// <summary>
       /// Executes a CQL (Cassandra Query Language) statement and returns a
       /// CqlResult containing the results.
       /// </summary>
       /// <param name="query"></param>
       /// <param name="compression"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression);
-      CqlResult End_execute_cql_query(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<CqlResult> execute_cql_queryAsync(byte[] query, Compression compression);
       /// <summary>
       /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
       /// - the type of CQL statement
@@ -551,20 +664,280 @@ namespace Apache.Cassandra.Test
       /// </summary>
       /// <param name="query"></param>
       /// <param name="compression"></param>
-      #if SILVERLIGHT
-      IAsyncResult Begin_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression);
-      CqlPreparedResult End_prepare_cql_query(IAsyncResult asyncResult);
-      #endif
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      Task<CqlPreparedResult> prepare_cql_queryAsync(byte[] query, Compression compression);
       /// <summary>
       /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
       /// to bind and returns a CqlResult containing the results.
       /// </summary>
       /// <param name="itemId"></param>
       /// <param name="values"></param>
-      #if SILVERLIGHT
+      [OperationContract]
+      [FaultContract(typeof(InvalidRequestExceptionFault))]
+      [FaultContract(typeof(UnavailableExceptionFault))]
+      [FaultContract(typeof(TimedOutExceptionFault))]
+      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
+      Task<CqlResult> execute_prepared_cql_queryAsync(int itemId, List<string> values);
+    }
+
+    [ServiceContract(Namespace="")]
+    public interface Iface : ISync, IAsync {
+      IAsyncResult Begin_login(AsyncCallback callback, object state, AuthenticationRequest auth_request);
+      void End_login(IAsyncResult asyncResult);
+      IAsyncResult Begin_set_keyspace(AsyncCallback callback, object state, string keyspace);
+      void End_set_keyspace(IAsyncResult asyncResult);
+      /// <summary>
+      /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
+      /// the only method that can throw an exception under non-failure conditions.)
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="column_path"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
+      ColumnOrSuperColumn End_get(IAsyncResult asyncResult);
+      /// <summary>
+      /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
+      /// pair) specified by the given SlicePredicate. If no matching values are found, an empty list is returned.
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="column_parent"></param>
+      /// <param name="predicate"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      List<ColumnOrSuperColumn> End_get_slice(IAsyncResult asyncResult);
+      /// <summary>
+      /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
+      /// <code>ColumnFamily</code> and optionally <code>SuperColumn</code>.
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="column_parent"></param>
+      /// <param name="predicate"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      int End_get_count(IAsyncResult asyncResult);
+      /// <summary>
+      /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
+      /// </summary>
+      /// <param name="keys"></param>
+      /// <param name="column_parent"></param>
+      /// <param name="predicate"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      Dictionary<byte[], List<ColumnOrSuperColumn>> End_multiget_slice(IAsyncResult asyncResult);
+      /// <summary>
+      /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
+      /// </summary>
+      /// <param name="keys"></param>
+      /// <param name="column_parent"></param>
+      /// <param name="predicate"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      Dictionary<byte[], int> End_multiget_count(IAsyncResult asyncResult);
+      /// <summary>
+      /// returns a subset of columns for a contiguous range of keys.
+      /// </summary>
+      /// <param name="column_parent"></param>
+      /// <param name="predicate"></param>
+      /// <param name="range"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
+      List<KeySlice> End_get_range_slices(IAsyncResult asyncResult);
+      /// <summary>
+      /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
+      /// </summary>
+      /// <param name="column_parent"></param>
+      /// <param name="index_clause"></param>
+      /// <param name="column_predicate"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
+      List<KeySlice> End_get_indexed_slices(IAsyncResult asyncResult);
+      /// <summary>
+      /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="column_parent"></param>
+      /// <param name="column"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
+      void End_insert(IAsyncResult asyncResult);
+      /// <summary>
+      /// Increment or decrement a counter.
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="column_parent"></param>
+      /// <param name="column"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
+      void End_add(IAsyncResult asyncResult);
+      /// <summary>
+      /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
+      /// that all the values in column_path besides column_path.column_family are truly optional: you can remove the entire
+      /// row by just specifying the ColumnFamily, or you can remove a SuperColumn or a single Column by specifying those levels too.
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="column_path"></param>
+      /// <param name="timestamp"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
+      void End_remove(IAsyncResult asyncResult);
+      /// <summary>
+      /// Remove a counter at the specified location.
+      /// Note that counters have limited support for deletes: if you remove a counter, you must wait to issue any following update
+      /// until the delete has reached all the nodes and all of them have been fully compacted.
+      /// </summary>
+      /// <param name="key"></param>
+      /// <param name="path"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
+      void End_remove_counter(IAsyncResult asyncResult);
+      /// <summary>
+      ///   Mutate many columns or super columns for many row keys. See also: Mutation.
+      /// 
+      ///   mutation_map maps key to column family to a list of Mutation objects to take place at that scope.
+      /// *
+      /// </summary>
+      /// <param name="mutation_map"></param>
+      /// <param name="consistency_level"></param>
+      IAsyncResult Begin_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
+      void End_batch_mutate(IAsyncResult asyncResult);
+      /// <summary>
+      /// Truncate will mark and entire column family as deleted.
+      /// From the user's perspective a successful call to truncate will result complete data deletion from cfname.
+      /// Internally, however, disk space will not be immediatily released, as with all deletes in cassandra, this one
+      /// only marks the data as deleted.
+      /// The operation succeeds only if all hosts in the cluster at available and will throw an UnavailableException if
+      /// some hosts are down.
+      /// </summary>
+      /// <param name="cfname"></param>
+      IAsyncResult Begin_truncate(AsyncCallback callback, object state, string cfname);
+      void End_truncate(IAsyncResult asyncResult);
+      /// <summary>
+      /// for each schema version present in the cluster, returns a list of nodes at that version.
+      /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
+      /// the cluster is all on the same version if the size of the map is 1.
+      /// </summary>
+      IAsyncResult Begin_describe_schema_versions(AsyncCallback callback, object state);
+      Dictionary<string, List<string>> End_describe_schema_versions(IAsyncResult asyncResult);
+      /// <summary>
+      /// list the defined keyspaces in this cluster
+      /// </summary>
+      IAsyncResult Begin_describe_keyspaces(AsyncCallback callback, object state);
+      List<KsDef> End_describe_keyspaces(IAsyncResult asyncResult);
+      /// <summary>
+      /// get the cluster name
+      /// </summary>
+      IAsyncResult Begin_describe_cluster_name(AsyncCallback callback, object state);
+      string End_describe_cluster_name(IAsyncResult asyncResult);
+      /// <summary>
+      /// get the thrift api version
+      /// </summary>
+      IAsyncResult Begin_describe_version(AsyncCallback callback, object state);
+      string End_describe_version(IAsyncResult asyncResult);
+      /// <summary>
+      /// get the token ring: a map of ranges to host addresses,
+      /// represented as a set of TokenRange instead of a map from range
+      /// to list of endpoints, because you can't use Thrift structs as
+      /// map keys:
+      /// https://issues.apache.org/jira/browse/THRIFT-162
+      /// 
+      /// for the same reason, we can't return a set here, even though
+      /// order is neither important nor predictable.
+      /// </summary>
+      /// <param name="keyspace"></param>
+      IAsyncResult Begin_describe_ring(AsyncCallback callback, object state, string keyspace);
+      List<TokenRange> End_describe_ring(IAsyncResult asyncResult);
+      /// <summary>
+      /// returns the partitioner used by this cluster
+      /// </summary>
+      IAsyncResult Begin_describe_partitioner(AsyncCallback callback, object state);
+      string End_describe_partitioner(IAsyncResult asyncResult);
+      /// <summary>
+      /// returns the snitch used by this cluster
+      /// </summary>
+      IAsyncResult Begin_describe_snitch(AsyncCallback callback, object state);
+      string End_describe_snitch(IAsyncResult asyncResult);
+      /// <summary>
+      /// describe specified keyspace
+      /// </summary>
+      /// <param name="keyspace"></param>
+      IAsyncResult Begin_describe_keyspace(AsyncCallback callback, object state, string keyspace);
+      KsDef End_describe_keyspace(IAsyncResult asyncResult);
+      /// <summary>
+      /// experimental API for hadoop/parallel query support.
+      /// may change violently and without warning.
+      /// 
+      /// returns list of token strings such that first subrange is (list[0], list[1]],
+      /// next is (list[1], list[2]], etc.
+      /// </summary>
+      /// <param name="cfName"></param>
+      /// <param name="start_token"></param>
+      /// <param name="end_token"></param>
+      /// <param name="keys_per_split"></param>
+      IAsyncResult Begin_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split);
+      List<string> End_describe_splits(IAsyncResult asyncResult);
+      /// <summary>
+      /// adds a column family. returns the new schema id.
+      /// </summary>
+      /// <param name="cf_def"></param>
+      IAsyncResult Begin_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def);
+      string End_system_add_column_family(IAsyncResult asyncResult);
+      /// <summary>
+      /// drops a column family. returns the new schema id.
+      /// </summary>
+      /// <param name="column_family"></param>
+      IAsyncResult Begin_system_drop_column_family(AsyncCallback callback, object state, string column_family);
+      string End_system_drop_column_family(IAsyncResult asyncResult);
+      /// <summary>
+      /// adds a keyspace and any column families that are part of it. returns the new schema id.
+      /// </summary>
+      /// <param name="ks_def"></param>
+      IAsyncResult Begin_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def);
+      string End_system_add_keyspace(IAsyncResult asyncResult);
+      /// <summary>
+      /// drops a keyspace and any column families that are part of it. returns the new schema id.
+      /// </summary>
+      /// <param name="keyspace"></param>
+      IAsyncResult Begin_system_drop_keyspace(AsyncCallback callback, object state, string keyspace);
+      string End_system_drop_keyspace(IAsyncResult asyncResult);
+      /// <summary>
+      /// updates properties of a keyspace. returns the new schema id.
+      /// </summary>
+      /// <param name="ks_def"></param>
+      IAsyncResult Begin_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def);
+      string End_system_update_keyspace(IAsyncResult asyncResult);
+      /// <summary>
+      /// updates properties of a column family. returns the new schema id.
+      /// </summary>
+      /// <param name="cf_def"></param>
+      IAsyncResult Begin_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def);
+      string End_system_update_column_family(IAsyncResult asyncResult);
+      /// <summary>
+      /// Executes a CQL (Cassandra Query Language) statement and returns a
+      /// CqlResult containing the results.
+      /// </summary>
+      /// <param name="query"></param>
+      /// <param name="compression"></param>
+      IAsyncResult Begin_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression);
+      CqlResult End_execute_cql_query(IAsyncResult asyncResult);
+      /// <summary>
+      /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
+      /// - the type of CQL statement
+      /// - an id token of the compiled CQL stored on the server side.
+      /// - a count of the discovered bound markers in the statement
+      /// </summary>
+      /// <param name="query"></param>
+      /// <param name="compression"></param>
+      IAsyncResult Begin_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression);
+      CqlPreparedResult End_prepare_cql_query(IAsyncResult asyncResult);
+      /// <summary>
+      /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
+      /// to bind and returns a CqlResult containing the results.
+      /// </summary>
+      /// <param name="itemId"></param>
+      /// <param name="values"></param>
       IAsyncResult Begin_execute_prepared_cql_query(AsyncCallback callback, object state, int itemId, List<string> values);
       CqlResult End_execute_prepared_cql_query(IAsyncResult asyncResult);
-      #endif
     }
 
     public class Client : IDisposable, Iface {
@@ -624,7 +997,6 @@ namespace Apache.Cassandra.Test
 
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_login(AsyncCallback callback, object state, AuthenticationRequest auth_request)
       {
         return send_login(callback, state, auth_request);
@@ -636,36 +1008,28 @@ namespace Apache.Cassandra.Test
         recv_login();
       }
 
-      #endif
+      public async Task loginAsync(AuthenticationRequest auth_request)
+      {
+        await Task.Run(() =>
+        {
+          login(auth_request);
+        });
+      }
 
       public void login(AuthenticationRequest auth_request)
       {
-        #if !SILVERLIGHT
-        send_login(auth_request);
-        recv_login();
-
-        #else
         var asyncResult = Begin_login(null, null, auth_request);
         End_login(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_login(AsyncCallback callback, object state, AuthenticationRequest auth_request)
-      #else
-      public void send_login(AuthenticationRequest auth_request)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("login", TMessageType.Call, seqid_));
         login_args args = new login_args();
         args.Auth_request = auth_request;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_login()
@@ -689,7 +1053,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_set_keyspace(AsyncCallback callback, object state, string keyspace)
       {
         return send_set_keyspace(callback, state, keyspace);
@@ -701,36 +1064,28 @@ namespace Apache.Cassandra.Test
         recv_set_keyspace();
       }
 
-      #endif
+      public async Task set_keyspaceAsync(string keyspace)
+      {
+        await Task.Run(() =>
+        {
+          set_keyspace(keyspace);
+        });
+      }
 
       public void set_keyspace(string keyspace)
       {
-        #if !SILVERLIGHT
-        send_set_keyspace(keyspace);
-        recv_set_keyspace();
-
-        #else
         var asyncResult = Begin_set_keyspace(null, null, keyspace);
         End_set_keyspace(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_set_keyspace(AsyncCallback callback, object state, string keyspace)
-      #else
-      public void send_set_keyspace(string keyspace)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Call, seqid_));
         set_keyspace_args args = new set_keyspace_args();
         args.Keyspace = keyspace;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_set_keyspace()
@@ -751,7 +1106,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
       {
         return send_get(callback, state, key, column_path, consistency_level);
@@ -763,7 +1117,15 @@ namespace Apache.Cassandra.Test
         return recv_get();
       }
 
-      #endif
+      public async Task<ColumnOrSuperColumn> @getAsync(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
+      {
+        ColumnOrSuperColumn retval;
+        retval = await Task.Run(() =>
+        {
+          return get(key, column_path, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
@@ -774,21 +1136,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public ColumnOrSuperColumn @get(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_get(key, column_path, consistency_level);
-        return recv_get();
-
-        #else
         var asyncResult = Begin_get(null, null, key, column_path, consistency_level);
         return End_get(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
-      #else
-      public void send_get(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("get", TMessageType.Call, seqid_));
         get_args args = new get_args();
@@ -797,11 +1149,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public ColumnOrSuperColumn recv_get()
@@ -834,7 +1182,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
         return send_get_slice(callback, state, key, column_parent, predicate, consistency_level);
@@ -846,7 +1193,15 @@ namespace Apache.Cassandra.Test
         return recv_get_slice();
       }
 
-      #endif
+      public async Task<List<ColumnOrSuperColumn>> get_sliceAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      {
+        List<ColumnOrSuperColumn> retval;
+        retval = await Task.Run(() =>
+        {
+          return get_slice(key, column_parent, predicate, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
@@ -858,21 +1213,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public List<ColumnOrSuperColumn> get_slice(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_get_slice(key, column_parent, predicate, consistency_level);
-        return recv_get_slice();
-
-        #else
         var asyncResult = Begin_get_slice(null, null, key, column_parent, predicate, consistency_level);
         return End_get_slice(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #else
-      public void send_get_slice(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("get_slice", TMessageType.Call, seqid_));
         get_slice_args args = new get_slice_args();
@@ -882,11 +1227,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<ColumnOrSuperColumn> recv_get_slice()
@@ -916,7 +1257,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
         return send_get_count(callback, state, key, column_parent, predicate, consistency_level);
@@ -928,7 +1268,15 @@ namespace Apache.Cassandra.Test
         return recv_get_count();
       }
 
-      #endif
+      public async Task<int> get_countAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      {
+        int retval;
+        retval = await Task.Run(() =>
+        {
+          return get_count(key, column_parent, predicate, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
@@ -940,21 +1288,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public int get_count(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_get_count(key, column_parent, predicate, consistency_level);
-        return recv_get_count();
-
-        #else
         var asyncResult = Begin_get_count(null, null, key, column_parent, predicate, consistency_level);
         return End_get_count(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #else
-      public void send_get_count(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("get_count", TMessageType.Call, seqid_));
         get_count_args args = new get_count_args();
@@ -964,11 +1302,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public int recv_get_count()
@@ -998,7 +1332,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
         return send_multiget_slice(callback, state, keys, column_parent, predicate, consistency_level);
@@ -1010,7 +1343,15 @@ namespace Apache.Cassandra.Test
         return recv_multiget_slice();
       }
 
-      #endif
+      public async Task<Dictionary<byte[], List<ColumnOrSuperColumn>>> multiget_sliceAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      {
+        Dictionary<byte[], List<ColumnOrSuperColumn>> retval;
+        retval = await Task.Run(() =>
+        {
+          return multiget_slice(keys, column_parent, predicate, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
@@ -1021,21 +1362,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public Dictionary<byte[], List<ColumnOrSuperColumn>> multiget_slice(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_multiget_slice(keys, column_parent, predicate, consistency_level);
-        return recv_multiget_slice();
-
-        #else
         var asyncResult = Begin_multiget_slice(null, null, keys, column_parent, predicate, consistency_level);
         return End_multiget_slice(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #else
-      public void send_multiget_slice(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Call, seqid_));
         multiget_slice_args args = new multiget_slice_args();
@@ -1045,11 +1376,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<byte[], List<ColumnOrSuperColumn>> recv_multiget_slice()
@@ -1079,7 +1406,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
         return send_multiget_count(callback, state, keys, column_parent, predicate, consistency_level);
@@ -1091,7 +1417,15 @@ namespace Apache.Cassandra.Test
         return recv_multiget_count();
       }
 
-      #endif
+      public async Task<Dictionary<byte[], int>> multiget_countAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      {
+        Dictionary<byte[], int> retval;
+        retval = await Task.Run(() =>
+        {
+          return multiget_count(keys, column_parent, predicate, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
@@ -1102,21 +1436,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public Dictionary<byte[], int> multiget_count(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_multiget_count(keys, column_parent, predicate, consistency_level);
-        return recv_multiget_count();
-
-        #else
         var asyncResult = Begin_multiget_count(null, null, keys, column_parent, predicate, consistency_level);
         return End_multiget_count(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #else
-      public void send_multiget_count(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Call, seqid_));
         multiget_count_args args = new multiget_count_args();
@@ -1126,11 +1450,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<byte[], int> recv_multiget_count()
@@ -1160,7 +1480,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
       {
         return send_get_range_slices(callback, state, column_parent, predicate, range, consistency_level);
@@ -1172,7 +1491,15 @@ namespace Apache.Cassandra.Test
         return recv_get_range_slices();
       }
 
-      #endif
+      public async Task<List<KeySlice>> get_range_slicesAsync(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
+      {
+        List<KeySlice> retval;
+        retval = await Task.Run(() =>
+        {
+          return get_range_slices(column_parent, predicate, range, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// returns a subset of columns for a contiguous range of keys.
@@ -1183,21 +1510,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public List<KeySlice> get_range_slices(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_get_range_slices(column_parent, predicate, range, consistency_level);
-        return recv_get_range_slices();
-
-        #else
         var asyncResult = Begin_get_range_slices(null, null, column_parent, predicate, range, consistency_level);
         return End_get_range_slices(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
-      #else
-      public void send_get_range_slices(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Call, seqid_));
         get_range_slices_args args = new get_range_slices_args();
@@ -1207,11 +1524,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<KeySlice> recv_get_range_slices()
@@ -1241,7 +1554,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
       {
         return send_get_indexed_slices(callback, state, column_parent, index_clause, column_predicate, consistency_level);
@@ -1253,7 +1565,15 @@ namespace Apache.Cassandra.Test
         return recv_get_indexed_slices();
       }
 
-      #endif
+      public async Task<List<KeySlice>> get_indexed_slicesAsync(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
+      {
+        List<KeySlice> retval;
+        retval = await Task.Run(() =>
+        {
+          return get_indexed_slices(column_parent, index_clause, column_predicate, consistency_level);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
@@ -1264,21 +1584,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public List<KeySlice> get_indexed_slices(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_get_indexed_slices(column_parent, index_clause, column_predicate, consistency_level);
-        return recv_get_indexed_slices();
-
-        #else
         var asyncResult = Begin_get_indexed_slices(null, null, column_parent, index_clause, column_predicate, consistency_level);
         return End_get_indexed_slices(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
-      #else
-      public void send_get_indexed_slices(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Call, seqid_));
         get_indexed_slices_args args = new get_indexed_slices_args();
@@ -1288,11 +1598,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<KeySlice> recv_get_indexed_slices()
@@ -1322,7 +1628,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
       {
         return send_insert(callback, state, key, column_parent, column, consistency_level);
@@ -1334,7 +1639,13 @@ namespace Apache.Cassandra.Test
         recv_insert();
       }
 
-      #endif
+      public async Task insertAsync(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
+      {
+        await Task.Run(() =>
+        {
+          insert(key, column_parent, column, consistency_level);
+        });
+      }
 
       /// <summary>
       /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
@@ -1345,21 +1656,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public void insert(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_insert(key, column_parent, column, consistency_level);
-        recv_insert();
-
-        #else
         var asyncResult = Begin_insert(null, null, key, column_parent, column, consistency_level);
         End_insert(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
-      #else
-      public void send_insert(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("insert", TMessageType.Call, seqid_));
         insert_args args = new insert_args();
@@ -1369,11 +1670,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_insert()
@@ -1400,7 +1697,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
       {
         return send_add(callback, state, key, column_parent, column, consistency_level);
@@ -1412,7 +1708,13 @@ namespace Apache.Cassandra.Test
         recv_add();
       }
 
-      #endif
+      public async Task @addAsync(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
+      {
+        await Task.Run(() =>
+        {
+          add(key, column_parent, column, consistency_level);
+        });
+      }
 
       /// <summary>
       /// Increment or decrement a counter.
@@ -1423,21 +1725,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public void @add(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_add(key, column_parent, column, consistency_level);
-        recv_add();
-
-        #else
         var asyncResult = Begin_add(null, null, key, column_parent, column, consistency_level);
         End_add(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
-      #else
-      public void send_add(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("add", TMessageType.Call, seqid_));
         add_args args = new add_args();
@@ -1447,11 +1739,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_add()
@@ -1478,7 +1766,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
       {
         return send_remove(callback, state, key, column_path, timestamp, consistency_level);
@@ -1490,7 +1777,13 @@ namespace Apache.Cassandra.Test
         recv_remove();
       }
 
-      #endif
+      public async Task @removeAsync(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
+      {
+        await Task.Run(() =>
+        {
+          remove(key, column_path, timestamp, consistency_level);
+        });
+      }
 
       /// <summary>
       /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
@@ -1503,21 +1796,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public void @remove(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_remove(key, column_path, timestamp, consistency_level);
-        recv_remove();
-
-        #else
         var asyncResult = Begin_remove(null, null, key, column_path, timestamp, consistency_level);
         End_remove(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
-      #else
-      public void send_remove(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("remove", TMessageType.Call, seqid_));
         remove_args args = new remove_args();
@@ -1527,11 +1810,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_remove()
@@ -1558,7 +1837,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
       {
         return send_remove_counter(callback, state, key, path, consistency_level);
@@ -1570,7 +1848,13 @@ namespace Apache.Cassandra.Test
         recv_remove_counter();
       }
 
-      #endif
+      public async Task remove_counterAsync(byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
+      {
+        await Task.Run(() =>
+        {
+          remove_counter(key, path, consistency_level);
+        });
+      }
 
       /// <summary>
       /// Remove a counter at the specified location.
@@ -1582,21 +1866,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public void remove_counter(byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_remove_counter(key, path, consistency_level);
-        recv_remove_counter();
-
-        #else
         var asyncResult = Begin_remove_counter(null, null, key, path, consistency_level);
         End_remove_counter(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
-      #else
-      public void send_remove_counter(byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Call, seqid_));
         remove_counter_args args = new remove_counter_args();
@@ -1605,11 +1879,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_remove_counter()
@@ -1636,7 +1906,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
       {
         return send_batch_mutate(callback, state, mutation_map, consistency_level);
@@ -1648,7 +1917,13 @@ namespace Apache.Cassandra.Test
         recv_batch_mutate();
       }
 
-      #endif
+      public async Task batch_mutateAsync(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
+      {
+        await Task.Run(() =>
+        {
+          batch_mutate(mutation_map, consistency_level);
+        });
+      }
 
       /// <summary>
       ///   Mutate many columns or super columns for many row keys. See also: Mutation.
@@ -1660,21 +1935,11 @@ namespace Apache.Cassandra.Test
       /// <param name="consistency_level"></param>
       public void batch_mutate(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
       {
-        #if !SILVERLIGHT
-        send_batch_mutate(mutation_map, consistency_level);
-        recv_batch_mutate();
-
-        #else
         var asyncResult = Begin_batch_mutate(null, null, mutation_map, consistency_level);
         End_batch_mutate(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
-      #else
-      public void send_batch_mutate(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Call, seqid_));
         batch_mutate_args args = new batch_mutate_args();
@@ -1682,11 +1947,7 @@ namespace Apache.Cassandra.Test
         args.Consistency_level = consistency_level;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_batch_mutate()
@@ -1713,7 +1974,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_truncate(AsyncCallback callback, object state, string cfname)
       {
         return send_truncate(callback, state, cfname);
@@ -1725,7 +1985,13 @@ namespace Apache.Cassandra.Test
         recv_truncate();
       }
 
-      #endif
+      public async Task truncateAsync(string cfname)
+      {
+        await Task.Run(() =>
+        {
+          truncate(cfname);
+        });
+      }
 
       /// <summary>
       /// Truncate will mark and entire column family as deleted.
@@ -1738,32 +2004,18 @@ namespace Apache.Cassandra.Test
       /// <param name="cfname"></param>
       public void truncate(string cfname)
       {
-        #if !SILVERLIGHT
-        send_truncate(cfname);
-        recv_truncate();
-
-        #else
         var asyncResult = Begin_truncate(null, null, cfname);
         End_truncate(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_truncate(AsyncCallback callback, object state, string cfname)
-      #else
-      public void send_truncate(string cfname)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("truncate", TMessageType.Call, seqid_));
         truncate_args args = new truncate_args();
         args.Cfname = cfname;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public void recv_truncate()
@@ -1790,7 +2042,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_schema_versions(AsyncCallback callback, object state)
       {
         return send_describe_schema_versions(callback, state);
@@ -1802,7 +2053,15 @@ namespace Apache.Cassandra.Test
         return recv_describe_schema_versions();
       }
 
-      #endif
+      public async Task<Dictionary<string, List<string>>> describe_schema_versionsAsync()
+      {
+        Dictionary<string, List<string>> retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_schema_versions();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// for each schema version present in the cluster, returns a list of nodes at that version.
@@ -1811,31 +2070,17 @@ namespace Apache.Cassandra.Test
       /// </summary>
       public Dictionary<string, List<string>> describe_schema_versions()
       {
-        #if !SILVERLIGHT
-        send_describe_schema_versions();
-        return recv_describe_schema_versions();
-
-        #else
         var asyncResult = Begin_describe_schema_versions(null, null);
         return End_describe_schema_versions(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_schema_versions(AsyncCallback callback, object state)
-      #else
-      public void send_describe_schema_versions()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Call, seqid_));
         describe_schema_versions_args args = new describe_schema_versions_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public Dictionary<string, List<string>> recv_describe_schema_versions()
@@ -1859,7 +2104,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_keyspaces(AsyncCallback callback, object state)
       {
         return send_describe_keyspaces(callback, state);
@@ -1871,38 +2115,32 @@ namespace Apache.Cassandra.Test
         return recv_describe_keyspaces();
       }
 
-      #endif
+      public async Task<List<KsDef>> describe_keyspacesAsync()
+      {
+        List<KsDef> retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_keyspaces();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// list the defined keyspaces in this cluster
       /// </summary>
       public List<KsDef> describe_keyspaces()
       {
-        #if !SILVERLIGHT
-        send_describe_keyspaces();
-        return recv_describe_keyspaces();
-
-        #else
         var asyncResult = Begin_describe_keyspaces(null, null);
         return End_describe_keyspaces(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_keyspaces(AsyncCallback callback, object state)
-      #else
-      public void send_describe_keyspaces()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Call, seqid_));
         describe_keyspaces_args args = new describe_keyspaces_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<KsDef> recv_describe_keyspaces()
@@ -1926,7 +2164,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_cluster_name(AsyncCallback callback, object state)
       {
         return send_describe_cluster_name(callback, state);
@@ -1938,38 +2175,32 @@ namespace Apache.Cassandra.Test
         return recv_describe_cluster_name();
       }
 
-      #endif
+      public async Task<string> describe_cluster_nameAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_cluster_name();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// get the cluster name
       /// </summary>
       public string describe_cluster_name()
       {
-        #if !SILVERLIGHT
-        send_describe_cluster_name();
-        return recv_describe_cluster_name();
-
-        #else
         var asyncResult = Begin_describe_cluster_name(null, null);
         return End_describe_cluster_name(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_cluster_name(AsyncCallback callback, object state)
-      #else
-      public void send_describe_cluster_name()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Call, seqid_));
         describe_cluster_name_args args = new describe_cluster_name_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_describe_cluster_name()
@@ -1990,7 +2221,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_version(AsyncCallback callback, object state)
       {
         return send_describe_version(callback, state);
@@ -2002,38 +2232,32 @@ namespace Apache.Cassandra.Test
         return recv_describe_version();
       }
 
-      #endif
+      public async Task<string> describe_versionAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_version();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// get the thrift api version
       /// </summary>
       public string describe_version()
       {
-        #if !SILVERLIGHT
-        send_describe_version();
-        return recv_describe_version();
-
-        #else
         var asyncResult = Begin_describe_version(null, null);
         return End_describe_version(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_version(AsyncCallback callback, object state)
-      #else
-      public void send_describe_version()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_version", TMessageType.Call, seqid_));
         describe_version_args args = new describe_version_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_describe_version()
@@ -2054,7 +2278,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_ring(AsyncCallback callback, object state, string keyspace)
       {
         return send_describe_ring(callback, state, keyspace);
@@ -2066,7 +2289,15 @@ namespace Apache.Cassandra.Test
         return recv_describe_ring();
       }
 
-      #endif
+      public async Task<List<TokenRange>> describe_ringAsync(string keyspace)
+      {
+        List<TokenRange> retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_ring(keyspace);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// get the token ring: a map of ranges to host addresses,
@@ -2081,32 +2312,18 @@ namespace Apache.Cassandra.Test
       /// <param name="keyspace"></param>
       public List<TokenRange> describe_ring(string keyspace)
       {
-        #if !SILVERLIGHT
-        send_describe_ring(keyspace);
-        return recv_describe_ring();
-
-        #else
         var asyncResult = Begin_describe_ring(null, null, keyspace);
         return End_describe_ring(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_ring(AsyncCallback callback, object state, string keyspace)
-      #else
-      public void send_describe_ring(string keyspace)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Call, seqid_));
         describe_ring_args args = new describe_ring_args();
         args.Keyspace = keyspace;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<TokenRange> recv_describe_ring()
@@ -2130,7 +2347,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_partitioner(AsyncCallback callback, object state)
       {
         return send_describe_partitioner(callback, state);
@@ -2142,38 +2358,32 @@ namespace Apache.Cassandra.Test
         return recv_describe_partitioner();
       }
 
-      #endif
+      public async Task<string> describe_partitionerAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_partitioner();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// returns the partitioner used by this cluster
       /// </summary>
       public string describe_partitioner()
       {
-        #if !SILVERLIGHT
-        send_describe_partitioner();
-        return recv_describe_partitioner();
-
-        #else
         var asyncResult = Begin_describe_partitioner(null, null);
         return End_describe_partitioner(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_partitioner(AsyncCallback callback, object state)
-      #else
-      public void send_describe_partitioner()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Call, seqid_));
         describe_partitioner_args args = new describe_partitioner_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_describe_partitioner()
@@ -2194,7 +2404,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_snitch(AsyncCallback callback, object state)
       {
         return send_describe_snitch(callback, state);
@@ -2206,38 +2415,32 @@ namespace Apache.Cassandra.Test
         return recv_describe_snitch();
       }
 
-      #endif
+      public async Task<string> describe_snitchAsync()
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_snitch();
+        });
+        return retval;
+      }
 
       /// <summary>
       /// returns the snitch used by this cluster
       /// </summary>
       public string describe_snitch()
       {
-        #if !SILVERLIGHT
-        send_describe_snitch();
-        return recv_describe_snitch();
-
-        #else
         var asyncResult = Begin_describe_snitch(null, null);
         return End_describe_snitch(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_snitch(AsyncCallback callback, object state)
-      #else
-      public void send_describe_snitch()
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Call, seqid_));
         describe_snitch_args args = new describe_snitch_args();
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_describe_snitch()
@@ -2258,7 +2461,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_keyspace(AsyncCallback callback, object state, string keyspace)
       {
         return send_describe_keyspace(callback, state, keyspace);
@@ -2270,7 +2472,15 @@ namespace Apache.Cassandra.Test
         return recv_describe_keyspace();
       }
 
-      #endif
+      public async Task<KsDef> describe_keyspaceAsync(string keyspace)
+      {
+        KsDef retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_keyspace(keyspace);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// describe specified keyspace
@@ -2278,32 +2488,18 @@ namespace Apache.Cassandra.Test
       /// <param name="keyspace"></param>
       public KsDef describe_keyspace(string keyspace)
       {
-        #if !SILVERLIGHT
-        send_describe_keyspace(keyspace);
-        return recv_describe_keyspace();
-
-        #else
         var asyncResult = Begin_describe_keyspace(null, null, keyspace);
         return End_describe_keyspace(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_keyspace(AsyncCallback callback, object state, string keyspace)
-      #else
-      public void send_describe_keyspace(string keyspace)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Call, seqid_));
         describe_keyspace_args args = new describe_keyspace_args();
         args.Keyspace = keyspace;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public KsDef recv_describe_keyspace()
@@ -2330,7 +2526,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split)
       {
         return send_describe_splits(callback, state, cfName, start_token, end_token, keys_per_split);
@@ -2342,7 +2537,15 @@ namespace Apache.Cassandra.Test
         return recv_describe_splits();
       }
 
-      #endif
+      public async Task<List<string>> describe_splitsAsync(string cfName, string start_token, string end_token, int keys_per_split)
+      {
+        List<string> retval;
+        retval = await Task.Run(() =>
+        {
+          return describe_splits(cfName, start_token, end_token, keys_per_split);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// experimental API for hadoop/parallel query support.
@@ -2357,21 +2560,11 @@ namespace Apache.Cassandra.Test
       /// <param name="keys_per_split"></param>
       public List<string> describe_splits(string cfName, string start_token, string end_token, int keys_per_split)
       {
-        #if !SILVERLIGHT
-        send_describe_splits(cfName, start_token, end_token, keys_per_split);
-        return recv_describe_splits();
-
-        #else
         var asyncResult = Begin_describe_splits(null, null, cfName, start_token, end_token, keys_per_split);
         return End_describe_splits(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split)
-      #else
-      public void send_describe_splits(string cfName, string start_token, string end_token, int keys_per_split)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Call, seqid_));
         describe_splits_args args = new describe_splits_args();
@@ -2381,11 +2574,7 @@ namespace Apache.Cassandra.Test
         args.Keys_per_split = keys_per_split;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public List<string> recv_describe_splits()
@@ -2409,7 +2598,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def)
       {
         return send_system_add_column_family(callback, state, cf_def);
@@ -2421,7 +2609,15 @@ namespace Apache.Cassandra.Test
         return recv_system_add_column_family();
       }
 
-      #endif
+      public async Task<string> system_add_column_familyAsync(CfDef cf_def)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return system_add_column_family(cf_def);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// adds a column family. returns the new schema id.
@@ -2429,32 +2625,18 @@ namespace Apache.Cassandra.Test
       /// <param name="cf_def"></param>
       public string system_add_column_family(CfDef cf_def)
       {
-        #if !SILVERLIGHT
-        send_system_add_column_family(cf_def);
-        return recv_system_add_column_family();
-
-        #else
         var asyncResult = Begin_system_add_column_family(null, null, cf_def);
         return End_system_add_column_family(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def)
-      #else
-      public void send_system_add_column_family(CfDef cf_def)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Call, seqid_));
         system_add_column_family_args args = new system_add_column_family_args();
         args.Cf_def = cf_def;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_system_add_column_family()
@@ -2481,7 +2663,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_system_drop_column_family(AsyncCallback callback, object state, string column_family)
       {
         return send_system_drop_column_family(callback, state, column_family);
@@ -2493,7 +2674,15 @@ namespace Apache.Cassandra.Test
         return recv_system_drop_column_family();
       }
 
-      #endif
+      public async Task<string> system_drop_column_familyAsync(string column_family)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return system_drop_column_family(column_family);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// drops a column family. returns the new schema id.
@@ -2501,32 +2690,18 @@ namespace Apache.Cassandra.Test
       /// <param name="column_family"></param>
       public string system_drop_column_family(string column_family)
       {
-        #if !SILVERLIGHT
-        send_system_drop_column_family(column_family);
-        return recv_system_drop_column_family();
-
-        #else
         var asyncResult = Begin_system_drop_column_family(null, null, column_family);
         return End_system_drop_column_family(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_system_drop_column_family(AsyncCallback callback, object state, string column_family)
-      #else
-      public void send_system_drop_column_family(string column_family)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Call, seqid_));
         system_drop_column_family_args args = new system_drop_column_family_args();
         args.Column_family = column_family;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_system_drop_column_family()
@@ -2553,7 +2728,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def)
       {
         return send_system_add_keyspace(callback, state, ks_def);
@@ -2565,7 +2739,15 @@ namespace Apache.Cassandra.Test
         return recv_system_add_keyspace();
       }
 
-      #endif
+      public async Task<string> system_add_keyspaceAsync(KsDef ks_def)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return system_add_keyspace(ks_def);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// adds a keyspace and any column families that are part of it. returns the new schema id.
@@ -2573,32 +2755,18 @@ namespace Apache.Cassandra.Test
       /// <param name="ks_def"></param>
       public string system_add_keyspace(KsDef ks_def)
       {
-        #if !SILVERLIGHT
-        send_system_add_keyspace(ks_def);
-        return recv_system_add_keyspace();
-
-        #else
         var asyncResult = Begin_system_add_keyspace(null, null, ks_def);
         return End_system_add_keyspace(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def)
-      #else
-      public void send_system_add_keyspace(KsDef ks_def)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Call, seqid_));
         system_add_keyspace_args args = new system_add_keyspace_args();
         args.Ks_def = ks_def;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_system_add_keyspace()
@@ -2625,7 +2793,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_system_drop_keyspace(AsyncCallback callback, object state, string keyspace)
       {
         return send_system_drop_keyspace(callback, state, keyspace);
@@ -2637,7 +2804,15 @@ namespace Apache.Cassandra.Test
         return recv_system_drop_keyspace();
       }
 
-      #endif
+      public async Task<string> system_drop_keyspaceAsync(string keyspace)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return system_drop_keyspace(keyspace);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// drops a keyspace and any column families that are part of it. returns the new schema id.
@@ -2645,32 +2820,18 @@ namespace Apache.Cassandra.Test
       /// <param name="keyspace"></param>
       public string system_drop_keyspace(string keyspace)
       {
-        #if !SILVERLIGHT
-        send_system_drop_keyspace(keyspace);
-        return recv_system_drop_keyspace();
-
-        #else
         var asyncResult = Begin_system_drop_keyspace(null, null, keyspace);
         return End_system_drop_keyspace(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_system_drop_keyspace(AsyncCallback callback, object state, string keyspace)
-      #else
-      public void send_system_drop_keyspace(string keyspace)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Call, seqid_));
         system_drop_keyspace_args args = new system_drop_keyspace_args();
         args.Keyspace = keyspace;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_system_drop_keyspace()
@@ -2697,7 +2858,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def)
       {
         return send_system_update_keyspace(callback, state, ks_def);
@@ -2709,7 +2869,15 @@ namespace Apache.Cassandra.Test
         return recv_system_update_keyspace();
       }
 
-      #endif
+      public async Task<string> system_update_keyspaceAsync(KsDef ks_def)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return system_update_keyspace(ks_def);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// updates properties of a keyspace. returns the new schema id.
@@ -2717,32 +2885,18 @@ namespace Apache.Cassandra.Test
       /// <param name="ks_def"></param>
       public string system_update_keyspace(KsDef ks_def)
       {
-        #if !SILVERLIGHT
-        send_system_update_keyspace(ks_def);
-        return recv_system_update_keyspace();
-
-        #else
         var asyncResult = Begin_system_update_keyspace(null, null, ks_def);
         return End_system_update_keyspace(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def)
-      #else
-      public void send_system_update_keyspace(KsDef ks_def)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Call, seqid_));
         system_update_keyspace_args args = new system_update_keyspace_args();
         args.Ks_def = ks_def;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_system_update_keyspace()
@@ -2769,7 +2923,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def)
       {
         return send_system_update_column_family(callback, state, cf_def);
@@ -2781,7 +2934,15 @@ namespace Apache.Cassandra.Test
         return recv_system_update_column_family();
       }
 
-      #endif
+      public async Task<string> system_update_column_familyAsync(CfDef cf_def)
+      {
+        string retval;
+        retval = await Task.Run(() =>
+        {
+          return system_update_column_family(cf_def);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// updates properties of a column family. returns the new schema id.
@@ -2789,32 +2950,18 @@ namespace Apache.Cassandra.Test
       /// <param name="cf_def"></param>
       public string system_update_column_family(CfDef cf_def)
       {
-        #if !SILVERLIGHT
-        send_system_update_column_family(cf_def);
-        return recv_system_update_column_family();
-
-        #else
         var asyncResult = Begin_system_update_column_family(null, null, cf_def);
         return End_system_update_column_family(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def)
-      #else
-      public void send_system_update_column_family(CfDef cf_def)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Call, seqid_));
         system_update_column_family_args args = new system_update_column_family_args();
         args.Cf_def = cf_def;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public string recv_system_update_column_family()
@@ -2841,7 +2988,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
       {
         return send_execute_cql_query(callback, state, query, compression);
@@ -2853,7 +2999,15 @@ namespace Apache.Cassandra.Test
         return recv_execute_cql_query();
       }
 
-      #endif
+      public async Task<CqlResult> execute_cql_queryAsync(byte[] query, Compression compression)
+      {
+        CqlResult retval;
+        retval = await Task.Run(() =>
+        {
+          return execute_cql_query(query, compression);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Executes a CQL (Cassandra Query Language) statement and returns a
@@ -2863,21 +3017,11 @@ namespace Apache.Cassandra.Test
       /// <param name="compression"></param>
       public CqlResult execute_cql_query(byte[] query, Compression compression)
       {
-        #if !SILVERLIGHT
-        send_execute_cql_query(query, compression);
-        return recv_execute_cql_query();
-
-        #else
         var asyncResult = Begin_execute_cql_query(null, null, query, compression);
         return End_execute_cql_query(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
-      #else
-      public void send_execute_cql_query(byte[] query, Compression compression)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Call, seqid_));
         execute_cql_query_args args = new execute_cql_query_args();
@@ -2885,11 +3029,7 @@ namespace Apache.Cassandra.Test
         args.Compression = compression;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public CqlResult recv_execute_cql_query()
@@ -2922,7 +3062,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
       {
         return send_prepare_cql_query(callback, state, query, compression);
@@ -2934,7 +3073,15 @@ namespace Apache.Cassandra.Test
         return recv_prepare_cql_query();
       }
 
-      #endif
+      public async Task<CqlPreparedResult> prepare_cql_queryAsync(byte[] query, Compression compression)
+      {
+        CqlPreparedResult retval;
+        retval = await Task.Run(() =>
+        {
+          return prepare_cql_query(query, compression);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
@@ -2946,21 +3093,11 @@ namespace Apache.Cassandra.Test
       /// <param name="compression"></param>
       public CqlPreparedResult prepare_cql_query(byte[] query, Compression compression)
       {
-        #if !SILVERLIGHT
-        send_prepare_cql_query(query, compression);
-        return recv_prepare_cql_query();
-
-        #else
         var asyncResult = Begin_prepare_cql_query(null, null, query, compression);
         return End_prepare_cql_query(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
-      #else
-      public void send_prepare_cql_query(byte[] query, Compression compression)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Call, seqid_));
         prepare_cql_query_args args = new prepare_cql_query_args();
@@ -2968,11 +3105,7 @@ namespace Apache.Cassandra.Test
         args.Compression = compression;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public CqlPreparedResult recv_prepare_cql_query()
@@ -2996,7 +3129,6 @@ namespace Apache.Cassandra.Test
       }
 
       
-      #if SILVERLIGHT
       public IAsyncResult Begin_execute_prepared_cql_query(AsyncCallback callback, object state, int itemId, List<string> values)
       {
         return send_execute_prepared_cql_query(callback, state, itemId, values);
@@ -3008,7 +3140,15 @@ namespace Apache.Cassandra.Test
         return recv_execute_prepared_cql_query();
       }
 
-      #endif
+      public async Task<CqlResult> execute_prepared_cql_queryAsync(int itemId, List<string> values)
+      {
+        CqlResult retval;
+        retval = await Task.Run(() =>
+        {
+          return execute_prepared_cql_query(itemId, values);
+        });
+        return retval;
+      }
 
       /// <summary>
       /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
@@ -3018,21 +3158,11 @@ namespace Apache.Cassandra.Test
       /// <param name="values"></param>
       public CqlResult execute_prepared_cql_query(int itemId, List<string> values)
       {
-        #if !SILVERLIGHT
-        send_execute_prepared_cql_query(itemId, values);
-        return recv_execute_prepared_cql_query();
-
-        #else
         var asyncResult = Begin_execute_prepared_cql_query(null, null, itemId, values);
         return End_execute_prepared_cql_query(asyncResult);
 
-        #endif
       }
-      #if SILVERLIGHT
       public IAsyncResult send_execute_prepared_cql_query(AsyncCallback callback, object state, int itemId, List<string> values)
-      #else
-      public void send_execute_prepared_cql_query(int itemId, List<string> values)
-      #endif
       {
         oprot_.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Call, seqid_));
         execute_prepared_cql_query_args args = new execute_prepared_cql_query_args();
@@ -3040,11 +3170,7 @@ namespace Apache.Cassandra.Test
         args.Values = values;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
-        #if SILVERLIGHT
         return oprot_.Transport.BeginFlush(callback, state);
-        #else
-        oprot_.Transport.Flush();
-        #endif
       }
 
       public CqlResult recv_execute_prepared_cql_query()
@@ -3077,6 +3203,1368 @@ namespace Apache.Cassandra.Test
       }
 
     }
+    public class AsyncProcessor : TAsyncProcessor {
+      public AsyncProcessor(IAsync iface)
+      {
+        iface_ = iface;
+        processMap_["login"] = login_ProcessAsync;
+        processMap_["set_keyspace"] = set_keyspace_ProcessAsync;
+        processMap_["get"] = get_ProcessAsync;
+        processMap_["get_slice"] = get_slice_ProcessAsync;
+        processMap_["get_count"] = get_count_ProcessAsync;
+        processMap_["multiget_slice"] = multiget_slice_ProcessAsync;
+        processMap_["multiget_count"] = multiget_count_ProcessAsync;
+        processMap_["get_range_slices"] = get_range_slices_ProcessAsync;
+        processMap_["get_indexed_slices"] = get_indexed_slices_ProcessAsync;
+        processMap_["insert"] = insert_ProcessAsync;
+        processMap_["add"] = add_ProcessAsync;
+        processMap_["remove"] = remove_ProcessAsync;
+        processMap_["remove_counter"] = remove_counter_ProcessAsync;
+        processMap_["batch_mutate"] = batch_mutate_ProcessAsync;
+        processMap_["truncate"] = truncate_ProcessAsync;
+        processMap_["describe_schema_versions"] = describe_schema_versions_ProcessAsync;
+        processMap_["describe_keyspaces"] = describe_keyspaces_ProcessAsync;
+        processMap_["describe_cluster_name"] = describe_cluster_name_ProcessAsync;
+        processMap_["describe_version"] = describe_version_ProcessAsync;
+        processMap_["describe_ring"] = describe_ring_ProcessAsync;
+        processMap_["describe_partitioner"] = describe_partitioner_ProcessAsync;
+        processMap_["describe_snitch"] = describe_snitch_ProcessAsync;
+        processMap_["describe_keyspace"] = describe_keyspace_ProcessAsync;
+        processMap_["describe_splits"] = describe_splits_ProcessAsync;
+        processMap_["system_add_column_family"] = system_add_column_family_ProcessAsync;
+        processMap_["system_drop_column_family"] = system_drop_column_family_ProcessAsync;
+        processMap_["system_add_keyspace"] = system_add_keyspace_ProcessAsync;
+        processMap_["system_drop_keyspace"] = system_drop_keyspace_ProcessAsync;
+        processMap_["system_update_keyspace"] = system_update_keyspace_ProcessAsync;
+        processMap_["system_update_column_family"] = system_update_column_family_ProcessAsync;
+        processMap_["execute_cql_query"] = execute_cql_query_ProcessAsync;
+        processMap_["prepare_cql_query"] = prepare_cql_query_ProcessAsync;
+        processMap_["execute_prepared_cql_query"] = execute_prepared_cql_query_ProcessAsync;
+      }
+
+      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
+      private IAsync iface_;
+      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
+
+      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+      {
+        try
+        {
+          TMessage msg = iprot.ReadMessageBegin();
+          ProcessFunction fn;
+          processMap_.TryGetValue(msg.Name, out fn);
+          if (fn == null) {
+            TProtocolUtil.Skip(iprot, TType.Struct);
+            iprot.ReadMessageEnd();
+            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
+            x.Write(oprot);
+            oprot.WriteMessageEnd();
+            oprot.Transport.Flush();
+            return true;
+          }
+          await fn(msg.SeqID, iprot, oprot);
+        }
+        catch (IOException)
+        {
+          return false;
+        }
+        return true;
+      }
+
+      public async Task login_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        login_args args = new login_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        login_result result = new login_result();
+        try
+        {
+          try
+          {
+            await iface_.loginAsync(args.Auth_request);
+          }
+          catch (AuthenticationException authnx)
+          {
+            result.Authnx = authnx;
+          }
+          catch (AuthorizationException authzx)
+          {
+            result.Authzx = authzx;
+          }
+          oprot.WriteMessageBegin(new TMessage("login", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("login", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task set_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        set_keyspace_args args = new set_keyspace_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        set_keyspace_result result = new set_keyspace_result();
+        try
+        {
+          try
+          {
+            await iface_.set_keyspaceAsync(args.Keyspace);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task get_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        get_args args = new get_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        get_result result = new get_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.@getAsync(args.Key, args.Column_path, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (NotFoundException nfe)
+          {
+            result.Nfe = nfe;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("get", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("get", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task get_slice_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        get_slice_args args = new get_slice_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        get_slice_result result = new get_slice_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.get_sliceAsync(args.Key, args.Column_parent, args.Predicate, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("get_slice", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("get_slice", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task get_count_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        get_count_args args = new get_count_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        get_count_result result = new get_count_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.get_countAsync(args.Key, args.Column_parent, args.Predicate, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("get_count", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("get_count", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task multiget_slice_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        multiget_slice_args args = new multiget_slice_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        multiget_slice_result result = new multiget_slice_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.multiget_sliceAsync(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task multiget_count_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        multiget_count_args args = new multiget_count_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        multiget_count_result result = new multiget_count_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.multiget_countAsync(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task get_range_slices_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        get_range_slices_args args = new get_range_slices_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        get_range_slices_result result = new get_range_slices_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.get_range_slicesAsync(args.Column_parent, args.Predicate, args.Range, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task get_indexed_slices_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        get_indexed_slices_args args = new get_indexed_slices_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        get_indexed_slices_result result = new get_indexed_slices_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.get_indexed_slicesAsync(args.Column_parent, args.Index_clause, args.Column_predicate, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task insert_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        insert_args args = new insert_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        insert_result result = new insert_result();
+        try
+        {
+          try
+          {
+            await iface_.insertAsync(args.Key, args.Column_parent, args.Column, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("insert", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("insert", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task add_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        add_args args = new add_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        add_result result = new add_result();
+        try
+        {
+          try
+          {
+            await iface_.@addAsync(args.Key, args.Column_parent, args.Column, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("add", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("add", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task remove_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        remove_args args = new remove_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        remove_result result = new remove_result();
+        try
+        {
+          try
+          {
+            await iface_.@removeAsync(args.Key, args.Column_path, args.Timestamp, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("remove", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("remove", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task remove_counter_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        remove_counter_args args = new remove_counter_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        remove_counter_result result = new remove_counter_result();
+        try
+        {
+          try
+          {
+            await iface_.remove_counterAsync(args.Key, args.Path, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task batch_mutate_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        batch_mutate_args args = new batch_mutate_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        batch_mutate_result result = new batch_mutate_result();
+        try
+        {
+          try
+          {
+            await iface_.batch_mutateAsync(args.Mutation_map, args.Consistency_level);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task truncate_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        truncate_args args = new truncate_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        truncate_result result = new truncate_result();
+        try
+        {
+          try
+          {
+            await iface_.truncateAsync(args.Cfname);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          oprot.WriteMessageBegin(new TMessage("truncate", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("truncate", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_schema_versions_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_schema_versions_args args = new describe_schema_versions_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_schema_versions_result result = new describe_schema_versions_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.describe_schema_versionsAsync();
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_keyspaces_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_keyspaces_args args = new describe_keyspaces_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_keyspaces_result result = new describe_keyspaces_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.describe_keyspacesAsync();
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_cluster_name_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_cluster_name_args args = new describe_cluster_name_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_cluster_name_result result = new describe_cluster_name_result();
+        try
+        {
+          result.Success = await iface_.describe_cluster_nameAsync();
+          oprot.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_version_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_version_args args = new describe_version_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_version_result result = new describe_version_result();
+        try
+        {
+          result.Success = await iface_.describe_versionAsync();
+          oprot.WriteMessageBegin(new TMessage("describe_version", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_version", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_ring_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_ring_args args = new describe_ring_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_ring_result result = new describe_ring_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.describe_ringAsync(args.Keyspace);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_partitioner_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_partitioner_args args = new describe_partitioner_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_partitioner_result result = new describe_partitioner_result();
+        try
+        {
+          result.Success = await iface_.describe_partitionerAsync();
+          oprot.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_snitch_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_snitch_args args = new describe_snitch_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_snitch_result result = new describe_snitch_result();
+        try
+        {
+          result.Success = await iface_.describe_snitchAsync();
+          oprot.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_keyspace_args args = new describe_keyspace_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_keyspace_result result = new describe_keyspace_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.describe_keyspaceAsync(args.Keyspace);
+          }
+          catch (NotFoundException nfe)
+          {
+            result.Nfe = nfe;
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task describe_splits_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        describe_splits_args args = new describe_splits_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        describe_splits_result result = new describe_splits_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.describe_splitsAsync(args.CfName, args.Start_token, args.End_token, args.Keys_per_split);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task system_add_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        system_add_column_family_args args = new system_add_column_family_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        system_add_column_family_result result = new system_add_column_family_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.system_add_column_familyAsync(args.Cf_def);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task system_drop_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        system_drop_column_family_args args = new system_drop_column_family_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        system_drop_column_family_result result = new system_drop_column_family_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.system_drop_column_familyAsync(args.Column_family);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task system_add_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        system_add_keyspace_args args = new system_add_keyspace_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        system_add_keyspace_result result = new system_add_keyspace_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.system_add_keyspaceAsync(args.Ks_def);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task system_drop_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        system_drop_keyspace_args args = new system_drop_keyspace_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        system_drop_keyspace_result result = new system_drop_keyspace_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.system_drop_keyspaceAsync(args.Keyspace);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task system_update_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        system_update_keyspace_args args = new system_update_keyspace_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        system_update_keyspace_result result = new system_update_keyspace_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.system_update_keyspaceAsync(args.Ks_def);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task system_update_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        system_update_column_family_args args = new system_update_column_family_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        system_update_column_family_result result = new system_update_column_family_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.system_update_column_familyAsync(args.Cf_def);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task execute_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        execute_cql_query_args args = new execute_cql_query_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        execute_cql_query_result result = new execute_cql_query_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.execute_cql_queryAsync(args.Query, args.Compression);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task prepare_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        prepare_cql_query_args args = new prepare_cql_query_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        prepare_cql_query_result result = new prepare_cql_query_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.prepare_cql_queryAsync(args.Query, args.Compression);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          oprot.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+      public async Task execute_prepared_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        execute_prepared_cql_query_args args = new execute_prepared_cql_query_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        execute_prepared_cql_query_result result = new execute_prepared_cql_query_result();
+        try
+        {
+          try
+          {
+            result.Success = await iface_.execute_prepared_cql_queryAsync(args.ItemId, args.Values);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (UnavailableException ue)
+          {
+            result.Ue = ue;
+          }
+          catch (TimedOutException te)
+          {
+            result.Te = te;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          oprot.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Reply, seqid)); 
+          result.Write(oprot);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
+          oprot.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Exception, seqid));
+          x.Write(oprot);
+        }
+        oprot.WriteMessageEnd();
+        oprot.Transport.Flush();
+      }
+
+    }
+
     public class Processor : TProcessor {
       public Processor(ISync iface)
       {
@@ -4443,9 +5931,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class login_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public AuthenticationRequest Auth_request { get; set; }
 
       public login_args() {
@@ -4532,11 +6022,13 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class login_result : TBase
     {
       private AuthenticationException _authnx;
       private AuthorizationException _authzx;
 
+      [DataMember(Order = 0)]
       public AuthenticationException Authnx
       {
         get
@@ -4550,6 +6042,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public AuthorizationException Authzx
       {
         get
@@ -4564,14 +6057,33 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool authnx;
+        [DataMember]
         public bool authzx;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeAuthnx()
+      {
+        return __isset.authnx;
+      }
+
+      public bool ShouldSerializeAuthzx()
+      {
+        return __isset.authzx;
+      }
+
+      #endregion XmlSerializer support
 
       public login_result() {
       }
@@ -4682,9 +6194,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class set_keyspace_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
       public set_keyspace_args() {
@@ -4770,10 +6284,12 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class set_keyspace_result : TBase
     {
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -4788,13 +6304,26 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public set_keyspace_result() {
       }
@@ -4882,17 +6411,21 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnPath Column_path { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public get_args() {
@@ -5020,6 +6553,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_result : TBase
     {
       private ColumnOrSuperColumn _success;
@@ -5028,6 +6562,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public ColumnOrSuperColumn Success
       {
         get
@@ -5041,6 +6576,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -5054,6 +6590,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public NotFoundException Nfe
       {
         get
@@ -5067,6 +6604,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -5080,6 +6618,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -5094,17 +6633,54 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool nfe;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeNfe()
+      {
+        return __isset.nfe;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public get_result() {
       }
@@ -5284,19 +6860,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_slice_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public SlicePredicate Predicate { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public get_slice_args() {
@@ -5445,6 +7026,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_slice_result : TBase
     {
       private List<ColumnOrSuperColumn> _success;
@@ -5452,6 +7034,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public List<ColumnOrSuperColumn> Success
       {
         get
@@ -5465,6 +7048,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -5478,6 +7062,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -5491,6 +7076,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -5505,16 +7091,47 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public get_slice_result() {
       }
@@ -5688,19 +7305,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_count_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public SlicePredicate Predicate { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public get_count_args() {
@@ -5849,6 +7471,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_count_result : TBase
     {
       private int _success;
@@ -5856,6 +7479,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public int Success
       {
         get
@@ -5869,6 +7493,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -5882,6 +7507,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -5895,6 +7521,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -5909,16 +7536,47 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public get_count_result() {
       }
@@ -6072,19 +7730,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class multiget_slice_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public List<byte[]> Keys { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public SlicePredicate Predicate { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public multiget_slice_args() {
@@ -6250,6 +7913,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class multiget_slice_result : TBase
     {
       private Dictionary<byte[], List<ColumnOrSuperColumn>> _success;
@@ -6257,6 +7921,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public Dictionary<byte[], List<ColumnOrSuperColumn>> Success
       {
         get
@@ -6270,6 +7935,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -6283,6 +7949,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -6296,6 +7963,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -6310,16 +7978,47 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public multiget_slice_result() {
       }
@@ -6513,19 +8212,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class multiget_count_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public List<byte[]> Keys { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public SlicePredicate Predicate { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public multiget_count_args() {
@@ -6691,6 +8395,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class multiget_count_result : TBase
     {
       private Dictionary<byte[], int> _success;
@@ -6698,6 +8403,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public Dictionary<byte[], int> Success
       {
         get
@@ -6711,6 +8417,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -6724,6 +8431,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -6737,6 +8445,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -6751,16 +8460,47 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public multiget_count_result() {
       }
@@ -6936,19 +8676,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_range_slices_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public SlicePredicate Predicate { get; set; }
 
+      [DataMember(Order = 0)]
       public KeyRange Range { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public get_range_slices_args() {
@@ -7098,6 +8843,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_range_slices_result : TBase
     {
       private List<KeySlice> _success;
@@ -7105,6 +8851,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public List<KeySlice> Success
       {
         get
@@ -7118,6 +8865,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -7131,6 +8879,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -7144,6 +8893,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -7158,16 +8908,47 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public get_range_slices_result() {
       }
@@ -7341,19 +9122,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_indexed_slices_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public IndexClause Index_clause { get; set; }
 
+      [DataMember(Order = 0)]
       public SlicePredicate Column_predicate { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public get_indexed_slices_args() {
@@ -7503,6 +9289,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class get_indexed_slices_result : TBase
     {
       private List<KeySlice> _success;
@@ -7510,6 +9297,7 @@ namespace Apache.Cassandra.Test
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public List<KeySlice> Success
       {
         get
@@ -7523,6 +9311,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -7536,6 +9325,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -7549,6 +9339,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -7563,16 +9354,47 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public get_indexed_slices_result() {
       }
@@ -7746,19 +9568,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class insert_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public Column Column { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public insert_args() {
@@ -7907,12 +9734,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class insert_result : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -7926,6 +9755,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -7939,6 +9769,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -7953,15 +9784,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public insert_result() {
       }
@@ -8095,19 +9951,24 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class add_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnParent Column_parent { get; set; }
 
+      [DataMember(Order = 0)]
       public CounterColumn Column { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public add_args() {
@@ -8256,12 +10117,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class add_result : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -8275,6 +10138,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -8288,6 +10152,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -8302,15 +10167,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public add_result() {
       }
@@ -8444,20 +10334,25 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class remove_args : TBase
     {
       private ConsistencyLevel _consistency_level;
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnPath Column_path { get; set; }
 
+      [DataMember(Order = 0)]
       public long Timestamp { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level
       {
         get
@@ -8472,13 +10367,26 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool consistency_level;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeConsistency_level()
+      {
+        return __isset.consistency_level;
+      }
+
+      #endregion XmlSerializer support
 
       public remove_args() {
         this._consistency_level = ConsistencyLevel.ONE;
@@ -8625,12 +10533,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class remove_result : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -8644,6 +10554,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -8657,6 +10568,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -8671,15 +10583,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public remove_result() {
       }
@@ -8813,17 +10750,21 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class remove_counter_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Key { get; set; }
 
+      [DataMember(Order = 0)]
       public ColumnPath Path { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public remove_counter_args() {
@@ -8951,12 +10892,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class remove_counter_result : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -8970,6 +10913,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -8983,6 +10927,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -8997,15 +10942,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public remove_counter_result() {
       }
@@ -9139,15 +11109,18 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class batch_mutate_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public Dictionary<byte[], Dictionary<string, List<Mutation>>> Mutation_map { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="ConsistencyLevel"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
       public batch_mutate_args() {
@@ -9312,12 +11285,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class batch_mutate_result : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -9331,6 +11306,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -9344,6 +11320,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -9358,15 +11335,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public batch_mutate_result() {
       }
@@ -9500,9 +11502,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class truncate_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string Cfname { get; set; }
 
       public truncate_args() {
@@ -9588,12 +11592,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class truncate_result : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
       private TimedOutException _te;
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -9607,6 +11613,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -9620,6 +11627,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -9634,15 +11642,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      #endregion XmlSerializer support
 
       public truncate_result() {
       }
@@ -9776,6 +11809,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_schema_versions_args : TBase
     {
 
@@ -9838,11 +11872,13 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_schema_versions_result : TBase
     {
       private Dictionary<string, List<string>> _success;
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public Dictionary<string, List<string>> Success
       {
         get
@@ -9856,6 +11892,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -9870,14 +11907,33 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_schema_versions_result() {
       }
@@ -10024,6 +12080,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_keyspaces_args : TBase
     {
 
@@ -10086,11 +12143,13 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_keyspaces_result : TBase
     {
       private List<KsDef> _success;
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public List<KsDef> Success
       {
         get
@@ -10104,6 +12163,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -10118,14 +12178,33 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_keyspaces_result() {
       }
@@ -10253,6 +12332,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_cluster_name_args : TBase
     {
 
@@ -10315,10 +12395,12 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_cluster_name_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -10333,13 +12415,26 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_cluster_name_result() {
       }
@@ -10426,6 +12521,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_version_args : TBase
     {
 
@@ -10488,10 +12584,12 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_version_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -10506,13 +12604,26 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_version_result() {
       }
@@ -10599,9 +12710,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_ring_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
       public describe_ring_args() {
@@ -10687,11 +12800,13 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_ring_result : TBase
     {
       private List<TokenRange> _success;
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public List<TokenRange> Success
       {
         get
@@ -10705,6 +12820,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -10719,14 +12835,33 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_ring_result() {
       }
@@ -10854,6 +12989,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_partitioner_args : TBase
     {
 
@@ -10916,10 +13052,12 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_partitioner_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -10934,13 +13072,26 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_partitioner_result() {
       }
@@ -11027,6 +13178,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_snitch_args : TBase
     {
 
@@ -11089,10 +13241,12 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_snitch_result : TBase
     {
       private string _success;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -11107,13 +13261,26 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_snitch_result() {
       }
@@ -11200,9 +13367,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_keyspace_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
       public describe_keyspace_args() {
@@ -11288,12 +13457,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_keyspace_result : TBase
     {
       private KsDef _success;
       private NotFoundException _nfe;
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public KsDef Success
       {
         get
@@ -11307,6 +13478,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public NotFoundException Nfe
       {
         get
@@ -11320,6 +13492,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -11334,15 +13507,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool nfe;
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeNfe()
+      {
+        return __isset.nfe;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_keyspace_result() {
       }
@@ -11476,15 +13674,20 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_splits_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string CfName { get; set; }
 
+      [DataMember(Order = 0)]
       public string Start_token { get; set; }
 
+      [DataMember(Order = 0)]
       public string End_token { get; set; }
 
+      [DataMember(Order = 0)]
       public int Keys_per_split { get; set; }
 
       public describe_splits_args() {
@@ -11630,11 +13833,13 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class describe_splits_result : TBase
     {
       private List<string> _success;
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public List<string> Success
       {
         get
@@ -11648,6 +13853,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -11662,14 +13868,33 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public describe_splits_result() {
       }
@@ -11796,9 +14021,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_add_column_family_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public CfDef Cf_def { get; set; }
 
       public system_add_column_family_args() {
@@ -11885,12 +14112,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_add_column_family_result : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -11904,6 +14133,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -11917,6 +14147,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -11931,15 +14162,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public system_add_column_family_result() {
       }
@@ -12072,9 +14328,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_drop_column_family_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string Column_family { get; set; }
 
       public system_drop_column_family_args() {
@@ -12160,12 +14418,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_drop_column_family_result : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -12179,6 +14439,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -12192,6 +14453,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -12206,15 +14468,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public system_drop_column_family_result() {
       }
@@ -12347,9 +14634,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_add_keyspace_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public KsDef Ks_def { get; set; }
 
       public system_add_keyspace_args() {
@@ -12436,12 +14725,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_add_keyspace_result : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -12455,6 +14746,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -12468,6 +14760,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -12482,15 +14775,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public system_add_keyspace_result() {
       }
@@ -12623,9 +14941,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_drop_keyspace_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
       public system_drop_keyspace_args() {
@@ -12711,12 +15031,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_drop_keyspace_result : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -12730,6 +15052,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -12743,6 +15066,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -12757,15 +15081,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public system_drop_keyspace_result() {
       }
@@ -12898,9 +15247,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_update_keyspace_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public KsDef Ks_def { get; set; }
 
       public system_update_keyspace_args() {
@@ -12987,12 +15338,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_update_keyspace_result : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -13006,6 +15359,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -13019,6 +15373,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -13033,15 +15388,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public system_update_keyspace_result() {
       }
@@ -13174,9 +15554,11 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_update_column_family_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public CfDef Cf_def { get; set; }
 
       public system_update_column_family_args() {
@@ -13263,12 +15645,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class system_update_column_family_result : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public string Success
       {
         get
@@ -13282,6 +15666,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -13295,6 +15680,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -13309,15 +15695,40 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public system_update_column_family_result() {
       }
@@ -13450,15 +15861,18 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class execute_cql_query_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Query { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="Compression"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Compression Compression { get; set; }
 
       public execute_cql_query_args() {
@@ -13564,6 +15978,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class execute_cql_query_result : TBase
     {
       private CqlResult _success;
@@ -13572,6 +15987,7 @@ namespace Apache.Cassandra.Test
       private TimedOutException _te;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public CqlResult Success
       {
         get
@@ -13585,6 +16001,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -13598,6 +16015,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -13611,6 +16029,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -13624,6 +16043,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -13638,17 +16058,54 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public execute_cql_query_result() {
       }
@@ -13828,15 +16285,18 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class prepare_cql_query_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public byte[] Query { get; set; }
 
       /// <summary>
       /// 
       /// <seealso cref="Compression"/>
       /// </summary>
+      [DataMember(Order = 0)]
       public Compression Compression { get; set; }
 
       public prepare_cql_query_args() {
@@ -13942,11 +16402,13 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class prepare_cql_query_result : TBase
     {
       private CqlPreparedResult _success;
       private InvalidRequestException _ire;
 
+      [DataMember(Order = 0)]
       public CqlPreparedResult Success
       {
         get
@@ -13960,6 +16422,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -13974,14 +16437,33 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      #endregion XmlSerializer support
 
       public prepare_cql_query_result() {
       }
@@ -14092,11 +16574,14 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class execute_prepared_cql_query_args : TBase
     {
 
+      [DataMember(Order = 0)]
       public int ItemId { get; set; }
 
+      [DataMember(Order = 0)]
       public List<string> Values { get; set; }
 
       public execute_prepared_cql_query_args() {
@@ -14219,6 +16704,7 @@ namespace Apache.Cassandra.Test
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract(Namespace="")]
     public partial class execute_prepared_cql_query_result : TBase
     {
       private CqlResult _success;
@@ -14227,6 +16713,7 @@ namespace Apache.Cassandra.Test
       private TimedOutException _te;
       private SchemaDisagreementException _sde;
 
+      [DataMember(Order = 0)]
       public CqlResult Success
       {
         get
@@ -14240,6 +16727,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public InvalidRequestException Ire
       {
         get
@@ -14253,6 +16741,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public UnavailableException Ue
       {
         get
@@ -14266,6 +16755,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public TimedOutException Te
       {
         get
@@ -14279,6 +16769,7 @@ namespace Apache.Cassandra.Test
         }
       }
 
+      [DataMember(Order = 0)]
       public SchemaDisagreementException Sde
       {
         get
@@ -14293,17 +16784,54 @@ namespace Apache.Cassandra.Test
       }
 
 
+      [XmlIgnore] // XmlSerializer
+      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
       public Isset __isset;
       #if !SILVERLIGHT
       [Serializable]
       #endif
+      [DataContract]
       public struct Isset {
+        [DataMember]
         public bool success;
+        [DataMember]
         public bool ire;
+        [DataMember]
         public bool ue;
+        [DataMember]
         public bool te;
+        [DataMember]
         public bool sde;
       }
+
+      #region XmlSerializer support
+
+      public bool ShouldSerializeSuccess()
+      {
+        return __isset.success;
+      }
+
+      public bool ShouldSerializeIre()
+      {
+        return __isset.ire;
+      }
+
+      public bool ShouldSerializeUe()
+      {
+        return __isset.ue;
+      }
+
+      public bool ShouldSerializeTe()
+      {
+        return __isset.te;
+      }
+
+      public bool ShouldSerializeSde()
+      {
+        return __isset.sde;
+      }
+
+      #endregion XmlSerializer support
 
       public execute_prepared_cql_query_result() {
       }

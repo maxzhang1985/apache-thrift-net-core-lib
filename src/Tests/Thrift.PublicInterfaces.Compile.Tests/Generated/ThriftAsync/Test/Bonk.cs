@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,11 +26,13 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Bonk : TBase
   {
     private string _message;
     private int _type;
 
+    [DataMember(Order = 0)]
     public string Message
     {
       get
@@ -40,6 +46,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Type
     {
       get
@@ -54,14 +61,33 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool message;
+      [DataMember]
       public bool type;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeMessage()
+    {
+      return __isset.message;
+    }
+
+    public bool ShouldSerializeType()
+    {
+      return __isset.type;
+    }
+
+    #endregion XmlSerializer support
 
     public Bonk() {
     }

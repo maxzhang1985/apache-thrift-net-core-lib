@@ -1,8 +1,9 @@
-﻿{
+{
   "version": "1.0.0-*",
 
   "dependencies": {
     "NETStandard.Library": "1.6.0",
+    "System.ServiceModel.Primitives": "4.0.0",
     "Thrift": "1.0.0-*"
   },
 
@@ -14,7 +15,7 @@
 
   "scripts": {
     "precompile": [
-      //"%project:Directory%/../../thrift.exe -r -out %project:Directory% --gen csharp:async %project:Directory%/tutorial.thrift"
+      //"%project:Directory%/../../thrift.exe -r -out %project:Directory% --gen csharp:async,wcf %project:Directory%/tutorial.thrift"
     ]
   }
 }

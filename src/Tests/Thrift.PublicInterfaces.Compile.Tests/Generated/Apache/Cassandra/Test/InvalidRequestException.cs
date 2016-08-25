@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -28,6 +33,7 @@ namespace Apache.Cassandra.Test
   public partial class InvalidRequestException : TException, TBase
   {
 
+    [DataMember(Order = 0)]
     public string Why { get; set; }
 
     public InvalidRequestException() {
@@ -106,6 +112,20 @@ namespace Apache.Cassandra.Test
       __sb.Append(")");
       return __sb.ToString();
     }
+
+  }
+
+
+  #if !SILVERLIGHT
+  [Serializable]
+  #endif
+  [DataContract]
+  public partial class InvalidRequestExceptionFault
+  {
+    private string _why;
+
+    [DataMember(Order = 0)]
+    public string Why { get; set; }
 
   }
 

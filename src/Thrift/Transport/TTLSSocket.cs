@@ -22,9 +22,13 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Thrift.Transport
 {
+    //TODO: check for correct work
+
     /// <summary>
     /// SSL Socket Wrapper class
     /// </summary>
@@ -82,16 +86,8 @@ namespace Thrift.Transport
         /// </summary>
         private readonly SslProtocols _sslProtocols;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TTLSSocket"/> class.
-        /// </summary>
-        /// <param name="client">An already created TCP-client</param>
-        /// <param name="certificate">The certificate.</param>
-        /// <param name="isServer">if set to <c>true</c> [is server].</param>
-        /// <param name="certValidator">User defined cert validator.</param>
-        /// <param name="localCertificateSelectionCallback">The callback to select which certificate to use.</param>
-        /// <param name="sslProtocols">The SslProtocols value that represents the protocol used for authentication.</param>
-        public TTLSSocket(TcpClient client, X509Certificate certificate, bool isServer = false, RemoteCertificateValidationCallback certValidator = null,
+        public TTLSSocket(TcpClient client, X509Certificate certificate, bool isServer = false,
+            RemoteCertificateValidationCallback certValidator = null,
             LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
             // TODO: Enable Tls11 and Tls12 (TLS 1.1 and 1.2) by default once we start using .NET 4.5+.
             SslProtocols sslProtocols = SslProtocols.Tls)
@@ -110,52 +106,32 @@ namespace Thrift.Transport
             if (IsOpen)
             {
                 InputStream = client.GetStream();
-               OutputStream = client.GetStream();
+                OutputStream = client.GetStream();
             }
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TTLSSocket"/> class.
-        /// </summary>
-        /// <param name="host">The host, where the socket should connect to.</param>
-        /// <param name="port">The port.</param>
-        /// <param name="certificatePath">The certificate path.</param>
-        /// <param name="certValidator">User defined cert validator.</param>
-        /// <param name="localCertificateSelectionCallback">The callback to select which certificate to use.</param>
-        /// <param name="sslProtocols">The SslProtocols value that represents the protocol used for authentication.</param>
-        public TTLSSocket(string host, int port, string certificatePath, RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null, SslProtocols sslProtocols = SslProtocols.Tls)
-            : this(host, port, 0, new X509Certificate(certificatePath), certValidator, localCertificateSelectionCallback, sslProtocols)
+        public TTLSSocket(string host, int port, string certificatePath,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls)
+            : this(
+                host, port, 0, new X509Certificate(certificatePath), certValidator, localCertificateSelectionCallback,
+                sslProtocols)
         {
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TTLSSocket"/> class.
-        /// </summary>
-        /// <param name="host">The host, where the socket should connect to.</param>
-        /// <param name="port">The port.</param>
-        /// <param name="certificate">The certificate.</param>
-        /// <param name="certValidator">User defined cert validator.</param>
-        /// <param name="localCertificateSelectionCallback">The callback to select which certificate to use.</param>
-        /// <param name="sslProtocols">The SslProtocols value that represents the protocol used for authentication.</param>
-        public TTLSSocket(string host, int port, X509Certificate certificate = null, RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null, SslProtocols sslProtocols = SslProtocols.Tls)
+        public TTLSSocket(string host, int port, X509Certificate certificate = null,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls)
             : this(host, port, 0, certificate, certValidator, localCertificateSelectionCallback, sslProtocols)
         {
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TTLSSocket"/> class.
-        /// </summary>
-        /// <param name="host">The host, where the socket should connect to.</param>
-        /// <param name="port">The port.</param>
-        /// <param name="timeout">The timeout.</param>
-        /// <param name="certificate">The certificate.</param>
-        /// <param name="certValidator">User defined cert validator.</param>
-        /// <param name="localCertificateSelectionCallback">The callback to select which certificate to use.</param>
-        /// <param name="sslProtocols">The SslProtocols value that represents the protocol used for authentication.</param>
-        public TTLSSocket(string host, int port, int timeout, X509Certificate certificate, RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null, SslProtocols sslProtocols = SslProtocols.Tls)
+        public TTLSSocket(string host, int port, int timeout, X509Certificate certificate,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls)
         {
             _host = host;
             _port = port;
@@ -168,9 +144,6 @@ namespace Thrift.Transport
             InitSocket();
         }
 
-        /// <summary>
-        /// Creates the TcpClient and sets the timeouts
-        /// </summary>
         private void InitSocket()
         {
             _client = new TcpClient();
@@ -191,17 +164,17 @@ namespace Thrift.Transport
         /// </summary>
         public TcpClient TcpClient => _client;
 
-      /// <summary>
+        /// <summary>
         /// Gets the host.
         /// </summary>
         public string Host => _host;
 
-      /// <summary>
+        /// <summary>
         /// Gets the port.
         /// </summary>
         public int Port => _port;
 
-      /// <summary>
+        /// <summary>
         /// Gets a value indicating whether TCP Client is Cpen
         /// </summary>
         public override bool IsOpen
@@ -217,23 +190,13 @@ namespace Thrift.Transport
             }
         }
 
-        /// <summary>
-        /// Validates the certificates!<br/>
-        /// </summary>
-        /// <param name="sender">The sender-object.</param>
-        /// <param name="certificate">The used certificate.</param>
-        /// <param name="chain">The certificate chain.</param>
-        /// <param name="sslValidationErrors">An enum, which lists all the errors from the .NET certificate check.</param>
-        /// <returns></returns>
-        private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslValidationErrors)
+        private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain,
+            SslPolicyErrors sslValidationErrors)
         {
-            return (sslValidationErrors == SslPolicyErrors.None);
+            return sslValidationErrors == SslPolicyErrors.None;
         }
 
-        /// <summary>
-        /// Connects to the host and starts the routine, which sets up the TLS
-        /// </summary>
-        public override void Open()
+        public override async Task OpenAsync(CancellationToken cancellationToken)
         {
             if (IsOpen)
             {
@@ -255,16 +218,16 @@ namespace Thrift.Transport
                 InitSocket();
             }
 
-            //TODO: Async
-            _client?.ConnectAsync(_host, _port).Wait();
+            //TODO: check logic
+            if (_client != null)
+            {
+                await _client.ConnectAsync(_host, _port);
 
-            SetupTls();
+                await SetupTlsAsync();
+            }
         }
 
-        /// <summary>
-        /// Creates a TLS-stream and lays it over the existing socket
-        /// </summary>
-        public void SetupTls()
+        public async Task SetupTlsAsync()
         {
             var validator = _certValidator ?? DefaultCertificateValidator;
 
@@ -281,19 +244,19 @@ namespace Thrift.Transport
             {
                 if (_isServer)
                 {
-                    //TODO: Async
                     // Server authentication
-                    _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols, true).Wait();
+                    await
+                        _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols,
+                            true);
                 }
                 else
                 {
-                    //TODO: Async
                     // Client authentication
                     var certs = _certificate != null
                         ? new X509CertificateCollection {_certificate}
                         : new X509CertificateCollection();
 
-                    _secureStream.AuthenticateAsClientAsync(_host, certs, _sslProtocols, true).Wait();
+                    await _secureStream.AuthenticateAsClientAsync(_host, certs, _sslProtocols, true);
                 }
             }
             catch (Exception)

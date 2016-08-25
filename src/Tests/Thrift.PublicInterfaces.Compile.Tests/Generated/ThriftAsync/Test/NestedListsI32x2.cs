@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,10 +26,12 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class NestedListsI32x2 : TBase
   {
     private List<List<int>> _integerlist;
 
+    [DataMember(Order = 0)]
     public List<List<int>> Integerlist
     {
       get
@@ -40,13 +46,26 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool integerlist;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeIntegerlist()
+    {
+      return __isset.integerlist;
+    }
+
+    #endregion XmlSerializer support
 
     public NestedListsI32x2() {
     }

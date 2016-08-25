@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Thrift.Protocol
@@ -49,11 +50,11 @@ namespace Thrift.Protocol
     *     server.serve();
     */
     // ReSharper disable once InconsistentNaming
-    public class TMultiplexedProcessor : TProcessor
+    public class TMultiplexedProcessor : TAsyncProcessor
     {
         //TODO: Localization
 
-        private readonly Dictionary<string, TProcessor> _serviceProcessorMap = new Dictionary<string, TProcessor>();
+        private readonly Dictionary<string, TAsyncProcessor> _serviceProcessorMap = new Dictionary<string, TAsyncProcessor>();
 
         /**
          * 'Register' a service with this TMultiplexedProcessor. This allows us to broker
@@ -66,90 +67,29 @@ namespace Thrift.Protocol
          *                  e.g. WeatherReportHandler implementing WeatherReport.Iface.
          */
 
-        public void RegisterProcessor(string serviceName, TProcessor processor)
+        public void RegisterProcessor(string serviceName, TAsyncProcessor processor)
+        {
+            RegisterProcessor(serviceName, processor, CancellationToken.None);
+        }
+
+        public void RegisterProcessor(string serviceName, TAsyncProcessor processor, CancellationToken cancellationToken)
         {
             _serviceProcessorMap.Add(serviceName, processor);
         }
 
 
-        private void Fail(TProtocol oprot, TMessage message, TApplicationException.ExceptionType extype, string etxt)
+        private async Task FailAsync(TProtocol oprot, TMessage message, TApplicationException.ExceptionType extype, string etxt, CancellationToken cancellationToken)
         {
             var appex = new TApplicationException(extype, etxt);
 
             var newMessage = new TMessage(message.Name, TMessageType.Exception, message.SeqID);
 
-            oprot.WriteMessageBegin(newMessage);
-            appex.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
+            await oprot.WriteMessageBeginAsync(newMessage, cancellationToken);
+            await appex.WriteAsync(oprot, cancellationToken);
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
         }
 
-
-        /**
-         * This implementation of process performs the following steps:
-         *
-         * - Read the beginning of the message.
-         * - Extract the service name from the message.
-         * - Using the service name to locate the appropriate processor.
-         * - Dispatch to the processor, with a decorated instance of TProtocol
-         *    that allows readMessageBegin() to return the original TMessage.
-         *
-         * Throws an exception if
-         * - the message exType is not CALL or ONEWAY,
-         * - the service name was not found in the message, or
-         * - the service name has not been RegisterProcessor()ed.
-         */
-
-        public bool Process(TProtocol iprot, TProtocol oprot)
-        {
-            /*  Use the actual underlying protocol (e.g. TBinaryProtocol) to read the
-                message header.  This pulls the message "off the wire", which we'll
-                deal with at the end of this method. */
-
-            try
-            {
-                var message = iprot.ReadMessageBegin();
-
-                if ((message.Type != TMessageType.Call) && (message.Type != TMessageType.Oneway))
-                {
-                    Fail(oprot, message, TApplicationException.ExceptionType.InvalidMessageType,
-                        "Message exType CALL or ONEWAY expected");
-                    return false;
-                }
-
-                // Extract the service name
-                var index = message.Name.IndexOf(TMultiplexedProtocol.Separator, StringComparison.Ordinal);
-                if (index < 0)
-                {
-                    Fail(oprot, message, TApplicationException.ExceptionType.InvalidProtocol,
-                        $"Service name not found in message name: {message.Name}. Did you forget to use a TMultiplexProtocol in your client?");
-                    return false;
-                }
-
-                // Create a new TMessage, something that can be consumed by any TProtocol
-                var serviceName = message.Name.Substring(0, index);
-                TProcessor actualProcessor;
-                if (!_serviceProcessorMap.TryGetValue(serviceName, out actualProcessor))
-                {
-                    Fail(oprot, message, TApplicationException.ExceptionType.InternalError,
-                        $"Service name not found: {serviceName}. Did you forget to call RegisterProcessor()?");
-                    return false;
-                }
-
-                // Create a new TMessage, removing the service name
-                var newMessage = new TMessage(
-                    message.Name.Substring(serviceName.Length + TMultiplexedProtocol.Separator.Length),
-                    message.Type,
-                    message.SeqID);
-
-                // Dispatch processing to the stored processor
-                return actualProcessor.Process(new StoredMessageProtocol(iprot, newMessage), oprot);
-            }
-            catch (IOException)
-            {
-                return false; // similar to all other processors
-            }
-        }
 
         /**
          *  Our goal was to work with any protocol.  In order to do that, we needed
@@ -167,14 +107,80 @@ namespace Thrift.Protocol
                 _msgBegin = messageBegin;
             }
 
-            public override TMessage ReadMessageBegin()
+            public override async Task<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return await Task.FromCanceled<TMessage>(cancellationToken);
+                }
+
                 return _msgBegin;
             }
+        }
 
-            public override async Task<TMessage> ReadMessageBeginAsync()
+        /**
+         * This implementation of process performs the following steps:
+         *
+         * - Read the beginning of the message.
+         * - Extract the service name from the message.
+         * - Using the service name to locate the appropriate processor.
+         * - Dispatch to the processor, with a decorated instance of TProtocol
+         *    that allows readMessageBegin() to return the original TMessage.
+         *
+         * Throws an exception if
+         * - the message exType is not CALL or ONEWAY,
+         * - the service name was not found in the message, or
+         * - the service name has not been RegisterProcessor()ed.
+         */
+
+        public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
+        {
+            /*  Use the actual underlying protocol (e.g. TBinaryProtocol) to read the
+                message header.  This pulls the message "off the wire", which we'll
+                deal with at the end of this method. */
+
+            try
             {
-                return await Task.FromResult(_msgBegin);
+                var message = await iprot.ReadMessageBeginAsync(cancellationToken);
+
+                if ((message.Type != TMessageType.Call) && (message.Type != TMessageType.Oneway))
+                {
+                    await FailAsync(oprot, message, TApplicationException.ExceptionType.InvalidMessageType, 
+                        "Message exType CALL or ONEWAY expected", cancellationToken);
+                    return false;
+                }
+
+                // Extract the service name
+                var index = message.Name.IndexOf(TMultiplexedProtocol.Separator, StringComparison.Ordinal);
+                if (index < 0)
+                {
+                    await FailAsync(oprot, message, TApplicationException.ExceptionType.InvalidProtocol,
+                        $"Service name not found in message name: {message.Name}. Did you forget to use a TMultiplexProtocol in your client?", cancellationToken);
+                    return false;
+                }
+
+                // Create a new TMessage, something that can be consumed by any TProtocol
+                var serviceName = message.Name.Substring(0, index);
+                TAsyncProcessor actualProcessor;
+                if (!_serviceProcessorMap.TryGetValue(serviceName, out actualProcessor))
+                {
+                    await FailAsync(oprot, message, TApplicationException.ExceptionType.InternalError,
+                        $"Service name not found: {serviceName}. Did you forget to call RegisterProcessor()?", cancellationToken);
+                    return false;
+                }
+
+                // Create a new TMessage, removing the service name
+                var newMessage = new TMessage(
+                    message.Name.Substring(serviceName.Length + TMultiplexedProtocol.Separator.Length),
+                    message.Type,
+                    message.SeqID);
+
+                // Dispatch processing to the stored processor
+                return await actualProcessor.ProcessAsync(new StoredMessageProtocol(iprot, newMessage), oprot, cancellationToken);
+            }
+            catch (IOException)
+            {
+                return false; // similar to all other processors
             }
         }
     }

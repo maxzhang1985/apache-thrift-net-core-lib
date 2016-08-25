@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,6 +26,7 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class CqlResult : TBase
   {
     private List<CqlRow> _rows;
@@ -31,8 +37,10 @@ namespace Apache.Cassandra.Test
     /// 
     /// <seealso cref="CqlResultType"/>
     /// </summary>
+    [DataMember(Order = 0)]
     public CqlResultType Type { get; set; }
 
+    [DataMember(Order = 0)]
     public List<CqlRow> Rows
     {
       get
@@ -46,6 +54,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Num
     {
       get
@@ -59,6 +68,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public CqlMetadata Schema
     {
       get
@@ -73,15 +83,40 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool rows;
+      [DataMember]
       public bool num;
+      [DataMember]
       public bool schema;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeRows()
+    {
+      return __isset.rows;
+    }
+
+    public bool ShouldSerializeNum()
+    {
+      return __isset.num;
+    }
+
+    public bool ShouldSerializeSchema()
+    {
+      return __isset.schema;
+    }
+
+    #endregion XmlSerializer support
 
     public CqlResult() {
     }

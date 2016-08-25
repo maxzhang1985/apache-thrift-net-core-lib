@@ -12,6 +12,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -22,11 +26,13 @@ namespace ThriftAsync.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class Insanity : TBase
   {
     private Dictionary<Numberz, long> _userMap;
     private List<Xtruct> _xtructs;
 
+    [DataMember(Order = 0)]
     public Dictionary<Numberz, long> UserMap
     {
       get
@@ -40,6 +46,7 @@ namespace ThriftAsync.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<Xtruct> Xtructs
     {
       get
@@ -54,14 +61,33 @@ namespace ThriftAsync.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool userMap;
+      [DataMember]
       public bool xtructs;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeUserMap()
+    {
+      return __isset.userMap;
+    }
+
+    public bool ShouldSerializeXtructs()
+    {
+      return __isset.xtructs;
+    }
+
+    #endregion XmlSerializer support
 
     public Insanity() {
     }

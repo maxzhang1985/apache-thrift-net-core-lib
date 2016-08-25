@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -29,6 +34,7 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class KeyRange : TBase
   {
     private byte[] _start_key;
@@ -36,6 +42,7 @@ namespace Apache.Cassandra.Test
     private string _start_token;
     private string _end_token;
 
+    [DataMember(Order = 0)]
     public byte[] Start_key
     {
       get
@@ -49,6 +56,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public byte[] End_key
     {
       get
@@ -62,6 +70,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Start_token
     {
       get
@@ -75,6 +84,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string End_token
     {
       get
@@ -88,19 +98,51 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Count { get; set; }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool start_key;
+      [DataMember]
       public bool end_key;
+      [DataMember]
       public bool start_token;
+      [DataMember]
       public bool end_token;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeStart_key()
+    {
+      return __isset.start_key;
+    }
+
+    public bool ShouldSerializeEnd_key()
+    {
+      return __isset.end_key;
+    }
+
+    public bool ShouldSerializeStart_token()
+    {
+      return __isset.start_token;
+    }
+
+    public bool ShouldSerializeEnd_token()
+    {
+      return __isset.end_token;
+    }
+
+    #endregion XmlSerializer support
 
     public KeyRange() {
       this.Count = 100;

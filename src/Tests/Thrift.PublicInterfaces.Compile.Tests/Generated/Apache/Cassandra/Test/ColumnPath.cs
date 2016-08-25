@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -31,13 +36,16 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class ColumnPath : TBase
   {
     private byte[] _super_column;
     private byte[] _column;
 
+    [DataMember(Order = 0)]
     public string Column_family { get; set; }
 
+    [DataMember(Order = 0)]
     public byte[] Super_column
     {
       get
@@ -51,6 +59,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public byte[] Column
     {
       get
@@ -65,14 +74,33 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool super_column;
+      [DataMember]
       public bool column;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeSuper_column()
+    {
+      return __isset.super_column;
+    }
+
+    public bool ShouldSerializeColumn()
+    {
+      return __isset.column;
+    }
+
+    #endregion XmlSerializer support
 
     public ColumnPath() {
     }

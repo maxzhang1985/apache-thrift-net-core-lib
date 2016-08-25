@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,12 +26,14 @@ namespace Thrift.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class VersioningTestV1 : TBase
   {
     private int _begin_in_both;
     private string _old_string;
     private int _end_in_both;
 
+    [DataMember(Order = 0)]
     public int Begin_in_both
     {
       get
@@ -40,6 +47,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Old_string
     {
       get
@@ -53,6 +61,7 @@ namespace Thrift.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int End_in_both
     {
       get
@@ -67,15 +76,40 @@ namespace Thrift.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool begin_in_both;
+      [DataMember]
       public bool old_string;
+      [DataMember]
       public bool end_in_both;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeBegin_in_both()
+    {
+      return __isset.begin_in_both;
+    }
+
+    public bool ShouldSerializeOld_string()
+    {
+      return __isset.old_string;
+    }
+
+    public bool ShouldSerializeEnd_in_both()
+    {
+      return __isset.end_in_both;
+    }
+
+    #endregion XmlSerializer support
 
     public VersioningTestV1() {
     }

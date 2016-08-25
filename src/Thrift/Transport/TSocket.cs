@@ -89,24 +89,6 @@ namespace Thrift.Transport
                 return TcpClient.Connected;
             }
         }
-        
-        public override void Open()
-        {
-            if (IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
-            }
-
-            if (Port <= 0)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
-            }
-
-            TcpClient.ConnectAsync(Host, Port).GetAwaiter().GetResult();
-
-            InputStream = TcpClient.GetStream();
-            OutputStream = TcpClient.GetStream();
-        }
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {

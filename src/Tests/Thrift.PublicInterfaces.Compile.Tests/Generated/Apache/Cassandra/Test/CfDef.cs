@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -21,6 +26,7 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class CfDef : TBase
   {
     private string _column_type;
@@ -43,10 +49,13 @@ namespace Apache.Cassandra.Test
     private Dictionary<string, string> _compression_options;
     private double _bloom_filter_fp_chance;
 
+    [DataMember(Order = 0)]
     public string Keyspace { get; set; }
 
+    [DataMember(Order = 0)]
     public string Name { get; set; }
 
+    [DataMember(Order = 0)]
     public string Column_type
     {
       get
@@ -60,6 +69,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Comparator_type
     {
       get
@@ -73,6 +83,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Subcomparator_type
     {
       get
@@ -86,6 +97,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Comment
     {
       get
@@ -99,6 +111,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public double Read_repair_chance
     {
       get
@@ -112,6 +125,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<ColumnDef> Column_metadata
     {
       get
@@ -125,6 +139,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Gc_grace_seconds
     {
       get
@@ -138,6 +153,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Default_validation_class
     {
       get
@@ -151,6 +167,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Id
     {
       get
@@ -164,6 +181,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Min_compaction_threshold
     {
       get
@@ -177,6 +195,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public int Max_compaction_threshold
     {
       get
@@ -190,6 +209,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public bool Replicate_on_write
     {
       get
@@ -203,6 +223,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public double Merge_shards_chance
     {
       get
@@ -216,6 +237,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Key_validation_class
     {
       get
@@ -229,6 +251,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public byte[] Key_alias
     {
       get
@@ -242,6 +265,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public string Compaction_strategy
     {
       get
@@ -255,6 +279,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Dictionary<string, string> Compaction_strategy_options
     {
       get
@@ -268,6 +293,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public Dictionary<string, string> Compression_options
     {
       get
@@ -281,6 +307,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public double Bloom_filter_fp_chance
     {
       get
@@ -295,31 +322,152 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool column_type;
+      [DataMember]
       public bool comparator_type;
+      [DataMember]
       public bool subcomparator_type;
+      [DataMember]
       public bool comment;
+      [DataMember]
       public bool read_repair_chance;
+      [DataMember]
       public bool column_metadata;
+      [DataMember]
       public bool gc_grace_seconds;
+      [DataMember]
       public bool default_validation_class;
+      [DataMember]
       public bool id;
+      [DataMember]
       public bool min_compaction_threshold;
+      [DataMember]
       public bool max_compaction_threshold;
+      [DataMember]
       public bool replicate_on_write;
+      [DataMember]
       public bool merge_shards_chance;
+      [DataMember]
       public bool key_validation_class;
+      [DataMember]
       public bool key_alias;
+      [DataMember]
       public bool compaction_strategy;
+      [DataMember]
       public bool compaction_strategy_options;
+      [DataMember]
       public bool compression_options;
+      [DataMember]
       public bool bloom_filter_fp_chance;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeColumn_type()
+    {
+      return __isset.column_type;
+    }
+
+    public bool ShouldSerializeComparator_type()
+    {
+      return __isset.comparator_type;
+    }
+
+    public bool ShouldSerializeSubcomparator_type()
+    {
+      return __isset.subcomparator_type;
+    }
+
+    public bool ShouldSerializeComment()
+    {
+      return __isset.comment;
+    }
+
+    public bool ShouldSerializeRead_repair_chance()
+    {
+      return __isset.read_repair_chance;
+    }
+
+    public bool ShouldSerializeColumn_metadata()
+    {
+      return __isset.column_metadata;
+    }
+
+    public bool ShouldSerializeGc_grace_seconds()
+    {
+      return __isset.gc_grace_seconds;
+    }
+
+    public bool ShouldSerializeDefault_validation_class()
+    {
+      return __isset.default_validation_class;
+    }
+
+    public bool ShouldSerializeId()
+    {
+      return __isset.id;
+    }
+
+    public bool ShouldSerializeMin_compaction_threshold()
+    {
+      return __isset.min_compaction_threshold;
+    }
+
+    public bool ShouldSerializeMax_compaction_threshold()
+    {
+      return __isset.max_compaction_threshold;
+    }
+
+    public bool ShouldSerializeReplicate_on_write()
+    {
+      return __isset.replicate_on_write;
+    }
+
+    public bool ShouldSerializeMerge_shards_chance()
+    {
+      return __isset.merge_shards_chance;
+    }
+
+    public bool ShouldSerializeKey_validation_class()
+    {
+      return __isset.key_validation_class;
+    }
+
+    public bool ShouldSerializeKey_alias()
+    {
+      return __isset.key_alias;
+    }
+
+    public bool ShouldSerializeCompaction_strategy()
+    {
+      return __isset.compaction_strategy;
+    }
+
+    public bool ShouldSerializeCompaction_strategy_options()
+    {
+      return __isset.compaction_strategy_options;
+    }
+
+    public bool ShouldSerializeCompression_options()
+    {
+      return __isset.compression_options;
+    }
+
+    public bool ShouldSerializeBloom_filter_fp_chance()
+    {
+      return __isset.bloom_filter_fp_chance;
+    }
+
+    #endregion XmlSerializer support
 
     public CfDef() {
       this._column_type = "Standard";

@@ -97,56 +97,6 @@ namespace Thrift.Transport
             return _server.Pending();
         }
 
-        protected override TTransport AcceptImpl()
-        {
-            if (_server == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No underlying server socket.");
-            }
-
-            try
-            {
-                TSocket result2 = null;
-                //TODO: Async
-                var result = _server.AcceptTcpClientAsync().Result;
-
-                try
-                {
-                    result2 = new TSocket(result)
-                    {
-                        Timeout = _clientTimeout
-                    };
-
-                    if (_useBufferedSockets)
-                    {
-                        var result3 = new TBufferedTransport(result2);
-                        return result3;
-                    }
-
-                    return result2;
-                }
-                catch (Exception)
-                {
-                    // If a TSocket was successfully created, then let
-                    // it do proper cleanup of the TcpClient object.
-                    if (result2 != null)
-                    {
-                        result2.Dispose();
-                    }
-                    else //  Otherwise, clean it up ourselves.
-                    {
-                        ((IDisposable) result).Dispose();
-                    }
-
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new TTransportException(ex.ToString());
-            }
-        }
-
         protected override async Task<TTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)

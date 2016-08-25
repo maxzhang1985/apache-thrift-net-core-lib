@@ -46,13 +46,6 @@ namespace Thrift.Transport
             InitWriteBuffer();
         }
 
-        public override void Open()
-        {
-            CheckNotDisposed();
-
-            _transport.Open();
-        }
-
         public override bool IsOpen => !_isDisposed && _transport.IsOpen;
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
@@ -67,28 +60,6 @@ namespace Thrift.Transport
             CheckNotDisposed();
 
             _transport.Close();
-        }
-
-        public override int Read(byte[] buffer, int offset, int length)
-        {
-            CheckNotDisposed();
-            ValidateBufferArgs(buffer, offset, length);
-
-            if (!IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            var got = _readBuffer.Read(buffer, offset, length);
-            if (got > 0)
-            {
-                return got;
-            }
-
-            // Read another frame of data
-            ReadFrame();
-
-            return _readBuffer.Read(buffer, offset, length);
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
@@ -114,23 +85,6 @@ namespace Thrift.Transport
             return await _readBuffer.ReadAsync(buffer, offset, length, cancellationToken);
         }
 
-        private void ReadFrame()
-        {
-            _transport.ReadAll(_headerBuf, 0, HeaderSize);
-
-            var size = DecodeFrameSize(_headerBuf);
-
-            _readBuffer.SetLength(size);
-            _readBuffer.Seek(0, SeekOrigin.Begin);
-
-            ArraySegment<byte> bufSegment;
-            _readBuffer.TryGetBuffer(out bufSegment);
-
-            var buff = bufSegment.Array;
-
-            _transport.ReadAll(buff, 0, size);
-        }
-
         private async Task ReadFrameAsync(CancellationToken cancellationToken)
         {
             await _transport.ReadAllAsync(_headerBuf, 0, HeaderSize, cancellationToken);
@@ -147,26 +101,7 @@ namespace Thrift.Transport
 
             await _transport.ReadAllAsync(buff, 0, size, cancellationToken);
         }
-
-        public override void Write(byte[] buffer, int offset, int length)
-        {
-            CheckNotDisposed();
-
-            ValidateBufferArgs(buffer, offset, length);
-
-            if (!IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            if (_writeBuffer.Length + length > int.MaxValue)
-            {
-                Flush();
-            }
-
-            _writeBuffer.Write(buffer, offset, length);
-        }
-
+        
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             CheckNotDisposed();
@@ -184,38 +119,6 @@ namespace Thrift.Transport
             }
 
             await _writeBuffer.WriteAsync(buffer, offset, length, cancellationToken);
-        }
-
-        public override void Flush()
-        {
-            CheckNotDisposed();
-
-            if (!IsOpen)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen);
-            }
-
-            ArraySegment<byte> bufSegment;
-            _writeBuffer.TryGetBuffer(out bufSegment);
-            var buf = bufSegment.Array;
-
-            //byte[] buf = writeBuffer.GetBuffer();
-            var len = (int) _writeBuffer.Length;
-            var dataLen = len - HeaderSize;
-            if (dataLen < 0)
-            {
-                throw new InvalidOperationException(); // logic error actually
-            }
-
-            // Inject message header into the reserved buffer space
-            EncodeFrameSize(dataLen, buf);
-
-            // Send the entire message at once
-            _transport.Write(buf, 0, len);
-
-            InitWriteBuffer();
-
-            _transport.Flush();
         }
 
         public override async Task FlushAsync(CancellationToken cancellationToken)

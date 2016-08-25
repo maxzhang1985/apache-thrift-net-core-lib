@@ -9,8 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
+#if !SILVERLIGHT
+using System.Xml.Serialization;
+#endif
+//using System.ServiceModel;
 using System.Runtime.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
@@ -29,17 +34,22 @@ namespace Apache.Cassandra.Test
   #if !SILVERLIGHT
   [Serializable]
   #endif
+  [DataContract(Namespace="")]
   public partial class TokenRange : TBase
   {
     private List<string> _rpc_endpoints;
     private List<EndpointDetails> _endpoint_details;
 
+    [DataMember(Order = 0)]
     public string Start_token { get; set; }
 
+    [DataMember(Order = 0)]
     public string End_token { get; set; }
 
+    [DataMember(Order = 0)]
     public List<string> Endpoints { get; set; }
 
+    [DataMember(Order = 0)]
     public List<string> Rpc_endpoints
     {
       get
@@ -53,6 +63,7 @@ namespace Apache.Cassandra.Test
       }
     }
 
+    [DataMember(Order = 0)]
     public List<EndpointDetails> Endpoint_details
     {
       get
@@ -67,14 +78,33 @@ namespace Apache.Cassandra.Test
     }
 
 
+    [XmlIgnore] // XmlSerializer
+    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
     public Isset __isset;
     #if !SILVERLIGHT
     [Serializable]
     #endif
+    [DataContract]
     public struct Isset {
+      [DataMember]
       public bool rpc_endpoints;
+      [DataMember]
       public bool endpoint_details;
     }
+
+    #region XmlSerializer support
+
+    public bool ShouldSerializeRpc_endpoints()
+    {
+      return __isset.rpc_endpoints;
+    }
+
+    public bool ShouldSerializeEndpoint_details()
+    {
+      return __isset.endpoint_details;
+    }
+
+    #endregion XmlSerializer support
 
     public TokenRange() {
     }
