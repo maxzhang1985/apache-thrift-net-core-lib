@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -26,9 +26,6 @@ namespace Apache.Cassandra.Test
   /// <summary>
   /// invalid authorization request (user does not have access to keyspace)
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   public partial class AuthorizationException : TException, TBase
   {
 
@@ -42,17 +39,17 @@ namespace Apache.Cassandra.Test
       this.Why = why;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_why = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -60,19 +57,19 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Why = iprot.ReadString();
+                Why = await iprot.ReadStringAsync(cancellationToken);
                 isset_why = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_why)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -82,21 +79,21 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("AuthorizationException");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("AuthorizationException");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "why";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Why);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Why, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -105,19 +102,16 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("AuthorizationException(");
-      __sb.Append(", Why: ");
-      __sb.Append(Why);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("AuthorizationException(");
+      sb.Append(", Why: ");
+      sb.Append(Why);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }
 
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract]
   public partial class AuthorizationExceptionFault
   {

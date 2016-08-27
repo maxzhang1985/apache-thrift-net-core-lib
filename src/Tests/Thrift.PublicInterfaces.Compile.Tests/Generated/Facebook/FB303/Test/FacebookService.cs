@@ -9,98 +9,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Facebook.FB303.Test
 {
   public partial class FacebookService {
-    /// <summary>
-    /// Standard base service
-    /// </summary>
-    [ServiceContract(Namespace="")]
-    public interface ISync {
-      /// <summary>
-      /// Returns a descriptive name of the service
-      /// </summary>
-      [OperationContract]
-      string getName();
-      /// <summary>
-      /// Returns the version of the service
-      /// </summary>
-      [OperationContract]
-      string getVersion();
-      /// <summary>
-      /// Gets the status of this service
-      /// </summary>
-      [OperationContract]
-      fb_status getStatus();
-      /// <summary>
-      /// User friendly description of status, such as why the service is in
-      /// the dead or warning state, or what is being started or stopped.
-      /// </summary>
-      [OperationContract]
-      string getStatusDetails();
-      /// <summary>
-      /// Gets the counters for this service
-      /// </summary>
-      [OperationContract]
-      Dictionary<string, long> getCounters();
-      /// <summary>
-      /// Gets the value of a single counter
-      /// </summary>
-      /// <param name="key"></param>
-      [OperationContract]
-      long getCounter(string key);
-      /// <summary>
-      /// Sets an option
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="value"></param>
-      [OperationContract]
-      void setOption(string key, string @value);
-      /// <summary>
-      /// Gets an option
-      /// </summary>
-      /// <param name="key"></param>
-      [OperationContract]
-      string getOption(string key);
-      /// <summary>
-      /// Gets all options
-      /// </summary>
-      [OperationContract]
-      Dictionary<string, string> getOptions();
-      /// <summary>
-      /// Returns a CPU profile over the given time interval (client and server
-      /// must agree on the profile format).
-      /// </summary>
-      /// <param name="profileDurationInSec"></param>
-      [OperationContract]
-      string getCpuProfile(int profileDurationInSec);
-      /// <summary>
-      /// Returns the unix time that the server has been running since
-      /// </summary>
-      [OperationContract]
-      long aliveSince();
-      /// <summary>
-      /// Tell the server to reload its configuration, reopen log files, etc
-      /// </summary>
-      [OperationContract]
-      void reinitialize();
-      /// <summary>
-      /// Suggest a shutdown to the server
-      /// </summary>
-      [OperationContract]
-      void shutdown();
-    }
+
 
     /// <summary>
     /// Standard base service
@@ -111,187 +34,127 @@ namespace Facebook.FB303.Test
       /// Returns a descriptive name of the service
       /// </summary>
       [OperationContract]
-      Task<string> getNameAsync();
+      Task<string> getNameAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Returns the version of the service
       /// </summary>
       [OperationContract]
-      Task<string> getVersionAsync();
+      Task<string> getVersionAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Gets the status of this service
       /// </summary>
       [OperationContract]
-      Task<fb_status> getStatusAsync();
+      Task<fb_status> getStatusAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// User friendly description of status, such as why the service is in
       /// the dead or warning state, or what is being started or stopped.
       /// </summary>
       [OperationContract]
-      Task<string> getStatusDetailsAsync();
+      Task<string> getStatusDetailsAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Gets the counters for this service
       /// </summary>
       [OperationContract]
-      Task<Dictionary<string, long>> getCountersAsync();
+      Task<Dictionary<string, long>> getCountersAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Gets the value of a single counter
       /// </summary>
       /// <param name="key"></param>
       [OperationContract]
-      Task<long> getCounterAsync(string key);
+      Task<long> getCounterAsync(string key, CancellationToken cancellationToken);
+
       /// <summary>
       /// Sets an option
       /// </summary>
       /// <param name="key"></param>
       /// <param name="value"></param>
       [OperationContract]
-      Task setOptionAsync(string key, string @value);
+      Task setOptionAsync(string key, string @value, CancellationToken cancellationToken);
+
       /// <summary>
       /// Gets an option
       /// </summary>
       /// <param name="key"></param>
       [OperationContract]
-      Task<string> getOptionAsync(string key);
+      Task<string> getOptionAsync(string key, CancellationToken cancellationToken);
+
       /// <summary>
       /// Gets all options
       /// </summary>
       [OperationContract]
-      Task<Dictionary<string, string>> getOptionsAsync();
+      Task<Dictionary<string, string>> getOptionsAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Returns a CPU profile over the given time interval (client and server
       /// must agree on the profile format).
       /// </summary>
       /// <param name="profileDurationInSec"></param>
       [OperationContract]
-      Task<string> getCpuProfileAsync(int profileDurationInSec);
+      Task<string> getCpuProfileAsync(int profileDurationInSec, CancellationToken cancellationToken);
+
       /// <summary>
       /// Returns the unix time that the server has been running since
       /// </summary>
       [OperationContract]
-      Task<long> aliveSinceAsync();
+      Task<long> aliveSinceAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Tell the server to reload its configuration, reopen log files, etc
       /// </summary>
       [OperationContract]
-      Task reinitializeAsync();
+      Task reinitializeAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// Suggest a shutdown to the server
       /// </summary>
       [OperationContract]
-      Task shutdownAsync();
+      Task shutdownAsync(CancellationToken cancellationToken);
+
     }
+
 
     /// <summary>
     /// Standard base service
     /// </summary>
-    [ServiceContract(Namespace="")]
-    public interface Iface : ISync, IAsync {
-      /// <summary>
-      /// Returns a descriptive name of the service
-      /// </summary>
-      IAsyncResult Begin_getName(AsyncCallback callback, object state);
-      string End_getName(IAsyncResult asyncResult);
-      /// <summary>
-      /// Returns the version of the service
-      /// </summary>
-      IAsyncResult Begin_getVersion(AsyncCallback callback, object state);
-      string End_getVersion(IAsyncResult asyncResult);
-      /// <summary>
-      /// Gets the status of this service
-      /// </summary>
-      IAsyncResult Begin_getStatus(AsyncCallback callback, object state);
-      fb_status End_getStatus(IAsyncResult asyncResult);
-      /// <summary>
-      /// User friendly description of status, such as why the service is in
-      /// the dead or warning state, or what is being started or stopped.
-      /// </summary>
-      IAsyncResult Begin_getStatusDetails(AsyncCallback callback, object state);
-      string End_getStatusDetails(IAsyncResult asyncResult);
-      /// <summary>
-      /// Gets the counters for this service
-      /// </summary>
-      IAsyncResult Begin_getCounters(AsyncCallback callback, object state);
-      Dictionary<string, long> End_getCounters(IAsyncResult asyncResult);
-      /// <summary>
-      /// Gets the value of a single counter
-      /// </summary>
-      /// <param name="key"></param>
-      IAsyncResult Begin_getCounter(AsyncCallback callback, object state, string key);
-      long End_getCounter(IAsyncResult asyncResult);
-      /// <summary>
-      /// Sets an option
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="value"></param>
-      IAsyncResult Begin_setOption(AsyncCallback callback, object state, string key, string @value);
-      void End_setOption(IAsyncResult asyncResult);
-      /// <summary>
-      /// Gets an option
-      /// </summary>
-      /// <param name="key"></param>
-      IAsyncResult Begin_getOption(AsyncCallback callback, object state, string key);
-      string End_getOption(IAsyncResult asyncResult);
-      /// <summary>
-      /// Gets all options
-      /// </summary>
-      IAsyncResult Begin_getOptions(AsyncCallback callback, object state);
-      Dictionary<string, string> End_getOptions(IAsyncResult asyncResult);
-      /// <summary>
-      /// Returns a CPU profile over the given time interval (client and server
-      /// must agree on the profile format).
-      /// </summary>
-      /// <param name="profileDurationInSec"></param>
-      IAsyncResult Begin_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec);
-      string End_getCpuProfile(IAsyncResult asyncResult);
-      /// <summary>
-      /// Returns the unix time that the server has been running since
-      /// </summary>
-      IAsyncResult Begin_aliveSince(AsyncCallback callback, object state);
-      long End_aliveSince(IAsyncResult asyncResult);
-      /// <summary>
-      /// Tell the server to reload its configuration, reopen log files, etc
-      /// </summary>
-      IAsyncResult Begin_reinitialize(AsyncCallback callback, object state);
-      void End_reinitialize(IAsyncResult asyncResult);
-      /// <summary>
-      /// Suggest a shutdown to the server
-      /// </summary>
-      IAsyncResult Begin_shutdown(AsyncCallback callback, object state);
-      void End_shutdown(IAsyncResult asyncResult);
-    }
-
-    /// <summary>
-    /// Standard base service
-    /// </summary>
-    public class Client : IDisposable, Iface {
-      public Client(TProtocol prot) : this(prot, prot)
+    public class Client : IDisposable, IAsync
+    {
+      public Client(TProtocol protocol) : this(protocol, protocol)
       {
       }
 
-      public Client(TProtocol iprot, TProtocol oprot)
+      public Client(TProtocol inputProtocol, TProtocol outputProtocol)
       {
-        iprot_ = iprot;
-        oprot_ = oprot;
+        if (inputProtocol == null) throw new ArgumentNullException(nameof(inputProtocol));
+        if (outputProtocol == null) throw new ArgumentNullException(nameof(outputProtocol));
+        _inputProtocol = inputProtocol;
+        _outputProtocol = outputProtocol;
       }
 
-      protected TProtocol iprot_;
-      protected TProtocol oprot_;
-      protected int seqid_;
-
+      private TProtocol _inputProtocol;
+      private TProtocol _outputProtocol;
+      private int _seqId;
       public TProtocol InputProtocol
       {
-        get { return iprot_; }
+        get { return _inputProtocol; }
       }
+
       public TProtocol OutputProtocol
       {
-        get { return oprot_; }
+        get { return _outputProtocol; }
       }
 
+      public int SeqId
+      {
+        get { return _seqId; }
+      }
 
-      #region " IDisposable Support "
-      private bool _IsDisposed;
+      private bool _isDisposed;
 
-      // IDisposable
       public void Dispose()
       {
         Dispose(true);
@@ -300,3993 +163,3093 @@ namespace Facebook.FB303.Test
 
       protected virtual void Dispose(bool disposing)
       {
-        if (!_IsDisposed)
+        if (!_isDisposed)
         {
           if (disposing)
           {
-            if (iprot_ != null)
+            if (_inputProtocol != null)
             {
-              ((IDisposable)iprot_).Dispose();
+              ((IDisposable)_inputProtocol).Dispose();
             }
-            if (oprot_ != null)
+            if (_outputProtocol != null)
             {
-              ((IDisposable)oprot_).Dispose();
+              ((IDisposable)_outputProtocol).Dispose();
             }
           }
         }
-        _IsDisposed = true;
-      }
-      #endregion
-
-
-      
-      public IAsyncResult Begin_getName(AsyncCallback callback, object state)
-      {
-        return send_getName(callback, state);
+        _isDisposed = true;
       }
 
-      public string End_getName(IAsyncResult asyncResult)
+      public async Task<string> getNameAsync(CancellationToken cancellationToken)
       {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getName();
-      }
-
-      public async Task<string> getNameAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getName", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getNameArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return getName();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Returns a descriptive name of the service
-      /// </summary>
-      public string getName()
-      {
-        var asyncResult = Begin_getName(null, null);
-        return End_getName(asyncResult);
-
-      }
-      public IAsyncResult send_getName(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getName", TMessageType.Call, seqid_));
-        getName_args args = new getName_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_getName()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getName_result result = new getName_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getNameResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getName failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getVersion(AsyncCallback callback, object state)
+      public async Task<string> getVersionAsync(CancellationToken cancellationToken)
       {
-        return send_getVersion(callback, state);
-      }
-
-      public string End_getVersion(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getVersion();
-      }
-
-      public async Task<string> getVersionAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getVersion", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getVersionArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return getVersion();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Returns the version of the service
-      /// </summary>
-      public string getVersion()
-      {
-        var asyncResult = Begin_getVersion(null, null);
-        return End_getVersion(asyncResult);
-
-      }
-      public IAsyncResult send_getVersion(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getVersion", TMessageType.Call, seqid_));
-        getVersion_args args = new getVersion_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_getVersion()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getVersion_result result = new getVersion_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getVersionResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getVersion failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getStatus(AsyncCallback callback, object state)
+      public async Task<fb_status> getStatusAsync(CancellationToken cancellationToken)
       {
-        return send_getStatus(callback, state);
-      }
-
-      public fb_status End_getStatus(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getStatus();
-      }
-
-      public async Task<fb_status> getStatusAsync()
-      {
-        fb_status retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getStatus", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getStatusArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return getStatus();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Gets the status of this service
-      /// </summary>
-      public fb_status getStatus()
-      {
-        var asyncResult = Begin_getStatus(null, null);
-        return End_getStatus(asyncResult);
-
-      }
-      public IAsyncResult send_getStatus(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getStatus", TMessageType.Call, seqid_));
-        getStatus_args args = new getStatus_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public fb_status recv_getStatus()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getStatus_result result = new getStatus_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getStatusResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getStatus failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getStatusDetails(AsyncCallback callback, object state)
+      public async Task<string> getStatusDetailsAsync(CancellationToken cancellationToken)
       {
-        return send_getStatusDetails(callback, state);
-      }
-
-      public string End_getStatusDetails(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getStatusDetails();
-      }
-
-      public async Task<string> getStatusDetailsAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getStatusDetails", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getStatusDetailsArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return getStatusDetails();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// User friendly description of status, such as why the service is in
-      /// the dead or warning state, or what is being started or stopped.
-      /// </summary>
-      public string getStatusDetails()
-      {
-        var asyncResult = Begin_getStatusDetails(null, null);
-        return End_getStatusDetails(asyncResult);
-
-      }
-      public IAsyncResult send_getStatusDetails(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Call, seqid_));
-        getStatusDetails_args args = new getStatusDetails_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_getStatusDetails()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getStatusDetails_result result = new getStatusDetails_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getStatusDetailsResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getStatusDetails failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getCounters(AsyncCallback callback, object state)
+      public async Task<Dictionary<string, long>> getCountersAsync(CancellationToken cancellationToken)
       {
-        return send_getCounters(callback, state);
-      }
-
-      public Dictionary<string, long> End_getCounters(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getCounters();
-      }
-
-      public async Task<Dictionary<string, long>> getCountersAsync()
-      {
-        Dictionary<string, long> retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getCounters", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getCountersArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return getCounters();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Gets the counters for this service
-      /// </summary>
-      public Dictionary<string, long> getCounters()
-      {
-        var asyncResult = Begin_getCounters(null, null);
-        return End_getCounters(asyncResult);
-
-      }
-      public IAsyncResult send_getCounters(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getCounters", TMessageType.Call, seqid_));
-        getCounters_args args = new getCounters_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public Dictionary<string, long> recv_getCounters()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getCounters_result result = new getCounters_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getCountersResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getCounters failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getCounter(AsyncCallback callback, object state, string key)
+      public async Task<long> getCounterAsync(string key, CancellationToken cancellationToken)
       {
-        return send_getCounter(callback, state, key);
-      }
-
-      public long End_getCounter(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getCounter();
-      }
-
-      public async Task<long> getCounterAsync(string key)
-      {
-        long retval;
-        retval = await Task.Run(() =>
-        {
-          return getCounter(key);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Gets the value of a single counter
-      /// </summary>
-      /// <param name="key"></param>
-      public long getCounter(string key)
-      {
-        var asyncResult = Begin_getCounter(null, null, key);
-        return End_getCounter(asyncResult);
-
-      }
-      public IAsyncResult send_getCounter(AsyncCallback callback, object state, string key)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getCounter", TMessageType.Call, seqid_));
-        getCounter_args args = new getCounter_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getCounter", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getCounterArgs();
         args.Key = key;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public long recv_getCounter()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getCounter_result result = new getCounter_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getCounterResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getCounter failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_setOption(AsyncCallback callback, object state, string key, string @value)
+      public async Task setOptionAsync(string key, string @value, CancellationToken cancellationToken)
       {
-        return send_setOption(callback, state, key, @value);
-      }
-
-      public void End_setOption(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_setOption();
-      }
-
-      public async Task setOptionAsync(string key, string @value)
-      {
-        await Task.Run(() =>
-        {
-          setOption(key, value);
-        });
-      }
-
-      /// <summary>
-      /// Sets an option
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="value"></param>
-      public void setOption(string key, string @value)
-      {
-        var asyncResult = Begin_setOption(null, null, key, @value);
-        End_setOption(asyncResult);
-
-      }
-      public IAsyncResult send_setOption(AsyncCallback callback, object state, string key, string @value)
-      {
-        oprot_.WriteMessageBegin(new TMessage("setOption", TMessageType.Call, seqid_));
-        setOption_args args = new setOption_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("setOption", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new setOptionArgs();
         args.Key = key;
         args.Value = @value;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_setOption()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        setOption_result result = new setOption_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new setOptionResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         return;
       }
 
-      
-      public IAsyncResult Begin_getOption(AsyncCallback callback, object state, string key)
+      public async Task<string> getOptionAsync(string key, CancellationToken cancellationToken)
       {
-        return send_getOption(callback, state, key);
-      }
-
-      public string End_getOption(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getOption();
-      }
-
-      public async Task<string> getOptionAsync(string key)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return getOption(key);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Gets an option
-      /// </summary>
-      /// <param name="key"></param>
-      public string getOption(string key)
-      {
-        var asyncResult = Begin_getOption(null, null, key);
-        return End_getOption(asyncResult);
-
-      }
-      public IAsyncResult send_getOption(AsyncCallback callback, object state, string key)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getOption", TMessageType.Call, seqid_));
-        getOption_args args = new getOption_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getOption", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getOptionArgs();
         args.Key = key;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_getOption()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getOption_result result = new getOption_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getOptionResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getOption failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getOptions(AsyncCallback callback, object state)
+      public async Task<Dictionary<string, string>> getOptionsAsync(CancellationToken cancellationToken)
       {
-        return send_getOptions(callback, state);
-      }
-
-      public Dictionary<string, string> End_getOptions(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getOptions();
-      }
-
-      public async Task<Dictionary<string, string>> getOptionsAsync()
-      {
-        Dictionary<string, string> retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getOptions", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getOptionsArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return getOptions();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Gets all options
-      /// </summary>
-      public Dictionary<string, string> getOptions()
-      {
-        var asyncResult = Begin_getOptions(null, null);
-        return End_getOptions(asyncResult);
-
-      }
-      public IAsyncResult send_getOptions(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getOptions", TMessageType.Call, seqid_));
-        getOptions_args args = new getOptions_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public Dictionary<string, string> recv_getOptions()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getOptions_result result = new getOptions_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getOptionsResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getOptions failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec)
+      public async Task<string> getCpuProfileAsync(int profileDurationInSec, CancellationToken cancellationToken)
       {
-        return send_getCpuProfile(callback, state, profileDurationInSec);
-      }
-
-      public string End_getCpuProfile(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_getCpuProfile();
-      }
-
-      public async Task<string> getCpuProfileAsync(int profileDurationInSec)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return getCpuProfile(profileDurationInSec);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Returns a CPU profile over the given time interval (client and server
-      /// must agree on the profile format).
-      /// </summary>
-      /// <param name="profileDurationInSec"></param>
-      public string getCpuProfile(int profileDurationInSec)
-      {
-        var asyncResult = Begin_getCpuProfile(null, null, profileDurationInSec);
-        return End_getCpuProfile(asyncResult);
-
-      }
-      public IAsyncResult send_getCpuProfile(AsyncCallback callback, object state, int profileDurationInSec)
-      {
-        oprot_.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Call, seqid_));
-        getCpuProfile_args args = new getCpuProfile_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("getCpuProfile", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getCpuProfileArgs();
         args.ProfileDurationInSec = profileDurationInSec;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_getCpuProfile()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        getCpuProfile_result result = new getCpuProfile_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getCpuProfileResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "getCpuProfile failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_aliveSince(AsyncCallback callback, object state)
+      public async Task<long> aliveSinceAsync(CancellationToken cancellationToken)
       {
-        return send_aliveSince(callback, state);
-      }
-
-      public long End_aliveSince(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_aliveSince();
-      }
-
-      public async Task<long> aliveSinceAsync()
-      {
-        long retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("aliveSince", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new aliveSinceArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return aliveSince();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Returns the unix time that the server has been running since
-      /// </summary>
-      public long aliveSince()
-      {
-        var asyncResult = Begin_aliveSince(null, null);
-        return End_aliveSince(asyncResult);
-
-      }
-      public IAsyncResult send_aliveSince(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Call, seqid_));
-        aliveSince_args args = new aliveSince_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public long recv_aliveSince()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        aliveSince_result result = new aliveSince_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new aliveSinceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "aliveSince failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_reinitialize(AsyncCallback callback, object state)
+      public async Task reinitializeAsync(CancellationToken cancellationToken)
       {
-        return send_reinitialize(callback, state);
-      }
-
-      public void End_reinitialize(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-      }
-
-      public async Task reinitializeAsync()
-      {
-        await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("reinitialize", TMessageType.Oneway, SeqId), cancellationToken);
+        
+        var args = new reinitializeArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        }
+        public async Task shutdownAsync(CancellationToken cancellationToken)
         {
-          reinitialize();
-        });
-      }
-
-      /// <summary>
-      /// Tell the server to reload its configuration, reopen log files, etc
-      /// </summary>
-      public void reinitialize()
-      {
-        var asyncResult = Begin_reinitialize(null, null);
-
-      }
-      public IAsyncResult send_reinitialize(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("reinitialize", TMessageType.Oneway, seqid_));
-        reinitialize_args args = new reinitialize_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      
-      public IAsyncResult Begin_shutdown(AsyncCallback callback, object state)
-      {
-        return send_shutdown(callback, state);
-      }
-
-      public void End_shutdown(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-      }
-
-      public async Task shutdownAsync()
-      {
-        await Task.Run(() =>
+          await OutputProtocol.WriteMessageBeginAsync(new TMessage("shutdown", TMessageType.Oneway, SeqId), cancellationToken);
+          
+          var args = new shutdownArgs();
+          
+          await args.WriteAsync(OutputProtocol, cancellationToken);
+          await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+          await OutputProtocol.Transport.FlushAsync(cancellationToken);
+          }
+        }
+        public class AsyncProcessor : TAsyncProcessor
         {
-          shutdown();
-        });
-      }
+          private IAsync _iAsync;
 
-      /// <summary>
-      /// Suggest a shutdown to the server
-      /// </summary>
-      public void shutdown()
-      {
-        var asyncResult = Begin_shutdown(null, null);
+          public AsyncProcessor(IAsync iAsync)
+          {
+            if (iAsync == null) throw new ArgumentNullException(nameof(iAsync));
+            _iAsync = iAsync;
+            processMap_["getName"] = getName_ProcessAsync;
+            processMap_["getVersion"] = getVersion_ProcessAsync;
+            processMap_["getStatus"] = getStatus_ProcessAsync;
+            processMap_["getStatusDetails"] = getStatusDetails_ProcessAsync;
+            processMap_["getCounters"] = getCounters_ProcessAsync;
+            processMap_["getCounter"] = getCounter_ProcessAsync;
+            processMap_["setOption"] = setOption_ProcessAsync;
+            processMap_["getOption"] = getOption_ProcessAsync;
+            processMap_["getOptions"] = getOptions_ProcessAsync;
+            processMap_["getCpuProfile"] = getCpuProfile_ProcessAsync;
+            processMap_["aliveSince"] = aliveSince_ProcessAsync;
+            processMap_["reinitialize"] = reinitialize_ProcessAsync;
+            processMap_["shutdown"] = shutdown_ProcessAsync;
+          }
 
-      }
-      public IAsyncResult send_shutdown(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("shutdown", TMessageType.Oneway, seqid_));
-        shutdown_args args = new shutdown_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
+          protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken);
+          protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
 
-    }
-    public class AsyncProcessor : TAsyncProcessor {
-      public AsyncProcessor(IAsync iface)
-      {
-        iface_ = iface;
-        processMap_["getName"] = getName_ProcessAsync;
-        processMap_["getVersion"] = getVersion_ProcessAsync;
-        processMap_["getStatus"] = getStatus_ProcessAsync;
-        processMap_["getStatusDetails"] = getStatusDetails_ProcessAsync;
-        processMap_["getCounters"] = getCounters_ProcessAsync;
-        processMap_["getCounter"] = getCounter_ProcessAsync;
-        processMap_["setOption"] = setOption_ProcessAsync;
-        processMap_["getOption"] = getOption_ProcessAsync;
-        processMap_["getOptions"] = getOptions_ProcessAsync;
-        processMap_["getCpuProfile"] = getCpuProfile_ProcessAsync;
-        processMap_["aliveSince"] = aliveSince_ProcessAsync;
-        processMap_["reinitialize"] = reinitialize_ProcessAsync;
-        processMap_["shutdown"] = shutdown_ProcessAsync;
-      }
-
-      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
-      private IAsync iface_;
-      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
-
-      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
-      {
-        try
-        {
-          TMessage msg = iprot.ReadMessageBegin();
-          ProcessFunction fn;
-          processMap_.TryGetValue(msg.Name, out fn);
-          if (fn == null) {
-            TProtocolUtil.Skip(iprot, TType.Struct);
-            iprot.ReadMessageEnd();
-            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
-            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
-            x.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
+          public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
+          {
+            try
+            {
+              var msg = await iprot.ReadMessageBeginAsync(cancellationToken);
+              ProcessFunction fn;
+              processMap_.TryGetValue(msg.Name, out fn);
+              if (fn == null) {
+                await TProtocolUtil.SkipAsync(iprot, TType.Struct, cancellationToken);
+                await iprot.ReadMessageEndAsync(cancellationToken);
+                var x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+                await oprot.WriteMessageBeginAsync(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID), cancellationToken);
+                await x.WriteAsync(oprot, cancellationToken);
+                await oprot.WriteMessageEndAsync(cancellationToken);
+                await oprot.Transport.FlushAsync(cancellationToken);
+                return true;
+              }
+              await fn(msg.SeqID, iprot, oprot, cancellationToken);
+            }
+            catch (IOException)
+            {
+              return false;
+            }
             return true;
           }
-          await fn(msg.SeqID, iprot, oprot);
-        }
-        catch (IOException)
-        {
-          return false;
-        }
-        return true;
-      }
-
-      public async Task getName_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getName_args args = new getName_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getName_result result = new getName_result();
-        try
-        {
-          result.Success = await iface_.getNameAsync();
-          oprot.WriteMessageBegin(new TMessage("getName", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getName", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getVersion_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getVersion_args args = new getVersion_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getVersion_result result = new getVersion_result();
-        try
-        {
-          result.Success = await iface_.getVersionAsync();
-          oprot.WriteMessageBegin(new TMessage("getVersion", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getVersion", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getStatus_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getStatus_args args = new getStatus_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getStatus_result result = new getStatus_result();
-        try
-        {
-          result.Success = await iface_.getStatusAsync();
-          oprot.WriteMessageBegin(new TMessage("getStatus", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getStatus", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getStatusDetails_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getStatusDetails_args args = new getStatusDetails_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getStatusDetails_result result = new getStatusDetails_result();
-        try
-        {
-          result.Success = await iface_.getStatusDetailsAsync();
-          oprot.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getCounters_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getCounters_args args = new getCounters_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getCounters_result result = new getCounters_result();
-        try
-        {
-          result.Success = await iface_.getCountersAsync();
-          oprot.WriteMessageBegin(new TMessage("getCounters", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getCounters", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getCounter_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getCounter_args args = new getCounter_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getCounter_result result = new getCounter_result();
-        try
-        {
-          result.Success = await iface_.getCounterAsync(args.Key);
-          oprot.WriteMessageBegin(new TMessage("getCounter", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getCounter", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task setOption_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        setOption_args args = new setOption_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        setOption_result result = new setOption_result();
-        try
-        {
-          await iface_.setOptionAsync(args.Key, args.Value);
-          oprot.WriteMessageBegin(new TMessage("setOption", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("setOption", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getOption_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getOption_args args = new getOption_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getOption_result result = new getOption_result();
-        try
-        {
-          result.Success = await iface_.getOptionAsync(args.Key);
-          oprot.WriteMessageBegin(new TMessage("getOption", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getOption", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getOptions_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getOptions_args args = new getOptions_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getOptions_result result = new getOptions_result();
-        try
-        {
-          result.Success = await iface_.getOptionsAsync();
-          oprot.WriteMessageBegin(new TMessage("getOptions", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getOptions", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task getCpuProfile_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getCpuProfile_args args = new getCpuProfile_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getCpuProfile_result result = new getCpuProfile_result();
-        try
-        {
-          result.Success = await iface_.getCpuProfileAsync(args.ProfileDurationInSec);
-          oprot.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task aliveSince_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        aliveSince_args args = new aliveSince_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        aliveSince_result result = new aliveSince_result();
-        try
-        {
-          result.Success = await iface_.aliveSinceAsync();
-          oprot.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task reinitialize_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        reinitialize_args args = new reinitialize_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        try
-        {
-          await iface_.reinitializeAsync();
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-        }
-      }
-
-      public async Task shutdown_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        shutdown_args args = new shutdown_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        try
-        {
-          await iface_.shutdownAsync();
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-        }
-      }
-
-    }
-
-    public class Processor : TProcessor {
-      public Processor(ISync iface)
-      {
-        iface_ = iface;
-        processMap_["getName"] = getName_Process;
-        processMap_["getVersion"] = getVersion_Process;
-        processMap_["getStatus"] = getStatus_Process;
-        processMap_["getStatusDetails"] = getStatusDetails_Process;
-        processMap_["getCounters"] = getCounters_Process;
-        processMap_["getCounter"] = getCounter_Process;
-        processMap_["setOption"] = setOption_Process;
-        processMap_["getOption"] = getOption_Process;
-        processMap_["getOptions"] = getOptions_Process;
-        processMap_["getCpuProfile"] = getCpuProfile_Process;
-        processMap_["aliveSince"] = aliveSince_Process;
-        processMap_["reinitialize"] = reinitialize_Process;
-        processMap_["shutdown"] = shutdown_Process;
-      }
-
-      protected delegate void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
-      private ISync iface_;
-      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
-
-      public bool Process(TProtocol iprot, TProtocol oprot)
-      {
-        try
-        {
-          TMessage msg = iprot.ReadMessageBegin();
-          ProcessFunction fn;
-          processMap_.TryGetValue(msg.Name, out fn);
-          if (fn == null) {
-            TProtocolUtil.Skip(iprot, TType.Struct);
-            iprot.ReadMessageEnd();
-            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
-            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
-            x.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
-            return true;
-          }
-          fn(msg.SeqID, iprot, oprot);
-        }
-        catch (IOException)
-        {
-          return false;
-        }
-        return true;
-      }
-
-      public void getName_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getName_args args = new getName_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getName_result result = new getName_result();
-        try
-        {
-          result.Success = iface_.getName();
-          oprot.WriteMessageBegin(new TMessage("getName", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getName", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getVersion_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getVersion_args args = new getVersion_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getVersion_result result = new getVersion_result();
-        try
-        {
-          result.Success = iface_.getVersion();
-          oprot.WriteMessageBegin(new TMessage("getVersion", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getVersion", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getStatus_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getStatus_args args = new getStatus_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getStatus_result result = new getStatus_result();
-        try
-        {
-          result.Success = iface_.getStatus();
-          oprot.WriteMessageBegin(new TMessage("getStatus", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getStatus", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getStatusDetails_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getStatusDetails_args args = new getStatusDetails_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getStatusDetails_result result = new getStatusDetails_result();
-        try
-        {
-          result.Success = iface_.getStatusDetails();
-          oprot.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getStatusDetails", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getCounters_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getCounters_args args = new getCounters_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getCounters_result result = new getCounters_result();
-        try
-        {
-          result.Success = iface_.getCounters();
-          oprot.WriteMessageBegin(new TMessage("getCounters", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getCounters", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getCounter_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getCounter_args args = new getCounter_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getCounter_result result = new getCounter_result();
-        try
-        {
-          result.Success = iface_.getCounter(args.Key);
-          oprot.WriteMessageBegin(new TMessage("getCounter", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getCounter", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void setOption_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        setOption_args args = new setOption_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        setOption_result result = new setOption_result();
-        try
-        {
-          iface_.setOption(args.Key, args.Value);
-          oprot.WriteMessageBegin(new TMessage("setOption", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("setOption", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getOption_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getOption_args args = new getOption_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getOption_result result = new getOption_result();
-        try
-        {
-          result.Success = iface_.getOption(args.Key);
-          oprot.WriteMessageBegin(new TMessage("getOption", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getOption", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getOptions_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getOptions_args args = new getOptions_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getOptions_result result = new getOptions_result();
-        try
-        {
-          result.Success = iface_.getOptions();
-          oprot.WriteMessageBegin(new TMessage("getOptions", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getOptions", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void getCpuProfile_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        getCpuProfile_args args = new getCpuProfile_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        getCpuProfile_result result = new getCpuProfile_result();
-        try
-        {
-          result.Success = iface_.getCpuProfile(args.ProfileDurationInSec);
-          oprot.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("getCpuProfile", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void aliveSince_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        aliveSince_args args = new aliveSince_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        aliveSince_result result = new aliveSince_result();
-        try
-        {
-          result.Success = iface_.aliveSince();
-          oprot.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("aliveSince", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void reinitialize_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        reinitialize_args args = new reinitialize_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        try
-        {
-          iface_.reinitialize();
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-        }
-      }
-
-      public void shutdown_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        shutdown_args args = new shutdown_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        try
-        {
-          iface_.shutdown();
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-        }
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getName_args : TBase
-    {
-
-      public getName_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getName_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getNameArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getNameResult();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getNameAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getName", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getName", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getName_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getName_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getName_result : TBase
-    {
-      private string _success;
-
-      [DataMember(Order = 0)]
-      public string Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getName_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getVersion_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getVersionArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getVersionResult();
+            try
             {
-              case 0:
-                if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getVersionAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getVersion", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getName_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.String;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
             }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getVersion", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getName_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getVersion_args : TBase
-    {
-
-      public getVersion_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getStatus_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getStatusArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getStatusResult();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getStatusAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getStatus", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getStatus", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getVersion_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getVersion_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getVersion_result : TBase
-    {
-      private string _success;
-
-      [DataMember(Order = 0)]
-      public string Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getVersion_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getStatusDetails_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getStatusDetailsArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getStatusDetailsResult();
+            try
             {
-              case 0:
-                if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getStatusDetailsAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getStatusDetails", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getVersion_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.String;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
             }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getStatusDetails", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getVersion_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getStatus_args : TBase
-    {
-
-      public getStatus_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getCounters_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getCountersArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getCountersResult();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getCountersAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getCounters", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getCounters", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getStatus_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getStatus_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getStatus_result : TBase
-    {
-      private fb_status _success;
-
-      /// <summary>
-      /// 
-      /// <seealso cref="fb_status"/>
-      /// </summary>
-      [DataMember(Order = 0)]
-      public fb_status Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getStatus_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getCounter_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getCounterArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getCounterResult();
+            try
             {
-              case 0:
-                if (field.Type == TType.I32) {
-                  Success = (fb_status)iprot.ReadI32();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getCounterAsync(args.Key, cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getCounter", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getCounter", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getStatus_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            field.Name = "Success";
-            field.Type = TType.I32;
-            field.ID = 0;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32((int)Success);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getStatus_result(");
-        bool __first = true;
-        if (__isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getStatusDetails_args : TBase
-    {
-
-      public getStatusDetails_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task setOption_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new setOptionArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new setOptionResult();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              await _iAsync.setOptionAsync(args.Key, args.Value, cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("setOption", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("setOption", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getStatusDetails_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getStatusDetails_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getStatusDetails_result : TBase
-    {
-      private string _success;
-
-      [DataMember(Order = 0)]
-      public string Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getStatusDetails_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getOption_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getOptionArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getOptionResult();
+            try
             {
-              case 0:
-                if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getOptionAsync(args.Key, cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getOption", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getStatusDetails_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.String;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
             }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getOption", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getStatusDetails_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getCounters_args : TBase
-    {
-
-      public getCounters_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getOptions_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getOptionsArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getOptionsResult();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getOptionsAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getOptions", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getOptions", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getCounters_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getCounters_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getCounters_result : TBase
-    {
-      private Dictionary<string, long> _success;
-
-      [DataMember(Order = 0)]
-      public Dictionary<string, long> Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getCounters_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task getCpuProfile_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            var args = new getCpuProfileArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new getCpuProfileResult();
+            try
             {
-              case 0:
-                if (field.Type == TType.Map) {
-                  {
-                    Success = new Dictionary<string, long>();
-                    TMap _map0 = iprot.ReadMapBegin();
-                    for( int _i1 = 0; _i1 < _map0.Count; ++_i1)
-                    {
-                      string _key2;
-                      long _val3;
-                      _key2 = iprot.ReadString();
-                      _val3 = iprot.ReadI64();
-                      Success[_key2] = _val3;
-                    }
-                    iprot.ReadMapEnd();
-                  }
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              result.Success = await _iAsync.getCpuProfileAsync(args.ProfileDurationInSec, cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("getCpuProfile", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("getCpuProfile", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getCounters_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          public async Task aliveSince_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
+          {
+            var args = new aliveSinceArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var result = new aliveSinceResult();
+            try
+            {
+              result.Success = await _iAsync.aliveSinceAsync(cancellationToken);
+              await oprot.WriteMessageBeginAsync(new TMessage("aliveSince", TMessageType.Reply, seqid), cancellationToken); 
+              await result.WriteAsync(oprot, cancellationToken);
+            }
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+              var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+              await oprot.WriteMessageBeginAsync(new TMessage("aliveSince", TMessageType.Exception, seqid), cancellationToken);
+              await x.WriteAsync(oprot, cancellationToken);
+            }
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
+          }
 
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.Map;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
+          public async Task reinitialize_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
+          {
+            var args = new reinitializeArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            try
+            {
+              await _iAsync.reinitializeAsync(cancellationToken);
+            }
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+            }
+          }
+
+          public async Task shutdown_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
+          {
+            var args = new shutdownArgs();
+            await args.ReadAsync(iprot, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            try
+            {
+              await _iAsync.shutdownAsync(cancellationToken);
+            }
+            catch (TTransportException)
+            {
+              throw;
+            }
+            catch (Exception ex)
+            {
+              Console.Error.WriteLine("Error occurred in processor:");
+              Console.Error.WriteLine(ex.ToString());
+            }
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getNameArgs : TBase
+        {
+
+          public getNameArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
               {
-                oprot.WriteMapBegin(new TMap(TType.String, TType.I64, Success.Count));
-                foreach (string _iter4 in Success.Keys)
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
                 {
-                  oprot.WriteString(_iter4);
-                  oprot.WriteI64(Success[_iter4]);
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
                 }
-                oprot.WriteMapEnd();
+                await iprot.ReadFieldEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await iprot.ReadStructEndAsync(cancellationToken);
             }
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getCounters_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getCounter_args : TBase
-    {
-      private string _key;
-
-      [DataMember(Order = 0)]
-      public string Key
-      {
-        get
-        {
-          return _key;
-        }
-        set
-        {
-          __isset.key = true;
-          this._key = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool key;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeKey()
-      {
-        return __isset.key;
-      }
-
-      #endregion XmlSerializer support
-
-      public getCounter_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            finally
             {
-              case 1:
-                if (field.Type == TType.String) {
-                  Key = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              iprot.DecrementRecursionDepth();
             }
-            iprot.ReadFieldEnd();
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getCounter_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-          if (Key != null && __isset.key) {
-            field.Name = "key";
-            field.Type = TType.String;
-            field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteString(Key);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getCounter_args(");
-        bool __first = true;
-        if (Key != null && __isset.key) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Key: ");
-          __sb.Append(Key);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getCounter_result : TBase
-    {
-      private long _success;
-
-      [DataMember(Order = 0)]
-      public long Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getCounter_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
             {
-              case 0:
-                if (field.Type == TType.I64) {
-                  Success = iprot.ReadI64();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              var struc = new TStruct("getName_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
             }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getCounter_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            field.Name = "Success";
-            field.Type = TType.I64;
-            field.ID = 0;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI64(Success);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getCounter_result(");
-        bool __first = true;
-        if (__isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class setOption_args : TBase
-    {
-      private string _key;
-      private string _value;
-
-      [DataMember(Order = 0)]
-      public string Key
-      {
-        get
-        {
-          return _key;
-        }
-        set
-        {
-          __isset.key = true;
-          this._key = value;
-        }
-      }
-
-      [DataMember(Order = 0)]
-      public string Value
-      {
-        get
-        {
-          return _value;
-        }
-        set
-        {
-          __isset.@value = true;
-          this._value = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool key;
-        [DataMember]
-        public bool @value;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeKey()
-      {
-        return __isset.key;
-      }
-
-      public bool ShouldSerializeValue()
-      {
-        return __isset.@value;
-      }
-
-      #endregion XmlSerializer support
-
-      public setOption_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            finally
             {
-              case 1:
-                if (field.Type == TType.String) {
-                  Key = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              case 2:
-                if (field.Type == TType.String) {
-                  Value = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              oprot.DecrementRecursionDepth();
             }
-            iprot.ReadFieldEnd();
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("setOption_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-          if (Key != null && __isset.key) {
-            field.Name = "key";
-            field.Type = TType.String;
-            field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteString(Key);
-            oprot.WriteFieldEnd();
+          public override string ToString() {
+            var sb = new StringBuilder("getName_args(");
+            sb.Append(")");
+            return sb.ToString();
           }
-          if (Value != null && __isset.@value) {
-            field.Name = "value";
-            field.Type = TType.String;
-            field.ID = 2;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteString(Value);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+
         }
-        finally
+
+
+        [DataContract(Namespace="")]
+        public partial class getNameResult : TBase
         {
-          oprot.DecrementRecursionDepth();
-        }
-      }
+          private string _success;
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("setOption_args(");
-        bool __first = true;
-        if (Key != null && __isset.key) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Key: ");
-          __sb.Append(Key);
-        }
-        if (Value != null && __isset.@value) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Value: ");
-          __sb.Append(Value);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class setOption_result : TBase
-    {
-
-      public setOption_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          [DataMember(Order = 0)]
+          public string Success
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            get
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              return _success;
             }
-            iprot.ReadFieldEnd();
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("setOption_result");
-          oprot.WriteStructBegin(struc);
-
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("setOption_result(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getOption_args : TBase
-    {
-      private string _key;
-
-      [DataMember(Order = 0)]
-      public string Key
-      {
-        get
-        {
-          return _key;
-        }
-        set
-        {
-          __isset.key = true;
-          this._key = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool key;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeKey()
-      {
-        return __isset.key;
-      }
-
-      #endregion XmlSerializer support
-
-      public getOption_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
-            {
-              case 1:
-                if (field.Type == TType.String) {
-                  Key = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
-            }
-            iprot.ReadFieldEnd();
+            [DataMember]
+            public bool success;
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getOption_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-          if (Key != null && __isset.key) {
-            field.Name = "key";
-            field.Type = TType.String;
-            field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteString(Key);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
+          #region XmlSerializer support
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getOption_args(");
-        bool __first = true;
-        if (Key != null && __isset.key) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Key: ");
-          __sb.Append(Key);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getOption_result : TBase
-    {
-      private string _success;
-
-      [DataMember(Order = 0)]
-      public string Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getOption_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public bool ShouldSerializeSuccess()
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
-            {
-              case 0:
-                if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
-            }
-            iprot.ReadFieldEnd();
+            return __isset.success;
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getOption_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          #endregion XmlSerializer support
 
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.String;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
-            }
+          public getNameResult() {
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getOption_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getOptions_args : TBase
-    {
-
-      public getOptions_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
           {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            iprot.IncrementRecursionDepth();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
-            }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getOptions_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getOptions_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getOptions_result : TBase
-    {
-      private Dictionary<string, string> _success;
-
-      [DataMember(Order = 0)]
-      public Dictionary<string, string> Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getOptions_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
-            {
-              case 0:
-                if (field.Type == TType.Map) {
-                  {
-                    Success = new Dictionary<string, string>();
-                    TMap _map5 = iprot.ReadMapBegin();
-                    for( int _i6 = 0; _i6 < _map5.Count; ++_i6)
-                    {
-                      string _key7;
-                      string _val8;
-                      _key7 = iprot.ReadString();
-                      _val8 = iprot.ReadString();
-                      Success[_key7] = _val8;
-                    }
-                    iprot.ReadMapEnd();
-                  }
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
-                }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
-            }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getOptions_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.Map;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
               {
-                oprot.WriteMapBegin(new TMap(TType.String, TType.String, Success.Count));
-                foreach (string _iter9 in Success.Keys)
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
                 {
-                  oprot.WriteString(_iter9);
-                  oprot.WriteString(Success[_iter9]);
+                  case 0:
+                    if (field.Type == TType.String) {
+                      Success = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
                 }
-                oprot.WriteMapEnd();
+                await iprot.ReadFieldEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getOptions_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getCpuProfile_args : TBase
-    {
-      private int _profileDurationInSec;
-
-      [DataMember(Order = 0)]
-      public int ProfileDurationInSec
-      {
-        get
-        {
-          return _profileDurationInSec;
-        }
-        set
-        {
-          __isset.profileDurationInSec = true;
-          this._profileDurationInSec = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool profileDurationInSec;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeProfileDurationInSec()
-      {
-        return __isset.profileDurationInSec;
-      }
-
-      #endregion XmlSerializer support
-
-      public getCpuProfile_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
             {
-              case 1:
-                if (field.Type == TType.I32) {
-                  ProfileDurationInSec = iprot.ReadI32();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+              var struc = new TStruct("getName_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.String;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  await oprot.WriteStringAsync(Success, cancellationToken);
+                  await oprot.WriteFieldEndAsync(cancellationToken);
                 }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
             }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getCpuProfile_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-          if (__isset.profileDurationInSec) {
-            field.Name = "profileDurationInSec";
-            field.Type = TType.I32;
-            field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32(ProfileDurationInSec);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getCpuProfile_args(");
-        bool __first = true;
-        if (__isset.profileDurationInSec) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("ProfileDurationInSec: ");
-          __sb.Append(ProfileDurationInSec);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class getCpuProfile_result : TBase
-    {
-      private string _success;
-
-      [DataMember(Order = 0)]
-      public string Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public getCpuProfile_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            finally
             {
-              case 0:
-                if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getName_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getVersionArgs : TBase
+        {
+
+          public getVersionArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
                 }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
-            }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("getCpuProfile_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            if (Success != null) {
-              field.Name = "Success";
-              field.Type = TType.String;
-              field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
-            }
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("getCpuProfile_result(");
-        bool __first = true;
-        if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class aliveSince_args : TBase
-    {
-
-      public aliveSince_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
-            {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
-            }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("aliveSince_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("aliveSince_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class aliveSince_result : TBase
-    {
-      private long _success;
-
-      [DataMember(Order = 0)]
-      public long Success
-      {
-        get
-        {
-          return _success;
-        }
-        set
-        {
-          __isset.success = true;
-          this._success = value;
-        }
-      }
-
-
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
-      public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
-      [DataContract]
-      public struct Isset {
-        [DataMember]
-        public bool success;
-      }
-
-      #region XmlSerializer support
-
-      public bool ShouldSerializeSuccess()
-      {
-        return __isset.success;
-      }
-
-      #endregion XmlSerializer support
-
-      public aliveSince_result() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
-            {
-              case 0:
-                if (field.Type == TType.I64) {
-                  Success = iprot.ReadI64();
-                } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
                 }
-                break;
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
             }
-            iprot.ReadFieldEnd();
-          }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
-
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("aliveSince_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
-
-          if (this.__isset.success) {
-            field.Name = "Success";
-            field.Type = TType.I64;
-            field.ID = 0;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI64(Success);
-            oprot.WriteFieldEnd();
-          }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("aliveSince_result(");
-        bool __first = true;
-        if (__isset.success) {
-          if(!__first) { __sb.Append(", "); }
-          __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
-        }
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class reinitialize_args : TBase
-    {
-
-      public reinitialize_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+            finally
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              iprot.DecrementRecursionDepth();
             }
-            iprot.ReadFieldEnd();
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("reinitialize_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
-
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("reinitialize_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
-
-    }
-
-
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    [DataContract(Namespace="")]
-    public partial class shutdown_args : TBase
-    {
-
-      public shutdown_args() {
-      }
-
-      public void Read (TProtocol iprot)
-      {
-        iprot.IncrementRecursionDepth();
-        try
-        {
-          TField field;
-          iprot.ReadStructBegin();
-          while (true)
-          {
-            field = iprot.ReadFieldBegin();
-            if (field.Type == TType.Stop) { 
-              break;
-            }
-            switch (field.ID)
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
             {
-              default: 
-                TProtocolUtil.Skip(iprot, field.Type);
-                break;
+              var struc = new TStruct("getVersion_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
             }
-            iprot.ReadFieldEnd();
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
           }
-          iprot.ReadStructEnd();
-        }
-        finally
-        {
-          iprot.DecrementRecursionDepth();
-        }
-      }
 
-      public void Write(TProtocol oprot) {
-        oprot.IncrementRecursionDepth();
-        try
-        {
-          TStruct struc = new TStruct("shutdown_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
-        }
-        finally
-        {
-          oprot.DecrementRecursionDepth();
-        }
-      }
+          public override string ToString() {
+            var sb = new StringBuilder("getVersion_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
 
-      public override string ToString() {
-        StringBuilder __sb = new StringBuilder("shutdown_args(");
-        __sb.Append(")");
-        return __sb.ToString();
-      }
+        }
 
+
+        [DataContract(Namespace="")]
+        public partial class getVersionResult : TBase
+        {
+          private string _success;
+
+          [DataMember(Order = 0)]
+          public string Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getVersionResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.String) {
+                      Success = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getVersion_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.String;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  await oprot.WriteStringAsync(Success, cancellationToken);
+                  await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getVersion_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getStatusArgs : TBase
+        {
+
+          public getStatusArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getStatus_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getStatus_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getStatusResult : TBase
+        {
+          private fb_status _success;
+
+          /// <summary>
+          /// 
+          /// <seealso cref="fb_status"/>
+          /// </summary>
+          [DataMember(Order = 0)]
+          public fb_status Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getStatusResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.I32) {
+                      Success = (fb_status)await iprot.ReadI32Async(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getStatus_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                field.Name = "Success";
+                field.Type = TType.I32;
+                field.ID = 0;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteI32Async((int)Success, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getStatus_result(");
+            bool __first = true;
+            if (__isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getStatusDetailsArgs : TBase
+        {
+
+          public getStatusDetailsArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getStatusDetails_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getStatusDetails_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getStatusDetailsResult : TBase
+        {
+          private string _success;
+
+          [DataMember(Order = 0)]
+          public string Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getStatusDetailsResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.String) {
+                      Success = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getStatusDetails_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.String;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  await oprot.WriteStringAsync(Success, cancellationToken);
+                  await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getStatusDetails_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getCountersArgs : TBase
+        {
+
+          public getCountersArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getCounters_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getCounters_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getCountersResult : TBase
+        {
+          private Dictionary<string, long> _success;
+
+          [DataMember(Order = 0)]
+          public Dictionary<string, long> Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getCountersResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.Map) {
+                      {
+                        Success = new Dictionary<string, long>();
+                        TMap _map0 = await iprot.ReadMapBeginAsync(cancellationToken);
+                        for(int _i1 = 0; _i1 < _map0.Count; ++_i1)
+                        {
+                          string _key2;
+                          long _val3;
+                          _key2 = await iprot.ReadStringAsync(cancellationToken);
+                          _val3 = await iprot.ReadI64Async(cancellationToken);
+                          Success[_key2] = _val3;
+                        }
+                        await iprot.ReadMapEndAsync(cancellationToken);
+                      }
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getCounters_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.Map;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  {
+                    await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.I64, Success.Count), cancellationToken);
+                    foreach (string _iter4 in Success.Keys)
+                    {
+                      await oprot.WriteStringAsync(_iter4, cancellationToken);
+                      await oprot.WriteI64Async(Success[_iter4], cancellationToken);
+                    }
+                    await oprot.WriteMapEndAsync(cancellationToken);
+                  }
+                  await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getCounters_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getCounterArgs : TBase
+        {
+          private string _key;
+
+          [DataMember(Order = 0)]
+          public string Key
+          {
+            get
+            {
+              return _key;
+            }
+            set
+            {
+              __isset.key = true;
+              this._key = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool key;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeKey()
+          {
+            return __isset.key;
+          }
+
+          #endregion XmlSerializer support
+
+          public getCounterArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 1:
+                    if (field.Type == TType.String) {
+                      Key = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getCounter_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+              if (Key != null && __isset.key) {
+                field.Name = "key";
+                field.Type = TType.String;
+                field.ID = 1;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteStringAsync(Key, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getCounter_args(");
+            bool __first = true;
+            if (Key != null && __isset.key) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Key: ");
+              sb.Append(Key);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getCounterResult : TBase
+        {
+          private long _success;
+
+          [DataMember(Order = 0)]
+          public long Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getCounterResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.I64) {
+                      Success = await iprot.ReadI64Async(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getCounter_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                field.Name = "Success";
+                field.Type = TType.I64;
+                field.ID = 0;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteI64Async(Success, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getCounter_result(");
+            bool __first = true;
+            if (__isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class setOptionArgs : TBase
+        {
+          private string _key;
+          private string _value;
+
+          [DataMember(Order = 0)]
+          public string Key
+          {
+            get
+            {
+              return _key;
+            }
+            set
+            {
+              __isset.key = true;
+              this._key = value;
+            }
+          }
+
+          [DataMember(Order = 0)]
+          public string Value
+          {
+            get
+            {
+              return _value;
+            }
+            set
+            {
+              __isset.@value = true;
+              this._value = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool key;
+            [DataMember]
+            public bool @value;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeKey()
+          {
+            return __isset.key;
+          }
+
+          public bool ShouldSerializeValue()
+          {
+            return __isset.@value;
+          }
+
+          #endregion XmlSerializer support
+
+          public setOptionArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 1:
+                    if (field.Type == TType.String) {
+                      Key = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  case 2:
+                    if (field.Type == TType.String) {
+                      Value = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("setOption_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+              if (Key != null && __isset.key) {
+                field.Name = "key";
+                field.Type = TType.String;
+                field.ID = 1;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteStringAsync(Key, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              if (Value != null && __isset.@value) {
+                field.Name = "value";
+                field.Type = TType.String;
+                field.ID = 2;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteStringAsync(Value, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("setOption_args(");
+            bool __first = true;
+            if (Key != null && __isset.key) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Key: ");
+              sb.Append(Key);
+            }
+            if (Value != null && __isset.@value) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Value: ");
+              sb.Append(Value);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class setOptionResult : TBase
+        {
+
+          public setOptionResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("setOption_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("setOption_result(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getOptionArgs : TBase
+        {
+          private string _key;
+
+          [DataMember(Order = 0)]
+          public string Key
+          {
+            get
+            {
+              return _key;
+            }
+            set
+            {
+              __isset.key = true;
+              this._key = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool key;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeKey()
+          {
+            return __isset.key;
+          }
+
+          #endregion XmlSerializer support
+
+          public getOptionArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 1:
+                    if (field.Type == TType.String) {
+                      Key = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getOption_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+              if (Key != null && __isset.key) {
+                field.Name = "key";
+                field.Type = TType.String;
+                field.ID = 1;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteStringAsync(Key, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getOption_args(");
+            bool __first = true;
+            if (Key != null && __isset.key) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Key: ");
+              sb.Append(Key);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getOptionResult : TBase
+        {
+          private string _success;
+
+          [DataMember(Order = 0)]
+          public string Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getOptionResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.String) {
+                      Success = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getOption_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.String;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  await oprot.WriteStringAsync(Success, cancellationToken);
+                  await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getOption_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getOptionsArgs : TBase
+        {
+
+          public getOptionsArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getOptions_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getOptions_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getOptionsResult : TBase
+        {
+          private Dictionary<string, string> _success;
+
+          [DataMember(Order = 0)]
+          public Dictionary<string, string> Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getOptionsResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.Map) {
+                      {
+                        Success = new Dictionary<string, string>();
+                        TMap _map5 = await iprot.ReadMapBeginAsync(cancellationToken);
+                        for(int _i6 = 0; _i6 < _map5.Count; ++_i6)
+                        {
+                          string _key7;
+                          string _val8;
+                          _key7 = await iprot.ReadStringAsync(cancellationToken);
+                          _val8 = await iprot.ReadStringAsync(cancellationToken);
+                          Success[_key7] = _val8;
+                        }
+                        await iprot.ReadMapEndAsync(cancellationToken);
+                      }
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getOptions_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.Map;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  {
+                    await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Success.Count), cancellationToken);
+                    foreach (string _iter9 in Success.Keys)
+                    {
+                      await oprot.WriteStringAsync(_iter9, cancellationToken);
+                      await oprot.WriteStringAsync(Success[_iter9], cancellationToken);
+                    }
+                    await oprot.WriteMapEndAsync(cancellationToken);
+                  }
+                  await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getOptions_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getCpuProfileArgs : TBase
+        {
+          private int _profileDurationInSec;
+
+          [DataMember(Order = 0)]
+          public int ProfileDurationInSec
+          {
+            get
+            {
+              return _profileDurationInSec;
+            }
+            set
+            {
+              __isset.profileDurationInSec = true;
+              this._profileDurationInSec = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool profileDurationInSec;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeProfileDurationInSec()
+          {
+            return __isset.profileDurationInSec;
+          }
+
+          #endregion XmlSerializer support
+
+          public getCpuProfileArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 1:
+                    if (field.Type == TType.I32) {
+                      ProfileDurationInSec = await iprot.ReadI32Async(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getCpuProfile_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+              if (__isset.profileDurationInSec) {
+                field.Name = "profileDurationInSec";
+                field.Type = TType.I32;
+                field.ID = 1;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteI32Async(ProfileDurationInSec, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getCpuProfile_args(");
+            bool __first = true;
+            if (__isset.profileDurationInSec) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("ProfileDurationInSec: ");
+              sb.Append(ProfileDurationInSec);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class getCpuProfileResult : TBase
+        {
+          private string _success;
+
+          [DataMember(Order = 0)]
+          public string Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public getCpuProfileResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.String) {
+                      Success = await iprot.ReadStringAsync(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("getCpuProfile_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                if (Success != null) {
+                  field.Name = "Success";
+                  field.Type = TType.String;
+                  field.ID = 0;
+                  await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                  await oprot.WriteStringAsync(Success, cancellationToken);
+                  await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("getCpuProfile_result(");
+            bool __first = true;
+            if (Success != null && __isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class aliveSinceArgs : TBase
+        {
+
+          public aliveSinceArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("aliveSince_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("aliveSince_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class aliveSinceResult : TBase
+        {
+          private long _success;
+
+          [DataMember(Order = 0)]
+          public long Success
+          {
+            get
+            {
+              return _success;
+            }
+            set
+            {
+              __isset.success = true;
+              this._success = value;
+            }
+          }
+
+
+          [DataMember(Order = 1)]
+          public Isset __isset;
+          [DataContract]
+          public struct Isset
+          {
+            [DataMember]
+            public bool success;
+          }
+
+          #region XmlSerializer support
+
+          public bool ShouldSerializeSuccess()
+          {
+            return __isset.success;
+          }
+
+          #endregion XmlSerializer support
+
+          public aliveSinceResult() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  case 0:
+                    if (field.Type == TType.I64) {
+                      Success = await iprot.ReadI64Async(cancellationToken);
+                    } else { 
+                     await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    }
+                    break;
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("aliveSince_result");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              var field = new TField();
+
+              if (this.__isset.success) {
+                field.Name = "Success";
+                field.Type = TType.I64;
+                field.ID = 0;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteI64Async(Success, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+              }
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("aliveSince_result(");
+            bool __first = true;
+            if (__isset.success) {
+              if(!__first) { sb.Append(", "); }
+              __first = false;
+              sb.Append("Success: ");
+              sb.Append(Success);
+            }
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class reinitializeArgs : TBase
+        {
+
+          public reinitializeArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("reinitialize_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("reinitialize_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+
+        [DataContract(Namespace="")]
+        public partial class shutdownArgs : TBase
+        {
+
+          public shutdownArgs() {
+          }
+
+          public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+          {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+              TField field;
+              await iprot.ReadStructBeginAsync(cancellationToken);
+              while (true)
+              {
+                field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop) { 
+                  break;
+                }
+                switch (field.ID)
+                {
+                  default: 
+                    await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                    break;
+                }
+                await iprot.ReadFieldEndAsync(cancellationToken);
+              }
+              await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              iprot.DecrementRecursionDepth();
+            }
+          }
+
+          public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+              var struc = new TStruct("shutdown_args");
+              await oprot.WriteStructBeginAsync(struc, cancellationToken);
+              await oprot.WriteFieldStopAsync(cancellationToken);
+              await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+              oprot.DecrementRecursionDepth();
+            }
+          }
+
+          public override string ToString() {
+            var sb = new StringBuilder("shutdown_args(");
+            sb.Append(")");
+            return sb.ToString();
+          }
+
+        }
+
+      }
     }
-
-  }
-}

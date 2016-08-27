@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Thrift.Samples
 {
@@ -26,9 +26,6 @@ namespace Thrift.Samples
   /// <summary>
   /// Structs can also be exceptions, if they are nasty.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   public partial class InvalidOperation : TException, TBase
   {
     private int _WhatOp;
@@ -63,14 +60,11 @@ namespace Thrift.Samples
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool WhatOp;
       [DataMember]
@@ -94,16 +88,16 @@ namespace Thrift.Samples
     public InvalidOperation() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -111,25 +105,25 @@ namespace Thrift.Samples
           {
             case 1:
               if (field.Type == TType.I32) {
-                WhatOp = iprot.ReadI32();
+                WhatOp = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Why = iprot.ReadString();
+                Why = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -137,31 +131,31 @@ namespace Thrift.Samples
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("InvalidOperation");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("InvalidOperation");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (__isset.WhatOp) {
           field.Name = "WhatOp";
           field.Type = TType.I32;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(WhatOp);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(WhatOp, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Why != null && __isset.Why) {
           field.Name = "Why";
           field.Type = TType.String;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Why);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Why, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -170,30 +164,27 @@ namespace Thrift.Samples
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("InvalidOperation(");
+      var sb = new StringBuilder("InvalidOperation(");
       bool __first = true;
       if (__isset.WhatOp) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("WhatOp: ");
-        __sb.Append(WhatOp);
+        sb.Append("WhatOp: ");
+        sb.Append(WhatOp);
       }
       if (Why != null && __isset.Why) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Why: ");
-        __sb.Append(Why);
+        sb.Append("Why: ");
+        sb.Append(Why);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }
 
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract]
   public partial class InvalidOperationFault
   {

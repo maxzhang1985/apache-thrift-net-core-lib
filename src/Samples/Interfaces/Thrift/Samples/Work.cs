@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Thrift.Samples
 {
@@ -32,9 +32,6 @@ namespace Thrift.Samples
   /// in the serialized output if they aren't set.  Note that this requires some
   /// manual management in some languages.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class Work : TBase
   {
@@ -104,14 +101,11 @@ namespace Thrift.Samples
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool Num1;
       [DataMember]
@@ -151,16 +145,16 @@ namespace Thrift.Samples
       this.__isset.Num1 = true;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -168,39 +162,39 @@ namespace Thrift.Samples
           {
             case 1:
               if (field.Type == TType.I32) {
-                Num1 = iprot.ReadI32();
+                Num1 = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.I32) {
-                Num2 = iprot.ReadI32();
+                Num2 = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.I32) {
-                Op = (Operation)iprot.ReadI32();
+                Op = (Operation)await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.String) {
-                Comment = iprot.ReadString();
+                Comment = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -208,47 +202,47 @@ namespace Thrift.Samples
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("Work");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("Work");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (__isset.Num1) {
           field.Name = "Num1";
           field.Type = TType.I32;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Num1);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Num1, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.Num2) {
           field.Name = "Num2";
           field.Type = TType.I32;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Num2);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Num2, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.Op) {
           field.Name = "Op";
           field.Type = TType.I32;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Op);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Op, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Comment != null && __isset.Comment) {
           field.Name = "Comment";
           field.Type = TType.String;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Comment);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Comment, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -257,34 +251,34 @@ namespace Thrift.Samples
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("Work(");
+      var sb = new StringBuilder("Work(");
       bool __first = true;
       if (__isset.Num1) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Num1: ");
-        __sb.Append(Num1);
+        sb.Append("Num1: ");
+        sb.Append(Num1);
       }
       if (__isset.Num2) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Num2: ");
-        __sb.Append(Num2);
+        sb.Append("Num2: ");
+        sb.Append(Num2);
       }
       if (__isset.Op) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Op: ");
-        __sb.Append(Op);
+        sb.Append("Op: ");
+        sb.Append(Op);
       }
       if (Comment != null && __isset.Comment) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Comment: ");
-        __sb.Append(Comment);
+        sb.Append("Comment: ");
+        sb.Append(Comment);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

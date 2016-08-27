@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class GuessProtocolStruct : TBase
   {
@@ -46,14 +43,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool map_field;
     }
@@ -70,16 +64,16 @@ namespace ThriftAsync.Test
     public GuessProtocolStruct() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -89,28 +83,28 @@ namespace ThriftAsync.Test
               if (field.Type == TType.Map) {
                 {
                   Map_field = new Dictionary<string, string>();
-                  TMap _map65 = iprot.ReadMapBegin();
-                  for( int _i66 = 0; _i66 < _map65.Count; ++_i66)
+                  TMap _map65 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i66 = 0; _i66 < _map65.Count; ++_i66)
                   {
                     string _key67;
                     string _val68;
-                    _key67 = iprot.ReadString();
-                    _val68 = iprot.ReadString();
+                    _key67 = await iprot.ReadStringAsync(cancellationToken);
+                    _val68 = await iprot.ReadStringAsync(cancellationToken);
                     Map_field[_key67] = _val68;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -118,31 +112,31 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("GuessProtocolStruct");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("GuessProtocolStruct");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Map_field != null && __isset.map_field) {
           field.Name = "map_field";
           field.Type = TType.Map;
           field.ID = 7;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteMapBegin(new TMap(TType.String, TType.String, Map_field.Count));
+            await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Map_field.Count), cancellationToken);
             foreach (string _iter69 in Map_field.Keys)
             {
-              oprot.WriteString(_iter69);
-              oprot.WriteString(Map_field[_iter69]);
+              await oprot.WriteStringAsync(_iter69, cancellationToken);
+              await oprot.WriteStringAsync(Map_field[_iter69], cancellationToken);
             }
-            oprot.WriteMapEnd();
+            await oprot.WriteMapEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -151,16 +145,16 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("GuessProtocolStruct(");
+      var sb = new StringBuilder("GuessProtocolStruct(");
       bool __first = true;
       if (Map_field != null && __isset.map_field) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Map_field: ");
-        __sb.Append(Map_field);
+        sb.Append("Map_field: ");
+        sb.Append(Map_field);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

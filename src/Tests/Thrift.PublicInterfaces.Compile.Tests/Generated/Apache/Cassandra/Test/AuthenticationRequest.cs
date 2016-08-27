@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -26,9 +26,6 @@ namespace Apache.Cassandra.Test
   /// <summary>
   /// Authentication requests can contain any data, dependent on the IAuthenticator used
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class AuthenticationRequest : TBase
   {
@@ -43,17 +40,17 @@ namespace Apache.Cassandra.Test
       this.Credentials = credentials;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_credentials = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -63,29 +60,29 @@ namespace Apache.Cassandra.Test
               if (field.Type == TType.Map) {
                 {
                   Credentials = new Dictionary<string, string>();
-                  TMap _map32 = iprot.ReadMapBegin();
-                  for( int _i33 = 0; _i33 < _map32.Count; ++_i33)
+                  TMap _map32 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i33 = 0; _i33 < _map32.Count; ++_i33)
                   {
                     string _key34;
                     string _val35;
-                    _key34 = iprot.ReadString();
-                    _val35 = iprot.ReadString();
+                    _key34 = await iprot.ReadStringAsync(cancellationToken);
+                    _val35 = await iprot.ReadStringAsync(cancellationToken);
                     Credentials[_key34] = _val35;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
                 isset_credentials = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_credentials)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -95,29 +92,29 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("AuthenticationRequest");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("AuthenticationRequest");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "credentials";
         field.Type = TType.Map;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteMapBegin(new TMap(TType.String, TType.String, Credentials.Count));
+          await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Credentials.Count), cancellationToken);
           foreach (string _iter36 in Credentials.Keys)
           {
-            oprot.WriteString(_iter36);
-            oprot.WriteString(Credentials[_iter36]);
+            await oprot.WriteStringAsync(_iter36, cancellationToken);
+            await oprot.WriteStringAsync(Credentials[_iter36], cancellationToken);
           }
-          oprot.WriteMapEnd();
+          await oprot.WriteMapEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -126,11 +123,11 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("AuthenticationRequest(");
-      __sb.Append(", Credentials: ");
-      __sb.Append(Credentials);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("AuthenticationRequest(");
+      sb.Append(", Credentials: ");
+      sb.Append(Credentials);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

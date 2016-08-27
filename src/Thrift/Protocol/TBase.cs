@@ -17,14 +17,14 @@
  * under the License.
  */
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public interface TBase : TAbstractBase
     {
-        ///
-        /// Reads the TObject from the given input protocol.
-        ///
-        void Read(TProtocol tProtocol);
+        Task ReadAsync(TProtocol tProtocol, CancellationToken cancellationToken);
     }
 }

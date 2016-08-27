@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class ListTypeVersioningV1 : TBase
   {
@@ -61,14 +58,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool myints;
       [DataMember]
@@ -92,16 +86,16 @@ namespace ThriftAsync.Test
     public ListTypeVersioningV1() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -111,33 +105,33 @@ namespace ThriftAsync.Test
               if (field.Type == TType.List) {
                 {
                   Myints = new List<int>();
-                  TList _list57 = iprot.ReadListBegin();
-                  for( int _i58 = 0; _i58 < _list57.Count; ++_i58)
+                  TList _list57 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i58 = 0; _i58 < _list57.Count; ++_i58)
                   {
                     int _elem59;
-                    _elem59 = iprot.ReadI32();
+                    _elem59 = await iprot.ReadI32Async(cancellationToken);
                     Myints.Add(_elem59);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Hello = iprot.ReadString();
+                Hello = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -145,38 +139,38 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("ListTypeVersioningV1");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("ListTypeVersioningV1");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Myints != null && __isset.myints) {
           field.Name = "myints";
           field.Type = TType.List;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.I32, Myints.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.I32, Myints.Count), cancellationToken);
             foreach (int _iter60 in Myints)
             {
-              oprot.WriteI32(_iter60);
+              await oprot.WriteI32Async(_iter60, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Hello != null && __isset.hello) {
           field.Name = "hello";
           field.Type = TType.String;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Hello);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Hello, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -185,22 +179,22 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("ListTypeVersioningV1(");
+      var sb = new StringBuilder("ListTypeVersioningV1(");
       bool __first = true;
       if (Myints != null && __isset.myints) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Myints: ");
-        __sb.Append(Myints);
+        sb.Append("Myints: ");
+        sb.Append(Myints);
       }
       if (Hello != null && __isset.hello) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Hello: ");
-        __sb.Append(Hello);
+        sb.Append("Hello: ");
+        sb.Append(Hello);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

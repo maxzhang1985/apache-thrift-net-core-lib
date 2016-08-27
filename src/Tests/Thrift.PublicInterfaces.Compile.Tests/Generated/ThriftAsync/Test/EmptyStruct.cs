@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class EmptyStruct : TBase
   {
@@ -33,28 +30,28 @@ namespace ThriftAsync.Test
     public EmptyStruct() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
           switch (field.ID)
           {
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -62,14 +59,14 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("EmptyStruct");
-        oprot.WriteStructBegin(struc);
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        var struc = new TStruct("EmptyStruct");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -78,9 +75,9 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("EmptyStruct(");
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("EmptyStruct(");
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

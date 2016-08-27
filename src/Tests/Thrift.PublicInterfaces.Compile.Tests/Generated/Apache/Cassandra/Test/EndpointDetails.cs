@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class EndpointDetails : TBase
   {
@@ -76,14 +73,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool host;
       [DataMember]
@@ -114,16 +108,16 @@ namespace Apache.Cassandra.Test
     public EndpointDetails() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -131,32 +125,32 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Host = iprot.ReadString();
+                Host = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Datacenter = iprot.ReadString();
+                Datacenter = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.String) {
-                Rack = iprot.ReadString();
+                Rack = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -164,39 +158,39 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("EndpointDetails");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("EndpointDetails");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Host != null && __isset.host) {
           field.Name = "host";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Host);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Host, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Datacenter != null && __isset.datacenter) {
           field.Name = "datacenter";
           field.Type = TType.String;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Datacenter);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Datacenter, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Rack != null && __isset.rack) {
           field.Name = "rack";
           field.Type = TType.String;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Rack);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Rack, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -205,28 +199,28 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("EndpointDetails(");
+      var sb = new StringBuilder("EndpointDetails(");
       bool __first = true;
       if (Host != null && __isset.host) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Host: ");
-        __sb.Append(Host);
+        sb.Append("Host: ");
+        sb.Append(Host);
       }
       if (Datacenter != null && __isset.datacenter) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Datacenter: ");
-        __sb.Append(Datacenter);
+        sb.Append("Datacenter: ");
+        sb.Append(Datacenter);
       }
       if (Rack != null && __isset.rack) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Rack: ");
-        __sb.Append(Rack);
+        sb.Append("Rack: ");
+        sb.Append(Rack);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

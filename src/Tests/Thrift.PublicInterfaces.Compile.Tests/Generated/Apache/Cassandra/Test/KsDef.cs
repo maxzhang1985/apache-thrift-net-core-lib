@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class KsDef : TBase
   {
@@ -88,14 +85,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool strategy_options;
       [DataMember]
@@ -134,7 +128,7 @@ namespace Apache.Cassandra.Test
       this.Cf_defs = cf_defs;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -143,10 +137,10 @@ namespace Apache.Cassandra.Test
         bool isset_strategy_class = false;
         bool isset_cf_defs = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -154,79 +148,79 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Name = iprot.ReadString();
+                Name = await iprot.ReadStringAsync(cancellationToken);
                 isset_name = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Strategy_class = iprot.ReadString();
+                Strategy_class = await iprot.ReadStringAsync(cancellationToken);
                 isset_strategy_class = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.Map) {
                 {
                   Strategy_options = new Dictionary<string, string>();
-                  TMap _map56 = iprot.ReadMapBegin();
-                  for( int _i57 = 0; _i57 < _map56.Count; ++_i57)
+                  TMap _map56 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i57 = 0; _i57 < _map56.Count; ++_i57)
                   {
                     string _key58;
                     string _val59;
-                    _key58 = iprot.ReadString();
-                    _val59 = iprot.ReadString();
+                    _key58 = await iprot.ReadStringAsync(cancellationToken);
+                    _val59 = await iprot.ReadStringAsync(cancellationToken);
                     Strategy_options[_key58] = _val59;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.I32) {
-                Replication_factor = iprot.ReadI32();
+                Replication_factor = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 5:
               if (field.Type == TType.List) {
                 {
                   Cf_defs = new List<CfDef>();
-                  TList _list60 = iprot.ReadListBegin();
-                  for( int _i61 = 0; _i61 < _list60.Count; ++_i61)
+                  TList _list60 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i61 = 0; _i61 < _list60.Count; ++_i61)
                   {
                     CfDef _elem62;
                     _elem62 = new CfDef();
-                    _elem62.Read(iprot);
+                    await _elem62.ReadAsync(iprot, cancellationToken);
                     Cf_defs.Add(_elem62);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
                 isset_cf_defs = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 6:
               if (field.Type == TType.Bool) {
-                Durable_writes = iprot.ReadBool();
+                Durable_writes = await iprot.ReadBoolAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_name)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_strategy_class)
@@ -240,72 +234,72 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KsDef");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("KsDef");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "name";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Name);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Name, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "strategy_class";
         field.Type = TType.String;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Strategy_class);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Strategy_class, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (Strategy_options != null && __isset.strategy_options) {
           field.Name = "strategy_options";
           field.Type = TType.Map;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteMapBegin(new TMap(TType.String, TType.String, Strategy_options.Count));
+            await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Strategy_options.Count), cancellationToken);
             foreach (string _iter63 in Strategy_options.Keys)
             {
-              oprot.WriteString(_iter63);
-              oprot.WriteString(Strategy_options[_iter63]);
+              await oprot.WriteStringAsync(_iter63, cancellationToken);
+              await oprot.WriteStringAsync(Strategy_options[_iter63], cancellationToken);
             }
-            oprot.WriteMapEnd();
+            await oprot.WriteMapEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.replication_factor) {
           field.Name = "replication_factor";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Replication_factor);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Replication_factor, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         field.Name = "cf_defs";
         field.Type = TType.List;
         field.ID = 5;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteListBegin(new TList(TType.Struct, Cf_defs.Count));
+          await oprot.WriteListBeginAsync(new TList(TType.Struct, Cf_defs.Count), cancellationToken);
           foreach (CfDef _iter64 in Cf_defs)
           {
-            _iter64.Write(oprot);
+            await _iter64.WriteAsync(oprot, cancellationToken);
           }
-          oprot.WriteListEnd();
+          await oprot.WriteListEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (__isset.durable_writes) {
           field.Name = "durable_writes";
           field.Type = TType.Bool;
           field.ID = 6;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBool(Durable_writes);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBoolAsync(Durable_writes, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -314,27 +308,27 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KsDef(");
-      __sb.Append(", Name: ");
-      __sb.Append(Name);
-      __sb.Append(", Strategy_class: ");
-      __sb.Append(Strategy_class);
+      var sb = new StringBuilder("KsDef(");
+      sb.Append(", Name: ");
+      sb.Append(Name);
+      sb.Append(", Strategy_class: ");
+      sb.Append(Strategy_class);
       if (Strategy_options != null && __isset.strategy_options) {
-        __sb.Append(", Strategy_options: ");
-        __sb.Append(Strategy_options);
+        sb.Append(", Strategy_options: ");
+        sb.Append(Strategy_options);
       }
       if (__isset.replication_factor) {
-        __sb.Append(", Replication_factor: ");
-        __sb.Append(Replication_factor);
+        sb.Append(", Replication_factor: ");
+        sb.Append(Replication_factor);
       }
-      __sb.Append(", Cf_defs: ");
-      __sb.Append(Cf_defs);
+      sb.Append(", Cf_defs: ");
+      sb.Append(Cf_defs);
       if (__isset.durable_writes) {
-        __sb.Append(", Durable_writes: ");
-        __sb.Append(Durable_writes);
+        sb.Append(", Durable_writes: ");
+        sb.Append(Durable_writes);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

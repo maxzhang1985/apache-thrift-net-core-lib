@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -26,37 +26,34 @@ namespace Apache.Cassandra.Test
   /// <summary>
   /// A specific column was requested that does not exist.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   public partial class NotFoundException : TException, TBase
   {
 
     public NotFoundException() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
           switch (field.ID)
           {
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -64,14 +61,14 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("NotFoundException");
-        oprot.WriteStructBegin(struc);
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        var struc = new TStruct("NotFoundException");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -80,17 +77,14 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("NotFoundException(");
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("NotFoundException(");
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }
 
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract]
   public partial class NotFoundExceptionFault
   {

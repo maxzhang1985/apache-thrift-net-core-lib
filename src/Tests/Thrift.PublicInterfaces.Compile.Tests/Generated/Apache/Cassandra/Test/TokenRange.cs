@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -31,9 +31,6 @@ namespace Apache.Cassandra.Test
   /// @param endpoints The endpoints responsible for the range (listed by their configured listen_address)
   /// @param rpc_endpoints The endpoints responsible for the range (listed by their configured rpc_address)
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class TokenRange : TBase
   {
@@ -78,14 +75,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool rpc_endpoints;
       [DataMember]
@@ -115,7 +109,7 @@ namespace Apache.Cassandra.Test
       this.Endpoints = endpoints;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -124,10 +118,10 @@ namespace Apache.Cassandra.Test
         bool isset_end_token = false;
         bool isset_endpoints = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -135,80 +129,80 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Start_token = iprot.ReadString();
+                Start_token = await iprot.ReadStringAsync(cancellationToken);
                 isset_start_token = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                End_token = iprot.ReadString();
+                End_token = await iprot.ReadStringAsync(cancellationToken);
                 isset_end_token = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.List) {
                 {
                   Endpoints = new List<string>();
-                  TList _list20 = iprot.ReadListBegin();
-                  for( int _i21 = 0; _i21 < _list20.Count; ++_i21)
+                  TList _list20 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i21 = 0; _i21 < _list20.Count; ++_i21)
                   {
                     string _elem22;
-                    _elem22 = iprot.ReadString();
+                    _elem22 = await iprot.ReadStringAsync(cancellationToken);
                     Endpoints.Add(_elem22);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
                 isset_endpoints = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.List) {
                 {
                   Rpc_endpoints = new List<string>();
-                  TList _list23 = iprot.ReadListBegin();
-                  for( int _i24 = 0; _i24 < _list23.Count; ++_i24)
+                  TList _list23 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i24 = 0; _i24 < _list23.Count; ++_i24)
                   {
                     string _elem25;
-                    _elem25 = iprot.ReadString();
+                    _elem25 = await iprot.ReadStringAsync(cancellationToken);
                     Rpc_endpoints.Add(_elem25);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 5:
               if (field.Type == TType.List) {
                 {
                   Endpoint_details = new List<EndpointDetails>();
-                  TList _list26 = iprot.ReadListBegin();
-                  for( int _i27 = 0; _i27 < _list26.Count; ++_i27)
+                  TList _list26 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i27 = 0; _i27 < _list26.Count; ++_i27)
                   {
                     EndpointDetails _elem28;
                     _elem28 = new EndpointDetails();
-                    _elem28.Read(iprot);
+                    await _elem28.ReadAsync(iprot, cancellationToken);
                     Endpoint_details.Add(_elem28);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_start_token)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_end_token)
@@ -222,70 +216,70 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("TokenRange");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("TokenRange");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "start_token";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Start_token);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Start_token, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "end_token";
         field.Type = TType.String;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(End_token);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(End_token, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "endpoints";
         field.Type = TType.List;
         field.ID = 3;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteListBegin(new TList(TType.String, Endpoints.Count));
+          await oprot.WriteListBeginAsync(new TList(TType.String, Endpoints.Count), cancellationToken);
           foreach (string _iter29 in Endpoints)
           {
-            oprot.WriteString(_iter29);
+            await oprot.WriteStringAsync(_iter29, cancellationToken);
           }
-          oprot.WriteListEnd();
+          await oprot.WriteListEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (Rpc_endpoints != null && __isset.rpc_endpoints) {
           field.Name = "rpc_endpoints";
           field.Type = TType.List;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.String, Rpc_endpoints.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.String, Rpc_endpoints.Count), cancellationToken);
             foreach (string _iter30 in Rpc_endpoints)
             {
-              oprot.WriteString(_iter30);
+              await oprot.WriteStringAsync(_iter30, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Endpoint_details != null && __isset.endpoint_details) {
           field.Name = "endpoint_details";
           field.Type = TType.List;
           field.ID = 5;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.Struct, Endpoint_details.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.Struct, Endpoint_details.Count), cancellationToken);
             foreach (EndpointDetails _iter31 in Endpoint_details)
             {
-              _iter31.Write(oprot);
+              await _iter31.WriteAsync(oprot, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -294,23 +288,23 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("TokenRange(");
-      __sb.Append(", Start_token: ");
-      __sb.Append(Start_token);
-      __sb.Append(", End_token: ");
-      __sb.Append(End_token);
-      __sb.Append(", Endpoints: ");
-      __sb.Append(Endpoints);
+      var sb = new StringBuilder("TokenRange(");
+      sb.Append(", Start_token: ");
+      sb.Append(Start_token);
+      sb.Append(", End_token: ");
+      sb.Append(End_token);
+      sb.Append(", Endpoints: ");
+      sb.Append(Endpoints);
       if (Rpc_endpoints != null && __isset.rpc_endpoints) {
-        __sb.Append(", Rpc_endpoints: ");
-        __sb.Append(Rpc_endpoints);
+        sb.Append(", Rpc_endpoints: ");
+        sb.Append(Rpc_endpoints);
       }
       if (Endpoint_details != null && __isset.endpoint_details) {
-        __sb.Append(", Endpoint_details: ");
-        __sb.Append(Endpoint_details);
+        sb.Append(", Endpoint_details: ");
+        sb.Append(Endpoint_details);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

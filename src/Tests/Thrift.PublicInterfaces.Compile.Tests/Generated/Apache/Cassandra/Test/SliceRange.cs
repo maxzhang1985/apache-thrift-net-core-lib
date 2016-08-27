@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -39,9 +39,6 @@ namespace Apache.Cassandra.Test
   ///               be better served by iterating through slices by passing the last value of one call in as the 'start'
   ///               of the next instead of increasing 'count' arbitrarily large.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class SliceRange : TBase
   {
@@ -70,7 +67,7 @@ namespace Apache.Cassandra.Test
       this.Count = count;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -80,10 +77,10 @@ namespace Apache.Cassandra.Test
         bool isset_reversed = false;
         bool isset_count = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -91,43 +88,43 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Start = iprot.ReadBinary();
+                Start = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_start = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Finish = iprot.ReadBinary();
+                Finish = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_finish = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.Bool) {
-                Reversed = iprot.ReadBool();
+                Reversed = await iprot.ReadBoolAsync(cancellationToken);
                 isset_reversed = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.I32) {
-                Count = iprot.ReadI32();
+                Count = await iprot.ReadI32Async(cancellationToken);
                 isset_count = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_start)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_finish)
@@ -143,39 +140,39 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("SliceRange");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("SliceRange");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "start";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Start);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Start, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "finish";
         field.Type = TType.String;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Finish);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Finish, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "reversed";
         field.Type = TType.Bool;
         field.ID = 3;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBool(Reversed);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBoolAsync(Reversed, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "count";
         field.Type = TType.I32;
         field.ID = 4;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteI32(Count);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteI32Async(Count, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -184,17 +181,17 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("SliceRange(");
-      __sb.Append(", Start: ");
-      __sb.Append(Start);
-      __sb.Append(", Finish: ");
-      __sb.Append(Finish);
-      __sb.Append(", Reversed: ");
-      __sb.Append(Reversed);
-      __sb.Append(", Count: ");
-      __sb.Append(Count);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("SliceRange(");
+      sb.Append(", Start: ");
+      sb.Append(Start);
+      sb.Append(", Finish: ");
+      sb.Append(Finish);
+      sb.Append(", Reversed: ");
+      sb.Append(Reversed);
+      sb.Append(", Count: ");
+      sb.Append(Count);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

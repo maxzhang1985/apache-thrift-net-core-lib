@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class NestedListsI32x3 : TBase
   {
@@ -46,14 +43,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool integerlist;
     }
@@ -70,16 +64,16 @@ namespace ThriftAsync.Test
     public NestedListsI32x3() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -89,46 +83,46 @@ namespace ThriftAsync.Test
               if (field.Type == TType.List) {
                 {
                   Integerlist = new List<List<List<int>>>();
-                  TList _list86 = iprot.ReadListBegin();
-                  for( int _i87 = 0; _i87 < _list86.Count; ++_i87)
+                  TList _list86 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i87 = 0; _i87 < _list86.Count; ++_i87)
                   {
                     List<List<int>> _elem88;
                     {
                       _elem88 = new List<List<int>>();
-                      TList _list89 = iprot.ReadListBegin();
-                      for( int _i90 = 0; _i90 < _list89.Count; ++_i90)
+                      TList _list89 = await iprot.ReadListBeginAsync(cancellationToken);
+                      for(int _i90 = 0; _i90 < _list89.Count; ++_i90)
                       {
                         List<int> _elem91;
                         {
                           _elem91 = new List<int>();
-                          TList _list92 = iprot.ReadListBegin();
-                          for( int _i93 = 0; _i93 < _list92.Count; ++_i93)
+                          TList _list92 = await iprot.ReadListBeginAsync(cancellationToken);
+                          for(int _i93 = 0; _i93 < _list92.Count; ++_i93)
                           {
                             int _elem94;
-                            _elem94 = iprot.ReadI32();
+                            _elem94 = await iprot.ReadI32Async(cancellationToken);
                             _elem91.Add(_elem94);
                           }
-                          iprot.ReadListEnd();
+                          await iprot.ReadListEndAsync(cancellationToken);
                         }
                         _elem88.Add(_elem91);
                       }
-                      iprot.ReadListEnd();
+                      await iprot.ReadListEndAsync(cancellationToken);
                     }
                     Integerlist.Add(_elem88);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -136,44 +130,44 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("NestedListsI32x3");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("NestedListsI32x3");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Integerlist != null && __isset.integerlist) {
           field.Name = "integerlist";
           field.Type = TType.List;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.List, Integerlist.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.List, Integerlist.Count), cancellationToken);
             foreach (List<List<int>> _iter95 in Integerlist)
             {
               {
-                oprot.WriteListBegin(new TList(TType.List, _iter95.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.List, _iter95.Count), cancellationToken);
                 foreach (List<int> _iter96 in _iter95)
                 {
                   {
-                    oprot.WriteListBegin(new TList(TType.I32, _iter96.Count));
+                    await oprot.WriteListBeginAsync(new TList(TType.I32, _iter96.Count), cancellationToken);
                     foreach (int _iter97 in _iter96)
                     {
-                      oprot.WriteI32(_iter97);
+                      await oprot.WriteI32Async(_iter97, cancellationToken);
                     }
-                    oprot.WriteListEnd();
+                    await oprot.WriteListEndAsync(cancellationToken);
                   }
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -182,16 +176,16 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("NestedListsI32x3(");
+      var sb = new StringBuilder("NestedListsI32x3(");
       bool __first = true;
       if (Integerlist != null && __isset.integerlist) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Integerlist: ");
-        __sb.Append(Integerlist);
+        sb.Append("Integerlist: ");
+        sb.Append(Integerlist);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

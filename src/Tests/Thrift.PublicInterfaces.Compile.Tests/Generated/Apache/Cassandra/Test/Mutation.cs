@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -28,9 +28,6 @@ namespace Apache.Cassandra.Test
   /// @param column_or_supercolumn. An insert to a column or supercolumn (possibly counter column or supercolumn)
   /// @param deletion. A deletion of a column or supercolumn
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class Mutation : TBase
   {
@@ -66,14 +63,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool column_or_supercolumn;
       [DataMember]
@@ -97,16 +91,16 @@ namespace Apache.Cassandra.Test
     public Mutation() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -115,26 +109,26 @@ namespace Apache.Cassandra.Test
             case 1:
               if (field.Type == TType.Struct) {
                 Column_or_supercolumn = new ColumnOrSuperColumn();
-                Column_or_supercolumn.Read(iprot);
+                await Column_or_supercolumn.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.Struct) {
                 Deletion = new Deletion();
-                Deletion.Read(iprot);
+                await Deletion.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -142,31 +136,31 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("Mutation");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("Mutation");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Column_or_supercolumn != null && __isset.column_or_supercolumn) {
           field.Name = "column_or_supercolumn";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Column_or_supercolumn.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_or_supercolumn.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Deletion != null && __isset.deletion) {
           field.Name = "deletion";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Deletion.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Deletion.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -175,22 +169,22 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("Mutation(");
+      var sb = new StringBuilder("Mutation(");
       bool __first = true;
       if (Column_or_supercolumn != null && __isset.column_or_supercolumn) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Column_or_supercolumn: ");
-        __sb.Append(Column_or_supercolumn== null ? "<null>" : Column_or_supercolumn.ToString());
+        sb.Append("Column_or_supercolumn: ");
+        sb.Append(Column_or_supercolumn== null ? "<null>" : Column_or_supercolumn.ToString());
       }
       if (Deletion != null && __isset.deletion) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Deletion: ");
-        __sb.Append(Deletion== null ? "<null>" : Deletion.ToString());
+        sb.Append("Deletion: ");
+        sb.Append(Deletion== null ? "<null>" : Deletion.ToString());
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

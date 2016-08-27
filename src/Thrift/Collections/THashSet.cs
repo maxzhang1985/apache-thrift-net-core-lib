@@ -19,11 +19,9 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace Thrift.Collections
 {
-    [Serializable]
     // ReSharper disable once InconsistentNaming
     public class THashSet<T> : ICollection<T>
     {

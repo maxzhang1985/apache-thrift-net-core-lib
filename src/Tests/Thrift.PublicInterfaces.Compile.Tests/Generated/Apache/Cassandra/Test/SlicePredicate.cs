@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -35,9 +35,6 @@ namespace Apache.Cassandra.Test
   ///                     and 'Jim' you can pass those column names as a list to fetch all three at once.
   /// @param slice_range. A SliceRange describing how to range, order, and/or limit the slice.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class SlicePredicate : TBase
   {
@@ -73,14 +70,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool column_names;
       [DataMember]
@@ -104,16 +98,16 @@ namespace Apache.Cassandra.Test
     public SlicePredicate() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -123,34 +117,34 @@ namespace Apache.Cassandra.Test
               if (field.Type == TType.List) {
                 {
                   Column_names = new List<byte[]>();
-                  TList _list8 = iprot.ReadListBegin();
-                  for( int _i9 = 0; _i9 < _list8.Count; ++_i9)
+                  TList _list8 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i9 = 0; _i9 < _list8.Count; ++_i9)
                   {
                     byte[] _elem10;
-                    _elem10 = iprot.ReadBinary();
+                    _elem10 = await iprot.ReadBinaryAsync(cancellationToken);
                     Column_names.Add(_elem10);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.Struct) {
                 Slice_range = new SliceRange();
-                Slice_range.Read(iprot);
+                await Slice_range.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -158,38 +152,38 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("SlicePredicate");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("SlicePredicate");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Column_names != null && __isset.column_names) {
           field.Name = "column_names";
           field.Type = TType.List;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.String, Column_names.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.String, Column_names.Count), cancellationToken);
             foreach (byte[] _iter11 in Column_names)
             {
-              oprot.WriteBinary(_iter11);
+              await oprot.WriteBinaryAsync(_iter11, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Slice_range != null && __isset.slice_range) {
           field.Name = "slice_range";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Slice_range.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Slice_range.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -198,22 +192,22 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("SlicePredicate(");
+      var sb = new StringBuilder("SlicePredicate(");
       bool __first = true;
       if (Column_names != null && __isset.column_names) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Column_names: ");
-        __sb.Append(Column_names);
+        sb.Append("Column_names: ");
+        sb.Append(Column_names);
       }
       if (Slice_range != null && __isset.slice_range) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Slice_range: ");
-        __sb.Append(Slice_range== null ? "<null>" : Slice_range.ToString());
+        sb.Append("Slice_range: ");
+        sb.Append(Slice_range== null ? "<null>" : Slice_range.ToString());
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

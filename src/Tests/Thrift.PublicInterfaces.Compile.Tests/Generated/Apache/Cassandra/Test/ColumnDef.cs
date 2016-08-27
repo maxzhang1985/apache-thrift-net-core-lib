@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class ColumnDef : TBase
   {
@@ -86,14 +83,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool index_type;
       [DataMember]
@@ -129,7 +123,7 @@ namespace Apache.Cassandra.Test
       this.Validation_class = validation_class;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -137,10 +131,10 @@ namespace Apache.Cassandra.Test
         bool isset_name = false;
         bool isset_validation_class = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -148,60 +142,60 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Name = iprot.ReadBinary();
+                Name = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_name = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Validation_class = iprot.ReadString();
+                Validation_class = await iprot.ReadStringAsync(cancellationToken);
                 isset_validation_class = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.I32) {
-                Index_type = (IndexType)iprot.ReadI32();
+                Index_type = (IndexType)await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.String) {
-                Index_name = iprot.ReadString();
+                Index_name = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 5:
               if (field.Type == TType.Map) {
                 {
                   Index_options = new Dictionary<string, string>();
-                  TMap _map37 = iprot.ReadMapBegin();
-                  for( int _i38 = 0; _i38 < _map37.Count; ++_i38)
+                  TMap _map37 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i38 = 0; _i38 < _map37.Count; ++_i38)
                   {
                     string _key39;
                     string _val40;
-                    _key39 = iprot.ReadString();
-                    _val40 = iprot.ReadString();
+                    _key39 = await iprot.ReadStringAsync(cancellationToken);
+                    _val40 = await iprot.ReadStringAsync(cancellationToken);
                     Index_options[_key39] = _val40;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_name)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_validation_class)
@@ -213,59 +207,59 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("ColumnDef");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("ColumnDef");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "name";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Name);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Name, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "validation_class";
         field.Type = TType.String;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Validation_class);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Validation_class, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (__isset.index_type) {
           field.Name = "index_type";
           field.Type = TType.I32;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Index_type);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Index_type, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Index_name != null && __isset.index_name) {
           field.Name = "index_name";
           field.Type = TType.String;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Index_name);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Index_name, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Index_options != null && __isset.index_options) {
           field.Name = "index_options";
           field.Type = TType.Map;
           field.ID = 5;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteMapBegin(new TMap(TType.String, TType.String, Index_options.Count));
+            await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Index_options.Count), cancellationToken);
             foreach (string _iter41 in Index_options.Keys)
             {
-              oprot.WriteString(_iter41);
-              oprot.WriteString(Index_options[_iter41]);
+              await oprot.WriteStringAsync(_iter41, cancellationToken);
+              await oprot.WriteStringAsync(Index_options[_iter41], cancellationToken);
             }
-            oprot.WriteMapEnd();
+            await oprot.WriteMapEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -274,25 +268,25 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("ColumnDef(");
-      __sb.Append(", Name: ");
-      __sb.Append(Name);
-      __sb.Append(", Validation_class: ");
-      __sb.Append(Validation_class);
+      var sb = new StringBuilder("ColumnDef(");
+      sb.Append(", Name: ");
+      sb.Append(Name);
+      sb.Append(", Validation_class: ");
+      sb.Append(Validation_class);
       if (__isset.index_type) {
-        __sb.Append(", Index_type: ");
-        __sb.Append(Index_type);
+        sb.Append(", Index_type: ");
+        sb.Append(Index_type);
       }
       if (Index_name != null && __isset.index_name) {
-        __sb.Append(", Index_name: ");
-        __sb.Append(Index_name);
+        sb.Append(", Index_name: ");
+        sb.Append(Index_name);
       }
       if (Index_options != null && __isset.index_options) {
-        __sb.Append(", Index_options: ");
-        __sb.Append(Index_options);
+        sb.Append(", Index_options: ");
+        sb.Append(Index_options);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

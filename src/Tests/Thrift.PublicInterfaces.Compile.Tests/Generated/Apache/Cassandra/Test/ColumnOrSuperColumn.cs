@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -38,9 +38,6 @@ namespace Apache.Cassandra.Test
   /// @param counter_column. The Counterolumn returned by get() or get_slice().
   /// @param counter_super_column. The CounterSuperColumn returned by get() or get_slice().
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class ColumnOrSuperColumn : TBase
   {
@@ -106,14 +103,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool column;
       [DataMember]
@@ -151,16 +145,16 @@ namespace Apache.Cassandra.Test
     public ColumnOrSuperColumn() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -169,42 +163,42 @@ namespace Apache.Cassandra.Test
             case 1:
               if (field.Type == TType.Struct) {
                 Column = new Column();
-                Column.Read(iprot);
+                await Column.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.Struct) {
                 Super_column = new SuperColumn();
-                Super_column.Read(iprot);
+                await Super_column.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.Struct) {
                 Counter_column = new CounterColumn();
-                Counter_column.Read(iprot);
+                await Counter_column.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.Struct) {
                 Counter_super_column = new CounterSuperColumn();
-                Counter_super_column.Read(iprot);
+                await Counter_super_column.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -212,47 +206,47 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("ColumnOrSuperColumn");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("ColumnOrSuperColumn");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Column != null && __isset.column) {
           field.Name = "column";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Column.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Super_column != null && __isset.super_column) {
           field.Name = "super_column";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Super_column.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Super_column.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Counter_column != null && __isset.counter_column) {
           field.Name = "counter_column";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Counter_column.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Counter_column.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Counter_super_column != null && __isset.counter_super_column) {
           field.Name = "counter_super_column";
           field.Type = TType.Struct;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          Counter_super_column.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Counter_super_column.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -261,34 +255,34 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("ColumnOrSuperColumn(");
+      var sb = new StringBuilder("ColumnOrSuperColumn(");
       bool __first = true;
       if (Column != null && __isset.column) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Column: ");
-        __sb.Append(Column== null ? "<null>" : Column.ToString());
+        sb.Append("Column: ");
+        sb.Append(Column== null ? "<null>" : Column.ToString());
       }
       if (Super_column != null && __isset.super_column) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Super_column: ");
-        __sb.Append(Super_column== null ? "<null>" : Super_column.ToString());
+        sb.Append("Super_column: ");
+        sb.Append(Super_column== null ? "<null>" : Super_column.ToString());
       }
       if (Counter_column != null && __isset.counter_column) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Counter_column: ");
-        __sb.Append(Counter_column== null ? "<null>" : Counter_column.ToString());
+        sb.Append("Counter_column: ");
+        sb.Append(Counter_column== null ? "<null>" : Counter_column.ToString());
       }
       if (Counter_super_column != null && __isset.counter_super_column) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Counter_super_column: ");
-        __sb.Append(Counter_super_column== null ? "<null>" : Counter_super_column.ToString());
+        sb.Append("Counter_super_column: ");
+        sb.Append(Counter_super_column== null ? "<null>" : Counter_super_column.ToString());
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

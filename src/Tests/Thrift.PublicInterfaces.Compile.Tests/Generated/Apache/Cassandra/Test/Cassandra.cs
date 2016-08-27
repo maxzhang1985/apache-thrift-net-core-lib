@@ -9,358 +9,33 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
   public partial class Cassandra {
-    [ServiceContract(Namespace="")]
-    public interface ISync {
-      [OperationContract]
-      [FaultContract(typeof(AuthenticationExceptionFault))]
-      [FaultContract(typeof(AuthorizationExceptionFault))]
-      void login(AuthenticationRequest auth_request);
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      void set_keyspace(string keyspace);
-      /// <summary>
-      /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
-      /// the only method that can throw an exception under non-failure conditions.)
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_path"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(NotFoundExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      ColumnOrSuperColumn @get(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
-      /// pair) specified by the given SlicePredicate. If no matching values are found, an empty list is returned.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      List<ColumnOrSuperColumn> get_slice(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
-      /// <code>ColumnFamily</code> and optionally <code>SuperColumn</code>.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      int get_count(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
-      /// </summary>
-      /// <param name="keys"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      Dictionary<byte[], List<ColumnOrSuperColumn>> multiget_slice(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
-      /// </summary>
-      /// <param name="keys"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      Dictionary<byte[], int> multiget_count(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// returns a subset of columns for a contiguous range of keys.
-      /// </summary>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="range"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      List<KeySlice> get_range_slices(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
-      /// </summary>
-      /// <param name="column_parent"></param>
-      /// <param name="index_clause"></param>
-      /// <param name="column_predicate"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      List<KeySlice> get_indexed_slices(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="column"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      void insert(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Increment or decrement a counter.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="column"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      void @add(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
-      /// that all the values in column_path besides column_path.column_family are truly optional: you can remove the entire
-      /// row by just specifying the ColumnFamily, or you can remove a SuperColumn or a single Column by specifying those levels too.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_path"></param>
-      /// <param name="timestamp"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      void @remove(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Remove a counter at the specified location.
-      /// Note that counters have limited support for deletes: if you remove a counter, you must wait to issue any following update
-      /// until the delete has reached all the nodes and all of them have been fully compacted.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="path"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      void remove_counter(byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
-      /// <summary>
-      ///   Mutate many columns or super columns for many row keys. See also: Mutation.
-      /// 
-      ///   mutation_map maps key to column family to a list of Mutation objects to take place at that scope.
-      /// *
-      /// </summary>
-      /// <param name="mutation_map"></param>
-      /// <param name="consistency_level"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      void batch_mutate(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
-      /// <summary>
-      /// Truncate will mark and entire column family as deleted.
-      /// From the user's perspective a successful call to truncate will result complete data deletion from cfname.
-      /// Internally, however, disk space will not be immediatily released, as with all deletes in cassandra, this one
-      /// only marks the data as deleted.
-      /// The operation succeeds only if all hosts in the cluster at available and will throw an UnavailableException if
-      /// some hosts are down.
-      /// </summary>
-      /// <param name="cfname"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      void truncate(string cfname);
-      /// <summary>
-      /// for each schema version present in the cluster, returns a list of nodes at that version.
-      /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
-      /// the cluster is all on the same version if the size of the map is 1.
-      /// </summary>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Dictionary<string, List<string>> describe_schema_versions();
-      /// <summary>
-      /// list the defined keyspaces in this cluster
-      /// </summary>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      List<KsDef> describe_keyspaces();
-      /// <summary>
-      /// get the cluster name
-      /// </summary>
-      [OperationContract]
-      string describe_cluster_name();
-      /// <summary>
-      /// get the thrift api version
-      /// </summary>
-      [OperationContract]
-      string describe_version();
-      /// <summary>
-      /// get the token ring: a map of ranges to host addresses,
-      /// represented as a set of TokenRange instead of a map from range
-      /// to list of endpoints, because you can't use Thrift structs as
-      /// map keys:
-      /// https://issues.apache.org/jira/browse/THRIFT-162
-      /// 
-      /// for the same reason, we can't return a set here, even though
-      /// order is neither important nor predictable.
-      /// </summary>
-      /// <param name="keyspace"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      List<TokenRange> describe_ring(string keyspace);
-      /// <summary>
-      /// returns the partitioner used by this cluster
-      /// </summary>
-      [OperationContract]
-      string describe_partitioner();
-      /// <summary>
-      /// returns the snitch used by this cluster
-      /// </summary>
-      [OperationContract]
-      string describe_snitch();
-      /// <summary>
-      /// describe specified keyspace
-      /// </summary>
-      /// <param name="keyspace"></param>
-      [OperationContract]
-      [FaultContract(typeof(NotFoundExceptionFault))]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      KsDef describe_keyspace(string keyspace);
-      /// <summary>
-      /// experimental API for hadoop/parallel query support.
-      /// may change violently and without warning.
-      /// 
-      /// returns list of token strings such that first subrange is (list[0], list[1]],
-      /// next is (list[1], list[2]], etc.
-      /// </summary>
-      /// <param name="cfName"></param>
-      /// <param name="start_token"></param>
-      /// <param name="end_token"></param>
-      /// <param name="keys_per_split"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      List<string> describe_splits(string cfName, string start_token, string end_token, int keys_per_split);
-      /// <summary>
-      /// adds a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="cf_def"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      string system_add_column_family(CfDef cf_def);
-      /// <summary>
-      /// drops a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="column_family"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      string system_drop_column_family(string column_family);
-      /// <summary>
-      /// adds a keyspace and any column families that are part of it. returns the new schema id.
-      /// </summary>
-      /// <param name="ks_def"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      string system_add_keyspace(KsDef ks_def);
-      /// <summary>
-      /// drops a keyspace and any column families that are part of it. returns the new schema id.
-      /// </summary>
-      /// <param name="keyspace"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      string system_drop_keyspace(string keyspace);
-      /// <summary>
-      /// updates properties of a keyspace. returns the new schema id.
-      /// </summary>
-      /// <param name="ks_def"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      string system_update_keyspace(KsDef ks_def);
-      /// <summary>
-      /// updates properties of a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="cf_def"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      string system_update_column_family(CfDef cf_def);
-      /// <summary>
-      /// Executes a CQL (Cassandra Query Language) statement and returns a
-      /// CqlResult containing the results.
-      /// </summary>
-      /// <param name="query"></param>
-      /// <param name="compression"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      CqlResult execute_cql_query(byte[] query, Compression compression);
-      /// <summary>
-      /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
-      /// - the type of CQL statement
-      /// - an id token of the compiled CQL stored on the server side.
-      /// - a count of the discovered bound markers in the statement
-      /// </summary>
-      /// <param name="query"></param>
-      /// <param name="compression"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      CqlPreparedResult prepare_cql_query(byte[] query, Compression compression);
-      /// <summary>
-      /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
-      /// to bind and returns a CqlResult containing the results.
-      /// </summary>
-      /// <param name="itemId"></param>
-      /// <param name="values"></param>
-      [OperationContract]
-      [FaultContract(typeof(InvalidRequestExceptionFault))]
-      [FaultContract(typeof(UnavailableExceptionFault))]
-      [FaultContract(typeof(TimedOutExceptionFault))]
-      [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      CqlResult execute_prepared_cql_query(int itemId, List<string> values);
-    }
+
 
     [ServiceContract(Namespace="")]
     public interface IAsync {
       [OperationContract]
       [FaultContract(typeof(AuthenticationExceptionFault))]
       [FaultContract(typeof(AuthorizationExceptionFault))]
-      Task loginAsync(AuthenticationRequest auth_request);
+      Task loginAsync(AuthenticationRequest auth_request, CancellationToken cancellationToken);
+
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task set_keyspaceAsync(string keyspace);
+      Task set_keyspaceAsync(string keyspace, CancellationToken cancellationToken);
+
       /// <summary>
       /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
       /// the only method that can throw an exception under non-failure conditions.)
@@ -373,7 +48,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(NotFoundExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<ColumnOrSuperColumn> @getAsync(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
+      Task<ColumnOrSuperColumn> @getAsync(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
       /// pair) specified by the given SlicePredicate. If no matching values are found, an empty list is returned.
@@ -386,7 +62,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<List<ColumnOrSuperColumn>> get_sliceAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      Task<List<ColumnOrSuperColumn>> get_sliceAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
       /// <code>ColumnFamily</code> and optionally <code>SuperColumn</code>.
@@ -399,7 +76,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<int> get_countAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      Task<int> get_countAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
       /// </summary>
@@ -411,7 +89,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<Dictionary<byte[], List<ColumnOrSuperColumn>>> multiget_sliceAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      Task<Dictionary<byte[], List<ColumnOrSuperColumn>>> multiget_sliceAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
       /// </summary>
@@ -423,7 +102,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<Dictionary<byte[], int>> multiget_countAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
+      Task<Dictionary<byte[], int>> multiget_countAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// returns a subset of columns for a contiguous range of keys.
       /// </summary>
@@ -435,7 +115,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<List<KeySlice>> get_range_slicesAsync(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
+      Task<List<KeySlice>> get_range_slicesAsync(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
       /// </summary>
@@ -447,7 +128,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task<List<KeySlice>> get_indexed_slicesAsync(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
+      Task<List<KeySlice>> get_indexed_slicesAsync(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
       /// </summary>
@@ -459,7 +141,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task insertAsync(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
+      Task insertAsync(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Increment or decrement a counter.
       /// </summary>
@@ -471,7 +154,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task @addAsync(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
+      Task @addAsync(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
       /// that all the values in column_path besides column_path.column_family are truly optional: you can remove the entire
@@ -485,7 +169,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task @removeAsync(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
+      Task @removeAsync(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Remove a counter at the specified location.
       /// Note that counters have limited support for deletes: if you remove a counter, you must wait to issue any following update
@@ -498,7 +183,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task remove_counterAsync(byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
+      Task remove_counterAsync(byte[] key, ColumnPath path, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       ///   Mutate many columns or super columns for many row keys. See also: Mutation.
       /// 
@@ -511,7 +197,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task batch_mutateAsync(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
+      Task batch_mutateAsync(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level, CancellationToken cancellationToken);
+
       /// <summary>
       /// Truncate will mark and entire column family as deleted.
       /// From the user's perspective a successful call to truncate will result complete data deletion from cfname.
@@ -525,7 +212,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
-      Task truncateAsync(string cfname);
+      Task truncateAsync(string cfname, CancellationToken cancellationToken);
+
       /// <summary>
       /// for each schema version present in the cluster, returns a list of nodes at that version.
       /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
@@ -533,23 +221,27 @@ namespace Apache.Cassandra.Test
       /// </summary>
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task<Dictionary<string, List<string>>> describe_schema_versionsAsync();
+      Task<Dictionary<string, List<string>>> describe_schema_versionsAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// list the defined keyspaces in this cluster
       /// </summary>
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task<List<KsDef>> describe_keyspacesAsync();
+      Task<List<KsDef>> describe_keyspacesAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// get the cluster name
       /// </summary>
       [OperationContract]
-      Task<string> describe_cluster_nameAsync();
+      Task<string> describe_cluster_nameAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// get the thrift api version
       /// </summary>
       [OperationContract]
-      Task<string> describe_versionAsync();
+      Task<string> describe_versionAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// get the token ring: a map of ranges to host addresses,
       /// represented as a set of TokenRange instead of a map from range
@@ -563,17 +255,20 @@ namespace Apache.Cassandra.Test
       /// <param name="keyspace"></param>
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task<List<TokenRange>> describe_ringAsync(string keyspace);
+      Task<List<TokenRange>> describe_ringAsync(string keyspace, CancellationToken cancellationToken);
+
       /// <summary>
       /// returns the partitioner used by this cluster
       /// </summary>
       [OperationContract]
-      Task<string> describe_partitionerAsync();
+      Task<string> describe_partitionerAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// returns the snitch used by this cluster
       /// </summary>
       [OperationContract]
-      Task<string> describe_snitchAsync();
+      Task<string> describe_snitchAsync(CancellationToken cancellationToken);
+
       /// <summary>
       /// describe specified keyspace
       /// </summary>
@@ -581,7 +276,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(NotFoundExceptionFault))]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task<KsDef> describe_keyspaceAsync(string keyspace);
+      Task<KsDef> describe_keyspaceAsync(string keyspace, CancellationToken cancellationToken);
+
       /// <summary>
       /// experimental API for hadoop/parallel query support.
       /// may change violently and without warning.
@@ -595,7 +291,8 @@ namespace Apache.Cassandra.Test
       /// <param name="keys_per_split"></param>
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task<List<string>> describe_splitsAsync(string cfName, string start_token, string end_token, int keys_per_split);
+      Task<List<string>> describe_splitsAsync(string cfName, string start_token, string end_token, int keys_per_split, CancellationToken cancellationToken);
+
       /// <summary>
       /// adds a column family. returns the new schema id.
       /// </summary>
@@ -603,7 +300,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<string> system_add_column_familyAsync(CfDef cf_def);
+      Task<string> system_add_column_familyAsync(CfDef cf_def, CancellationToken cancellationToken);
+
       /// <summary>
       /// drops a column family. returns the new schema id.
       /// </summary>
@@ -611,7 +309,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<string> system_drop_column_familyAsync(string column_family);
+      Task<string> system_drop_column_familyAsync(string column_family, CancellationToken cancellationToken);
+
       /// <summary>
       /// adds a keyspace and any column families that are part of it. returns the new schema id.
       /// </summary>
@@ -619,7 +318,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<string> system_add_keyspaceAsync(KsDef ks_def);
+      Task<string> system_add_keyspaceAsync(KsDef ks_def, CancellationToken cancellationToken);
+
       /// <summary>
       /// drops a keyspace and any column families that are part of it. returns the new schema id.
       /// </summary>
@@ -627,7 +327,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<string> system_drop_keyspaceAsync(string keyspace);
+      Task<string> system_drop_keyspaceAsync(string keyspace, CancellationToken cancellationToken);
+
       /// <summary>
       /// updates properties of a keyspace. returns the new schema id.
       /// </summary>
@@ -635,7 +336,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<string> system_update_keyspaceAsync(KsDef ks_def);
+      Task<string> system_update_keyspaceAsync(KsDef ks_def, CancellationToken cancellationToken);
+
       /// <summary>
       /// updates properties of a column family. returns the new schema id.
       /// </summary>
@@ -643,7 +345,8 @@ namespace Apache.Cassandra.Test
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<string> system_update_column_familyAsync(CfDef cf_def);
+      Task<string> system_update_column_familyAsync(CfDef cf_def, CancellationToken cancellationToken);
+
       /// <summary>
       /// Executes a CQL (Cassandra Query Language) statement and returns a
       /// CqlResult containing the results.
@@ -655,7 +358,8 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<CqlResult> execute_cql_queryAsync(byte[] query, Compression compression);
+      Task<CqlResult> execute_cql_queryAsync(byte[] query, Compression compression, CancellationToken cancellationToken);
+
       /// <summary>
       /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
       /// - the type of CQL statement
@@ -666,7 +370,8 @@ namespace Apache.Cassandra.Test
       /// <param name="compression"></param>
       [OperationContract]
       [FaultContract(typeof(InvalidRequestExceptionFault))]
-      Task<CqlPreparedResult> prepare_cql_queryAsync(byte[] query, Compression compression);
+      Task<CqlPreparedResult> prepare_cql_queryAsync(byte[] query, Compression compression, CancellationToken cancellationToken);
+
       /// <summary>
       /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
       /// to bind and returns a CqlResult containing the results.
@@ -678,297 +383,45 @@ namespace Apache.Cassandra.Test
       [FaultContract(typeof(UnavailableExceptionFault))]
       [FaultContract(typeof(TimedOutExceptionFault))]
       [FaultContract(typeof(SchemaDisagreementExceptionFault))]
-      Task<CqlResult> execute_prepared_cql_queryAsync(int itemId, List<string> values);
+      Task<CqlResult> execute_prepared_cql_queryAsync(int itemId, List<string> values, CancellationToken cancellationToken);
+
     }
 
-    [ServiceContract(Namespace="")]
-    public interface Iface : ISync, IAsync {
-      IAsyncResult Begin_login(AsyncCallback callback, object state, AuthenticationRequest auth_request);
-      void End_login(IAsyncResult asyncResult);
-      IAsyncResult Begin_set_keyspace(AsyncCallback callback, object state, string keyspace);
-      void End_set_keyspace(IAsyncResult asyncResult);
-      /// <summary>
-      /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
-      /// the only method that can throw an exception under non-failure conditions.)
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_path"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level);
-      ColumnOrSuperColumn End_get(IAsyncResult asyncResult);
-      /// <summary>
-      /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
-      /// pair) specified by the given SlicePredicate. If no matching values are found, an empty list is returned.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      List<ColumnOrSuperColumn> End_get_slice(IAsyncResult asyncResult);
-      /// <summary>
-      /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
-      /// <code>ColumnFamily</code> and optionally <code>SuperColumn</code>.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      int End_get_count(IAsyncResult asyncResult);
-      /// <summary>
-      /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
-      /// </summary>
-      /// <param name="keys"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      Dictionary<byte[], List<ColumnOrSuperColumn>> End_multiget_slice(IAsyncResult asyncResult);
-      /// <summary>
-      /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
-      /// </summary>
-      /// <param name="keys"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level);
-      Dictionary<byte[], int> End_multiget_count(IAsyncResult asyncResult);
-      /// <summary>
-      /// returns a subset of columns for a contiguous range of keys.
-      /// </summary>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="range"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level);
-      List<KeySlice> End_get_range_slices(IAsyncResult asyncResult);
-      /// <summary>
-      /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
-      /// </summary>
-      /// <param name="column_parent"></param>
-      /// <param name="index_clause"></param>
-      /// <param name="column_predicate"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level);
-      List<KeySlice> End_get_indexed_slices(IAsyncResult asyncResult);
-      /// <summary>
-      /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="column"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level);
-      void End_insert(IAsyncResult asyncResult);
-      /// <summary>
-      /// Increment or decrement a counter.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="column"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level);
-      void End_add(IAsyncResult asyncResult);
-      /// <summary>
-      /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
-      /// that all the values in column_path besides column_path.column_family are truly optional: you can remove the entire
-      /// row by just specifying the ColumnFamily, or you can remove a SuperColumn or a single Column by specifying those levels too.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_path"></param>
-      /// <param name="timestamp"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level);
-      void End_remove(IAsyncResult asyncResult);
-      /// <summary>
-      /// Remove a counter at the specified location.
-      /// Note that counters have limited support for deletes: if you remove a counter, you must wait to issue any following update
-      /// until the delete has reached all the nodes and all of them have been fully compacted.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="path"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level);
-      void End_remove_counter(IAsyncResult asyncResult);
-      /// <summary>
-      ///   Mutate many columns or super columns for many row keys. See also: Mutation.
-      /// 
-      ///   mutation_map maps key to column family to a list of Mutation objects to take place at that scope.
-      /// *
-      /// </summary>
-      /// <param name="mutation_map"></param>
-      /// <param name="consistency_level"></param>
-      IAsyncResult Begin_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level);
-      void End_batch_mutate(IAsyncResult asyncResult);
-      /// <summary>
-      /// Truncate will mark and entire column family as deleted.
-      /// From the user's perspective a successful call to truncate will result complete data deletion from cfname.
-      /// Internally, however, disk space will not be immediatily released, as with all deletes in cassandra, this one
-      /// only marks the data as deleted.
-      /// The operation succeeds only if all hosts in the cluster at available and will throw an UnavailableException if
-      /// some hosts are down.
-      /// </summary>
-      /// <param name="cfname"></param>
-      IAsyncResult Begin_truncate(AsyncCallback callback, object state, string cfname);
-      void End_truncate(IAsyncResult asyncResult);
-      /// <summary>
-      /// for each schema version present in the cluster, returns a list of nodes at that version.
-      /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
-      /// the cluster is all on the same version if the size of the map is 1.
-      /// </summary>
-      IAsyncResult Begin_describe_schema_versions(AsyncCallback callback, object state);
-      Dictionary<string, List<string>> End_describe_schema_versions(IAsyncResult asyncResult);
-      /// <summary>
-      /// list the defined keyspaces in this cluster
-      /// </summary>
-      IAsyncResult Begin_describe_keyspaces(AsyncCallback callback, object state);
-      List<KsDef> End_describe_keyspaces(IAsyncResult asyncResult);
-      /// <summary>
-      /// get the cluster name
-      /// </summary>
-      IAsyncResult Begin_describe_cluster_name(AsyncCallback callback, object state);
-      string End_describe_cluster_name(IAsyncResult asyncResult);
-      /// <summary>
-      /// get the thrift api version
-      /// </summary>
-      IAsyncResult Begin_describe_version(AsyncCallback callback, object state);
-      string End_describe_version(IAsyncResult asyncResult);
-      /// <summary>
-      /// get the token ring: a map of ranges to host addresses,
-      /// represented as a set of TokenRange instead of a map from range
-      /// to list of endpoints, because you can't use Thrift structs as
-      /// map keys:
-      /// https://issues.apache.org/jira/browse/THRIFT-162
-      /// 
-      /// for the same reason, we can't return a set here, even though
-      /// order is neither important nor predictable.
-      /// </summary>
-      /// <param name="keyspace"></param>
-      IAsyncResult Begin_describe_ring(AsyncCallback callback, object state, string keyspace);
-      List<TokenRange> End_describe_ring(IAsyncResult asyncResult);
-      /// <summary>
-      /// returns the partitioner used by this cluster
-      /// </summary>
-      IAsyncResult Begin_describe_partitioner(AsyncCallback callback, object state);
-      string End_describe_partitioner(IAsyncResult asyncResult);
-      /// <summary>
-      /// returns the snitch used by this cluster
-      /// </summary>
-      IAsyncResult Begin_describe_snitch(AsyncCallback callback, object state);
-      string End_describe_snitch(IAsyncResult asyncResult);
-      /// <summary>
-      /// describe specified keyspace
-      /// </summary>
-      /// <param name="keyspace"></param>
-      IAsyncResult Begin_describe_keyspace(AsyncCallback callback, object state, string keyspace);
-      KsDef End_describe_keyspace(IAsyncResult asyncResult);
-      /// <summary>
-      /// experimental API for hadoop/parallel query support.
-      /// may change violently and without warning.
-      /// 
-      /// returns list of token strings such that first subrange is (list[0], list[1]],
-      /// next is (list[1], list[2]], etc.
-      /// </summary>
-      /// <param name="cfName"></param>
-      /// <param name="start_token"></param>
-      /// <param name="end_token"></param>
-      /// <param name="keys_per_split"></param>
-      IAsyncResult Begin_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split);
-      List<string> End_describe_splits(IAsyncResult asyncResult);
-      /// <summary>
-      /// adds a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="cf_def"></param>
-      IAsyncResult Begin_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def);
-      string End_system_add_column_family(IAsyncResult asyncResult);
-      /// <summary>
-      /// drops a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="column_family"></param>
-      IAsyncResult Begin_system_drop_column_family(AsyncCallback callback, object state, string column_family);
-      string End_system_drop_column_family(IAsyncResult asyncResult);
-      /// <summary>
-      /// adds a keyspace and any column families that are part of it. returns the new schema id.
-      /// </summary>
-      /// <param name="ks_def"></param>
-      IAsyncResult Begin_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def);
-      string End_system_add_keyspace(IAsyncResult asyncResult);
-      /// <summary>
-      /// drops a keyspace and any column families that are part of it. returns the new schema id.
-      /// </summary>
-      /// <param name="keyspace"></param>
-      IAsyncResult Begin_system_drop_keyspace(AsyncCallback callback, object state, string keyspace);
-      string End_system_drop_keyspace(IAsyncResult asyncResult);
-      /// <summary>
-      /// updates properties of a keyspace. returns the new schema id.
-      /// </summary>
-      /// <param name="ks_def"></param>
-      IAsyncResult Begin_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def);
-      string End_system_update_keyspace(IAsyncResult asyncResult);
-      /// <summary>
-      /// updates properties of a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="cf_def"></param>
-      IAsyncResult Begin_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def);
-      string End_system_update_column_family(IAsyncResult asyncResult);
-      /// <summary>
-      /// Executes a CQL (Cassandra Query Language) statement and returns a
-      /// CqlResult containing the results.
-      /// </summary>
-      /// <param name="query"></param>
-      /// <param name="compression"></param>
-      IAsyncResult Begin_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression);
-      CqlResult End_execute_cql_query(IAsyncResult asyncResult);
-      /// <summary>
-      /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
-      /// - the type of CQL statement
-      /// - an id token of the compiled CQL stored on the server side.
-      /// - a count of the discovered bound markers in the statement
-      /// </summary>
-      /// <param name="query"></param>
-      /// <param name="compression"></param>
-      IAsyncResult Begin_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression);
-      CqlPreparedResult End_prepare_cql_query(IAsyncResult asyncResult);
-      /// <summary>
-      /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
-      /// to bind and returns a CqlResult containing the results.
-      /// </summary>
-      /// <param name="itemId"></param>
-      /// <param name="values"></param>
-      IAsyncResult Begin_execute_prepared_cql_query(AsyncCallback callback, object state, int itemId, List<string> values);
-      CqlResult End_execute_prepared_cql_query(IAsyncResult asyncResult);
-    }
 
-    public class Client : IDisposable, Iface {
-      public Client(TProtocol prot) : this(prot, prot)
+    public class Client : IDisposable, IAsync
+    {
+      public Client(TProtocol protocol) : this(protocol, protocol)
       {
       }
 
-      public Client(TProtocol iprot, TProtocol oprot)
+      public Client(TProtocol inputProtocol, TProtocol outputProtocol)
       {
-        iprot_ = iprot;
-        oprot_ = oprot;
+        if (inputProtocol == null) throw new ArgumentNullException(nameof(inputProtocol));
+        if (outputProtocol == null) throw new ArgumentNullException(nameof(outputProtocol));
+        _inputProtocol = inputProtocol;
+        _outputProtocol = outputProtocol;
       }
 
-      protected TProtocol iprot_;
-      protected TProtocol oprot_;
-      protected int seqid_;
-
+      private TProtocol _inputProtocol;
+      private TProtocol _outputProtocol;
+      private int _seqId;
       public TProtocol InputProtocol
       {
-        get { return iprot_; }
+        get { return _inputProtocol; }
       }
+
       public TProtocol OutputProtocol
       {
-        get { return oprot_; }
+        get { return _outputProtocol; }
       }
 
+      public int SeqId
+      {
+        get { return _seqId; }
+      }
 
-      #region " IDisposable Support "
-      private bool _IsDisposed;
+      private bool _isDisposed;
 
-      // IDisposable
       public void Dispose()
       {
         Dispose(true);
@@ -977,72 +430,45 @@ namespace Apache.Cassandra.Test
 
       protected virtual void Dispose(bool disposing)
       {
-        if (!_IsDisposed)
+        if (!_isDisposed)
         {
           if (disposing)
           {
-            if (iprot_ != null)
+            if (_inputProtocol != null)
             {
-              ((IDisposable)iprot_).Dispose();
+              ((IDisposable)_inputProtocol).Dispose();
             }
-            if (oprot_ != null)
+            if (_outputProtocol != null)
             {
-              ((IDisposable)oprot_).Dispose();
+              ((IDisposable)_outputProtocol).Dispose();
             }
           }
         }
-        _IsDisposed = true;
-      }
-      #endregion
-
-
-      
-      public IAsyncResult Begin_login(AsyncCallback callback, object state, AuthenticationRequest auth_request)
-      {
-        return send_login(callback, state, auth_request);
+        _isDisposed = true;
       }
 
-      public void End_login(IAsyncResult asyncResult)
+      public async Task loginAsync(AuthenticationRequest auth_request, CancellationToken cancellationToken)
       {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_login();
-      }
-
-      public async Task loginAsync(AuthenticationRequest auth_request)
-      {
-        await Task.Run(() =>
-        {
-          login(auth_request);
-        });
-      }
-
-      public void login(AuthenticationRequest auth_request)
-      {
-        var asyncResult = Begin_login(null, null, auth_request);
-        End_login(asyncResult);
-
-      }
-      public IAsyncResult send_login(AsyncCallback callback, object state, AuthenticationRequest auth_request)
-      {
-        oprot_.WriteMessageBegin(new TMessage("login", TMessageType.Call, seqid_));
-        login_args args = new login_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("login", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new loginArgs();
         args.Auth_request = auth_request;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_login()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        login_result result = new login_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new loginResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.authnx) {
           throw result.Authnx;
         }
@@ -1052,117 +478,58 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_set_keyspace(AsyncCallback callback, object state, string keyspace)
+      public async Task set_keyspaceAsync(string keyspace, CancellationToken cancellationToken)
       {
-        return send_set_keyspace(callback, state, keyspace);
-      }
-
-      public void End_set_keyspace(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_set_keyspace();
-      }
-
-      public async Task set_keyspaceAsync(string keyspace)
-      {
-        await Task.Run(() =>
-        {
-          set_keyspace(keyspace);
-        });
-      }
-
-      public void set_keyspace(string keyspace)
-      {
-        var asyncResult = Begin_set_keyspace(null, null, keyspace);
-        End_set_keyspace(asyncResult);
-
-      }
-      public IAsyncResult send_set_keyspace(AsyncCallback callback, object state, string keyspace)
-      {
-        oprot_.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Call, seqid_));
-        set_keyspace_args args = new set_keyspace_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("set_keyspace", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new set_keyspaceArgs();
         args.Keyspace = keyspace;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_set_keyspace()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        set_keyspace_result result = new set_keyspace_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new set_keyspaceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
         return;
       }
 
-      
-      public IAsyncResult Begin_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
+      public async Task<ColumnOrSuperColumn> @getAsync(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_get(callback, state, key, column_path, consistency_level);
-      }
-
-      public ColumnOrSuperColumn End_get(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_get();
-      }
-
-      public async Task<ColumnOrSuperColumn> @getAsync(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
-      {
-        ColumnOrSuperColumn retval;
-        retval = await Task.Run(() =>
-        {
-          return get(key, column_path, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Get the Column or SuperColumn at the given column_path. If no value is present, NotFoundException is thrown. (This is
-      /// the only method that can throw an exception under non-failure conditions.)
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_path"></param>
-      /// <param name="consistency_level"></param>
-      public ColumnOrSuperColumn @get(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_get(null, null, key, column_path, consistency_level);
-        return End_get(asyncResult);
-
-      }
-      public IAsyncResult send_get(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("get", TMessageType.Call, seqid_));
-        get_args args = new get_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("get", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new getArgs();
         args.Key = key;
         args.Column_path = column_path;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public ColumnOrSuperColumn recv_get()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        get_result result = new get_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new getResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1181,66 +548,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "get failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      public async Task<List<ColumnOrSuperColumn>> get_sliceAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_get_slice(callback, state, key, column_parent, predicate, consistency_level);
-      }
-
-      public List<ColumnOrSuperColumn> End_get_slice(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_get_slice();
-      }
-
-      public async Task<List<ColumnOrSuperColumn>> get_sliceAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        List<ColumnOrSuperColumn> retval;
-        retval = await Task.Run(() =>
-        {
-          return get_slice(key, column_parent, predicate, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Get the group of columns contained by column_parent (either a ColumnFamily name or a ColumnFamily/SuperColumn name
-      /// pair) specified by the given SlicePredicate. If no matching values are found, an empty list is returned.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      public List<ColumnOrSuperColumn> get_slice(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_get_slice(null, null, key, column_parent, predicate, consistency_level);
-        return End_get_slice(asyncResult);
-
-      }
-      public IAsyncResult send_get_slice(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("get_slice", TMessageType.Call, seqid_));
-        get_slice_args args = new get_slice_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("get_slice", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new get_sliceArgs();
         args.Key = key;
         args.Column_parent = column_parent;
         args.Predicate = predicate;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public List<ColumnOrSuperColumn> recv_get_slice()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        get_slice_result result = new get_slice_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new get_sliceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1256,66 +588,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "get_slice failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      public async Task<int> get_countAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_get_count(callback, state, key, column_parent, predicate, consistency_level);
-      }
-
-      public int End_get_count(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_get_count();
-      }
-
-      public async Task<int> get_countAsync(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        int retval;
-        retval = await Task.Run(() =>
-        {
-          return get_count(key, column_parent, predicate, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// returns the number of columns matching <code>predicate</code> for a particular <code>key</code>,
-      /// <code>ColumnFamily</code> and optionally <code>SuperColumn</code>.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      public int get_count(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_get_count(null, null, key, column_parent, predicate, consistency_level);
-        return End_get_count(asyncResult);
-
-      }
-      public IAsyncResult send_get_count(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("get_count", TMessageType.Call, seqid_));
-        get_count_args args = new get_count_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("get_count", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new get_countArgs();
         args.Key = key;
         args.Column_parent = column_parent;
         args.Predicate = predicate;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public int recv_get_count()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        get_count_result result = new get_count_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new get_countResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1331,65 +628,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "get_count failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      public async Task<Dictionary<byte[], List<ColumnOrSuperColumn>>> multiget_sliceAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_multiget_slice(callback, state, keys, column_parent, predicate, consistency_level);
-      }
-
-      public Dictionary<byte[], List<ColumnOrSuperColumn>> End_multiget_slice(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_multiget_slice();
-      }
-
-      public async Task<Dictionary<byte[], List<ColumnOrSuperColumn>>> multiget_sliceAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        Dictionary<byte[], List<ColumnOrSuperColumn>> retval;
-        retval = await Task.Run(() =>
-        {
-          return multiget_slice(keys, column_parent, predicate, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Performs a get_slice for column_parent and predicate for the given keys in parallel.
-      /// </summary>
-      /// <param name="keys"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      public Dictionary<byte[], List<ColumnOrSuperColumn>> multiget_slice(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_multiget_slice(null, null, keys, column_parent, predicate, consistency_level);
-        return End_multiget_slice(asyncResult);
-
-      }
-      public IAsyncResult send_multiget_slice(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Call, seqid_));
-        multiget_slice_args args = new multiget_slice_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("multiget_slice", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new multiget_sliceArgs();
         args.Keys = keys;
         args.Column_parent = column_parent;
         args.Predicate = predicate;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public Dictionary<byte[], List<ColumnOrSuperColumn>> recv_multiget_slice()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        multiget_slice_result result = new multiget_slice_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new multiget_sliceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1405,65 +668,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "multiget_slice failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
+      public async Task<Dictionary<byte[], int>> multiget_countAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_multiget_count(callback, state, keys, column_parent, predicate, consistency_level);
-      }
-
-      public Dictionary<byte[], int> End_multiget_count(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_multiget_count();
-      }
-
-      public async Task<Dictionary<byte[], int>> multiget_countAsync(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        Dictionary<byte[], int> retval;
-        retval = await Task.Run(() =>
-        {
-          return multiget_count(keys, column_parent, predicate, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Perform a get_count in parallel on the given list<binary> keys. The return value maps keys to the count found.
-      /// </summary>
-      /// <param name="keys"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="consistency_level"></param>
-      public Dictionary<byte[], int> multiget_count(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_multiget_count(null, null, keys, column_parent, predicate, consistency_level);
-        return End_multiget_count(asyncResult);
-
-      }
-      public IAsyncResult send_multiget_count(AsyncCallback callback, object state, List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Call, seqid_));
-        multiget_count_args args = new multiget_count_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("multiget_count", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new multiget_countArgs();
         args.Keys = keys;
         args.Column_parent = column_parent;
         args.Predicate = predicate;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public Dictionary<byte[], int> recv_multiget_count()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        multiget_count_result result = new multiget_count_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new multiget_countResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1479,65 +708,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "multiget_count failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
+      public async Task<List<KeySlice>> get_range_slicesAsync(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_get_range_slices(callback, state, column_parent, predicate, range, consistency_level);
-      }
-
-      public List<KeySlice> End_get_range_slices(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_get_range_slices();
-      }
-
-      public async Task<List<KeySlice>> get_range_slicesAsync(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
-      {
-        List<KeySlice> retval;
-        retval = await Task.Run(() =>
-        {
-          return get_range_slices(column_parent, predicate, range, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// returns a subset of columns for a contiguous range of keys.
-      /// </summary>
-      /// <param name="column_parent"></param>
-      /// <param name="predicate"></param>
-      /// <param name="range"></param>
-      /// <param name="consistency_level"></param>
-      public List<KeySlice> get_range_slices(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_get_range_slices(null, null, column_parent, predicate, range, consistency_level);
-        return End_get_range_slices(asyncResult);
-
-      }
-      public IAsyncResult send_get_range_slices(AsyncCallback callback, object state, ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Call, seqid_));
-        get_range_slices_args args = new get_range_slices_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("get_range_slices", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new get_range_slicesArgs();
         args.Column_parent = column_parent;
         args.Predicate = predicate;
         args.Range = range;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public List<KeySlice> recv_get_range_slices()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        get_range_slices_result result = new get_range_slices_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new get_range_slicesResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1553,65 +748,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "get_range_slices failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
+      public async Task<List<KeySlice>> get_indexed_slicesAsync(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_get_indexed_slices(callback, state, column_parent, index_clause, column_predicate, consistency_level);
-      }
-
-      public List<KeySlice> End_get_indexed_slices(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_get_indexed_slices();
-      }
-
-      public async Task<List<KeySlice>> get_indexed_slicesAsync(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
-      {
-        List<KeySlice> retval;
-        retval = await Task.Run(() =>
-        {
-          return get_indexed_slices(column_parent, index_clause, column_predicate, consistency_level);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Returns the subset of columns specified in SlicePredicate for the rows matching the IndexClause
-      /// </summary>
-      /// <param name="column_parent"></param>
-      /// <param name="index_clause"></param>
-      /// <param name="column_predicate"></param>
-      /// <param name="consistency_level"></param>
-      public List<KeySlice> get_indexed_slices(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_get_indexed_slices(null, null, column_parent, index_clause, column_predicate, consistency_level);
-        return End_get_indexed_slices(asyncResult);
-
-      }
-      public IAsyncResult send_get_indexed_slices(AsyncCallback callback, object state, ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Call, seqid_));
-        get_indexed_slices_args args = new get_indexed_slices_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("get_indexed_slices", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new get_indexed_slicesArgs();
         args.Column_parent = column_parent;
         args.Index_clause = index_clause;
         args.Column_predicate = column_predicate;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public List<KeySlice> recv_get_indexed_slices()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        get_indexed_slices_result result = new get_indexed_slices_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new get_indexed_slicesResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -1627,63 +788,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "get_indexed_slices failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
+      public async Task insertAsync(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_insert(callback, state, key, column_parent, column, consistency_level);
-      }
-
-      public void End_insert(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_insert();
-      }
-
-      public async Task insertAsync(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
-      {
-        await Task.Run(() =>
-        {
-          insert(key, column_parent, column, consistency_level);
-        });
-      }
-
-      /// <summary>
-      /// Insert a Column at the given column_parent.column_family and optional column_parent.super_column.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="column"></param>
-      /// <param name="consistency_level"></param>
-      public void insert(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_insert(null, null, key, column_parent, column, consistency_level);
-        End_insert(asyncResult);
-
-      }
-      public IAsyncResult send_insert(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("insert", TMessageType.Call, seqid_));
-        insert_args args = new insert_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("insert", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new insertArgs();
         args.Key = key;
         args.Column_parent = column_parent;
         args.Column = column;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_insert()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        insert_result result = new insert_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new insertResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
@@ -1696,63 +825,31 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
+      public async Task @addAsync(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_add(callback, state, key, column_parent, column, consistency_level);
-      }
-
-      public void End_add(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_add();
-      }
-
-      public async Task @addAsync(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
-      {
-        await Task.Run(() =>
-        {
-          add(key, column_parent, column, consistency_level);
-        });
-      }
-
-      /// <summary>
-      /// Increment or decrement a counter.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_parent"></param>
-      /// <param name="column"></param>
-      /// <param name="consistency_level"></param>
-      public void @add(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_add(null, null, key, column_parent, column, consistency_level);
-        End_add(asyncResult);
-
-      }
-      public IAsyncResult send_add(AsyncCallback callback, object state, byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("add", TMessageType.Call, seqid_));
-        add_args args = new add_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("add", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new addArgs();
         args.Key = key;
         args.Column_parent = column_parent;
         args.Column = column;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_add()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        add_result result = new add_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new addResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
@@ -1765,65 +862,31 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
+      public async Task @removeAsync(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_remove(callback, state, key, column_path, timestamp, consistency_level);
-      }
-
-      public void End_remove(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_remove();
-      }
-
-      public async Task @removeAsync(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
-      {
-        await Task.Run(() =>
-        {
-          remove(key, column_path, timestamp, consistency_level);
-        });
-      }
-
-      /// <summary>
-      /// Remove data from the row specified by key at the granularity specified by column_path, and the given timestamp. Note
-      /// that all the values in column_path besides column_path.column_family are truly optional: you can remove the entire
-      /// row by just specifying the ColumnFamily, or you can remove a SuperColumn or a single Column by specifying those levels too.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="column_path"></param>
-      /// <param name="timestamp"></param>
-      /// <param name="consistency_level"></param>
-      public void @remove(byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_remove(null, null, key, column_path, timestamp, consistency_level);
-        End_remove(asyncResult);
-
-      }
-      public IAsyncResult send_remove(AsyncCallback callback, object state, byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("remove", TMessageType.Call, seqid_));
-        remove_args args = new remove_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("remove", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new removeArgs();
         args.Key = key;
         args.Column_path = column_path;
         args.Timestamp = timestamp;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_remove()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        remove_result result = new remove_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new removeResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
@@ -1836,63 +899,30 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
+      public async Task remove_counterAsync(byte[] key, ColumnPath path, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_remove_counter(callback, state, key, path, consistency_level);
-      }
-
-      public void End_remove_counter(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_remove_counter();
-      }
-
-      public async Task remove_counterAsync(byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
-      {
-        await Task.Run(() =>
-        {
-          remove_counter(key, path, consistency_level);
-        });
-      }
-
-      /// <summary>
-      /// Remove a counter at the specified location.
-      /// Note that counters have limited support for deletes: if you remove a counter, you must wait to issue any following update
-      /// until the delete has reached all the nodes and all of them have been fully compacted.
-      /// </summary>
-      /// <param name="key"></param>
-      /// <param name="path"></param>
-      /// <param name="consistency_level"></param>
-      public void remove_counter(byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_remove_counter(null, null, key, path, consistency_level);
-        End_remove_counter(asyncResult);
-
-      }
-      public IAsyncResult send_remove_counter(AsyncCallback callback, object state, byte[] key, ColumnPath path, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Call, seqid_));
-        remove_counter_args args = new remove_counter_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("remove_counter", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new remove_counterArgs();
         args.Key = key;
         args.Path = path;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_remove_counter()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        remove_counter_result result = new remove_counter_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new remove_counterResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
@@ -1905,62 +935,29 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
+      public async Task batch_mutateAsync(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level, CancellationToken cancellationToken)
       {
-        return send_batch_mutate(callback, state, mutation_map, consistency_level);
-      }
-
-      public void End_batch_mutate(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_batch_mutate();
-      }
-
-      public async Task batch_mutateAsync(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
-      {
-        await Task.Run(() =>
-        {
-          batch_mutate(mutation_map, consistency_level);
-        });
-      }
-
-      /// <summary>
-      ///   Mutate many columns or super columns for many row keys. See also: Mutation.
-      /// 
-      ///   mutation_map maps key to column family to a list of Mutation objects to take place at that scope.
-      /// *
-      /// </summary>
-      /// <param name="mutation_map"></param>
-      /// <param name="consistency_level"></param>
-      public void batch_mutate(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
-      {
-        var asyncResult = Begin_batch_mutate(null, null, mutation_map, consistency_level);
-        End_batch_mutate(asyncResult);
-
-      }
-      public IAsyncResult send_batch_mutate(AsyncCallback callback, object state, Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level)
-      {
-        oprot_.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Call, seqid_));
-        batch_mutate_args args = new batch_mutate_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("batch_mutate", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new batch_mutateArgs();
         args.Mutation_map = mutation_map;
         args.Consistency_level = consistency_level;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_batch_mutate()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        batch_mutate_result result = new batch_mutate_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new batch_mutateResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
@@ -1973,62 +970,28 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_truncate(AsyncCallback callback, object state, string cfname)
+      public async Task truncateAsync(string cfname, CancellationToken cancellationToken)
       {
-        return send_truncate(callback, state, cfname);
-      }
-
-      public void End_truncate(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        recv_truncate();
-      }
-
-      public async Task truncateAsync(string cfname)
-      {
-        await Task.Run(() =>
-        {
-          truncate(cfname);
-        });
-      }
-
-      /// <summary>
-      /// Truncate will mark and entire column family as deleted.
-      /// From the user's perspective a successful call to truncate will result complete data deletion from cfname.
-      /// Internally, however, disk space will not be immediatily released, as with all deletes in cassandra, this one
-      /// only marks the data as deleted.
-      /// The operation succeeds only if all hosts in the cluster at available and will throw an UnavailableException if
-      /// some hosts are down.
-      /// </summary>
-      /// <param name="cfname"></param>
-      public void truncate(string cfname)
-      {
-        var asyncResult = Begin_truncate(null, null, cfname);
-        End_truncate(asyncResult);
-
-      }
-      public IAsyncResult send_truncate(AsyncCallback callback, object state, string cfname)
-      {
-        oprot_.WriteMessageBegin(new TMessage("truncate", TMessageType.Call, seqid_));
-        truncate_args args = new truncate_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("truncate", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new truncateArgs();
         args.Cfname = cfname;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public void recv_truncate()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        truncate_result result = new truncate_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new truncateResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.ire) {
           throw result.Ire;
         }
@@ -2041,59 +1004,27 @@ namespace Apache.Cassandra.Test
         return;
       }
 
-      
-      public IAsyncResult Begin_describe_schema_versions(AsyncCallback callback, object state)
+      public async Task<Dictionary<string, List<string>>> describe_schema_versionsAsync(CancellationToken cancellationToken)
       {
-        return send_describe_schema_versions(callback, state);
-      }
-
-      public Dictionary<string, List<string>> End_describe_schema_versions(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_schema_versions();
-      }
-
-      public async Task<Dictionary<string, List<string>>> describe_schema_versionsAsync()
-      {
-        Dictionary<string, List<string>> retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_schema_versions", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_schema_versionsArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return describe_schema_versions();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// for each schema version present in the cluster, returns a list of nodes at that version.
-      /// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
-      /// the cluster is all on the same version if the size of the map is 1.
-      /// </summary>
-      public Dictionary<string, List<string>> describe_schema_versions()
-      {
-        var asyncResult = Begin_describe_schema_versions(null, null);
-        return End_describe_schema_versions(asyncResult);
-
-      }
-      public IAsyncResult send_describe_schema_versions(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Call, seqid_));
-        describe_schema_versions_args args = new describe_schema_versions_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public Dictionary<string, List<string>> recv_describe_schema_versions()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_schema_versions_result result = new describe_schema_versions_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_schema_versionsResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2103,57 +1034,27 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_schema_versions failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_keyspaces(AsyncCallback callback, object state)
+      public async Task<List<KsDef>> describe_keyspacesAsync(CancellationToken cancellationToken)
       {
-        return send_describe_keyspaces(callback, state);
-      }
-
-      public List<KsDef> End_describe_keyspaces(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_keyspaces();
-      }
-
-      public async Task<List<KsDef>> describe_keyspacesAsync()
-      {
-        List<KsDef> retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_keyspaces", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_keyspacesArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return describe_keyspaces();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// list the defined keyspaces in this cluster
-      /// </summary>
-      public List<KsDef> describe_keyspaces()
-      {
-        var asyncResult = Begin_describe_keyspaces(null, null);
-        return End_describe_keyspaces(asyncResult);
-
-      }
-      public IAsyncResult send_describe_keyspaces(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Call, seqid_));
-        describe_keyspaces_args args = new describe_keyspaces_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public List<KsDef> recv_describe_keyspaces()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_keyspaces_result result = new describe_keyspaces_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_keyspacesResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2163,180 +1064,82 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_keyspaces failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_cluster_name(AsyncCallback callback, object state)
+      public async Task<string> describe_cluster_nameAsync(CancellationToken cancellationToken)
       {
-        return send_describe_cluster_name(callback, state);
-      }
-
-      public string End_describe_cluster_name(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_cluster_name();
-      }
-
-      public async Task<string> describe_cluster_nameAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_cluster_name", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_cluster_nameArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return describe_cluster_name();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// get the cluster name
-      /// </summary>
-      public string describe_cluster_name()
-      {
-        var asyncResult = Begin_describe_cluster_name(null, null);
-        return End_describe_cluster_name(asyncResult);
-
-      }
-      public IAsyncResult send_describe_cluster_name(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Call, seqid_));
-        describe_cluster_name_args args = new describe_cluster_name_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_describe_cluster_name()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_cluster_name_result result = new describe_cluster_name_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_cluster_nameResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_cluster_name failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_version(AsyncCallback callback, object state)
+      public async Task<string> describe_versionAsync(CancellationToken cancellationToken)
       {
-        return send_describe_version(callback, state);
-      }
-
-      public string End_describe_version(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_version();
-      }
-
-      public async Task<string> describe_versionAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_version", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_versionArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return describe_version();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// get the thrift api version
-      /// </summary>
-      public string describe_version()
-      {
-        var asyncResult = Begin_describe_version(null, null);
-        return End_describe_version(asyncResult);
-
-      }
-      public IAsyncResult send_describe_version(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_version", TMessageType.Call, seqid_));
-        describe_version_args args = new describe_version_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_describe_version()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_version_result result = new describe_version_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_versionResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_version failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_ring(AsyncCallback callback, object state, string keyspace)
+      public async Task<List<TokenRange>> describe_ringAsync(string keyspace, CancellationToken cancellationToken)
       {
-        return send_describe_ring(callback, state, keyspace);
-      }
-
-      public List<TokenRange> End_describe_ring(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_ring();
-      }
-
-      public async Task<List<TokenRange>> describe_ringAsync(string keyspace)
-      {
-        List<TokenRange> retval;
-        retval = await Task.Run(() =>
-        {
-          return describe_ring(keyspace);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// get the token ring: a map of ranges to host addresses,
-      /// represented as a set of TokenRange instead of a map from range
-      /// to list of endpoints, because you can't use Thrift structs as
-      /// map keys:
-      /// https://issues.apache.org/jira/browse/THRIFT-162
-      /// 
-      /// for the same reason, we can't return a set here, even though
-      /// order is neither important nor predictable.
-      /// </summary>
-      /// <param name="keyspace"></param>
-      public List<TokenRange> describe_ring(string keyspace)
-      {
-        var asyncResult = Begin_describe_ring(null, null, keyspace);
-        return End_describe_ring(asyncResult);
-
-      }
-      public IAsyncResult send_describe_ring(AsyncCallback callback, object state, string keyspace)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Call, seqid_));
-        describe_ring_args args = new describe_ring_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_ring", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_ringArgs();
         args.Keyspace = keyspace;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public List<TokenRange> recv_describe_ring()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_ring_result result = new describe_ring_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_ringResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2346,173 +1149,82 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_ring failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_partitioner(AsyncCallback callback, object state)
+      public async Task<string> describe_partitionerAsync(CancellationToken cancellationToken)
       {
-        return send_describe_partitioner(callback, state);
-      }
-
-      public string End_describe_partitioner(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_partitioner();
-      }
-
-      public async Task<string> describe_partitionerAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_partitioner", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_partitionerArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return describe_partitioner();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// returns the partitioner used by this cluster
-      /// </summary>
-      public string describe_partitioner()
-      {
-        var asyncResult = Begin_describe_partitioner(null, null);
-        return End_describe_partitioner(asyncResult);
-
-      }
-      public IAsyncResult send_describe_partitioner(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Call, seqid_));
-        describe_partitioner_args args = new describe_partitioner_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_describe_partitioner()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_partitioner_result result = new describe_partitioner_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_partitionerResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_partitioner failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_snitch(AsyncCallback callback, object state)
+      public async Task<string> describe_snitchAsync(CancellationToken cancellationToken)
       {
-        return send_describe_snitch(callback, state);
-      }
-
-      public string End_describe_snitch(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_snitch();
-      }
-
-      public async Task<string> describe_snitchAsync()
-      {
-        string retval;
-        retval = await Task.Run(() =>
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_snitch", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_snitchArgs();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
         {
-          return describe_snitch();
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// returns the snitch used by this cluster
-      /// </summary>
-      public string describe_snitch()
-      {
-        var asyncResult = Begin_describe_snitch(null, null);
-        return End_describe_snitch(asyncResult);
-
-      }
-      public IAsyncResult send_describe_snitch(AsyncCallback callback, object state)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Call, seqid_));
-        describe_snitch_args args = new describe_snitch_args();
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_describe_snitch()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_snitch_result result = new describe_snitch_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_snitchResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_snitch failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_keyspace(AsyncCallback callback, object state, string keyspace)
+      public async Task<KsDef> describe_keyspaceAsync(string keyspace, CancellationToken cancellationToken)
       {
-        return send_describe_keyspace(callback, state, keyspace);
-      }
-
-      public KsDef End_describe_keyspace(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_keyspace();
-      }
-
-      public async Task<KsDef> describe_keyspaceAsync(string keyspace)
-      {
-        KsDef retval;
-        retval = await Task.Run(() =>
-        {
-          return describe_keyspace(keyspace);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// describe specified keyspace
-      /// </summary>
-      /// <param name="keyspace"></param>
-      public KsDef describe_keyspace(string keyspace)
-      {
-        var asyncResult = Begin_describe_keyspace(null, null, keyspace);
-        return End_describe_keyspace(asyncResult);
-
-      }
-      public IAsyncResult send_describe_keyspace(AsyncCallback callback, object state, string keyspace)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Call, seqid_));
-        describe_keyspace_args args = new describe_keyspace_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_keyspace", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_keyspaceArgs();
         args.Keyspace = keyspace;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public KsDef recv_describe_keyspace()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_keyspace_result result = new describe_keyspace_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_keyspaceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2525,69 +1237,31 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_keyspace failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split)
+      public async Task<List<string>> describe_splitsAsync(string cfName, string start_token, string end_token, int keys_per_split, CancellationToken cancellationToken)
       {
-        return send_describe_splits(callback, state, cfName, start_token, end_token, keys_per_split);
-      }
-
-      public List<string> End_describe_splits(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_describe_splits();
-      }
-
-      public async Task<List<string>> describe_splitsAsync(string cfName, string start_token, string end_token, int keys_per_split)
-      {
-        List<string> retval;
-        retval = await Task.Run(() =>
-        {
-          return describe_splits(cfName, start_token, end_token, keys_per_split);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// experimental API for hadoop/parallel query support.
-      /// may change violently and without warning.
-      /// 
-      /// returns list of token strings such that first subrange is (list[0], list[1]],
-      /// next is (list[1], list[2]], etc.
-      /// </summary>
-      /// <param name="cfName"></param>
-      /// <param name="start_token"></param>
-      /// <param name="end_token"></param>
-      /// <param name="keys_per_split"></param>
-      public List<string> describe_splits(string cfName, string start_token, string end_token, int keys_per_split)
-      {
-        var asyncResult = Begin_describe_splits(null, null, cfName, start_token, end_token, keys_per_split);
-        return End_describe_splits(asyncResult);
-
-      }
-      public IAsyncResult send_describe_splits(AsyncCallback callback, object state, string cfName, string start_token, string end_token, int keys_per_split)
-      {
-        oprot_.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Call, seqid_));
-        describe_splits_args args = new describe_splits_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("describe_splits", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new describe_splitsArgs();
         args.CfName = cfName;
         args.Start_token = start_token;
         args.End_token = end_token;
         args.Keys_per_split = keys_per_split;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public List<string> recv_describe_splits()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        describe_splits_result result = new describe_splits_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new describe_splitsResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2597,59 +1271,28 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "describe_splits failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def)
+      public async Task<string> system_add_column_familyAsync(CfDef cf_def, CancellationToken cancellationToken)
       {
-        return send_system_add_column_family(callback, state, cf_def);
-      }
-
-      public string End_system_add_column_family(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_system_add_column_family();
-      }
-
-      public async Task<string> system_add_column_familyAsync(CfDef cf_def)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return system_add_column_family(cf_def);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// adds a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="cf_def"></param>
-      public string system_add_column_family(CfDef cf_def)
-      {
-        var asyncResult = Begin_system_add_column_family(null, null, cf_def);
-        return End_system_add_column_family(asyncResult);
-
-      }
-      public IAsyncResult send_system_add_column_family(AsyncCallback callback, object state, CfDef cf_def)
-      {
-        oprot_.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Call, seqid_));
-        system_add_column_family_args args = new system_add_column_family_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("system_add_column_family", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new system_add_column_familyArgs();
         args.Cf_def = cf_def;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_system_add_column_family()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        system_add_column_family_result result = new system_add_column_family_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new system_add_column_familyResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2662,59 +1305,28 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "system_add_column_family failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_system_drop_column_family(AsyncCallback callback, object state, string column_family)
+      public async Task<string> system_drop_column_familyAsync(string column_family, CancellationToken cancellationToken)
       {
-        return send_system_drop_column_family(callback, state, column_family);
-      }
-
-      public string End_system_drop_column_family(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_system_drop_column_family();
-      }
-
-      public async Task<string> system_drop_column_familyAsync(string column_family)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return system_drop_column_family(column_family);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// drops a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="column_family"></param>
-      public string system_drop_column_family(string column_family)
-      {
-        var asyncResult = Begin_system_drop_column_family(null, null, column_family);
-        return End_system_drop_column_family(asyncResult);
-
-      }
-      public IAsyncResult send_system_drop_column_family(AsyncCallback callback, object state, string column_family)
-      {
-        oprot_.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Call, seqid_));
-        system_drop_column_family_args args = new system_drop_column_family_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("system_drop_column_family", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new system_drop_column_familyArgs();
         args.Column_family = column_family;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_system_drop_column_family()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        system_drop_column_family_result result = new system_drop_column_family_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new system_drop_column_familyResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2727,59 +1339,28 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "system_drop_column_family failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def)
+      public async Task<string> system_add_keyspaceAsync(KsDef ks_def, CancellationToken cancellationToken)
       {
-        return send_system_add_keyspace(callback, state, ks_def);
-      }
-
-      public string End_system_add_keyspace(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_system_add_keyspace();
-      }
-
-      public async Task<string> system_add_keyspaceAsync(KsDef ks_def)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return system_add_keyspace(ks_def);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// adds a keyspace and any column families that are part of it. returns the new schema id.
-      /// </summary>
-      /// <param name="ks_def"></param>
-      public string system_add_keyspace(KsDef ks_def)
-      {
-        var asyncResult = Begin_system_add_keyspace(null, null, ks_def);
-        return End_system_add_keyspace(asyncResult);
-
-      }
-      public IAsyncResult send_system_add_keyspace(AsyncCallback callback, object state, KsDef ks_def)
-      {
-        oprot_.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Call, seqid_));
-        system_add_keyspace_args args = new system_add_keyspace_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("system_add_keyspace", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new system_add_keyspaceArgs();
         args.Ks_def = ks_def;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_system_add_keyspace()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        system_add_keyspace_result result = new system_add_keyspace_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new system_add_keyspaceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2792,59 +1373,28 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "system_add_keyspace failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_system_drop_keyspace(AsyncCallback callback, object state, string keyspace)
+      public async Task<string> system_drop_keyspaceAsync(string keyspace, CancellationToken cancellationToken)
       {
-        return send_system_drop_keyspace(callback, state, keyspace);
-      }
-
-      public string End_system_drop_keyspace(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_system_drop_keyspace();
-      }
-
-      public async Task<string> system_drop_keyspaceAsync(string keyspace)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return system_drop_keyspace(keyspace);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// drops a keyspace and any column families that are part of it. returns the new schema id.
-      /// </summary>
-      /// <param name="keyspace"></param>
-      public string system_drop_keyspace(string keyspace)
-      {
-        var asyncResult = Begin_system_drop_keyspace(null, null, keyspace);
-        return End_system_drop_keyspace(asyncResult);
-
-      }
-      public IAsyncResult send_system_drop_keyspace(AsyncCallback callback, object state, string keyspace)
-      {
-        oprot_.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Call, seqid_));
-        system_drop_keyspace_args args = new system_drop_keyspace_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("system_drop_keyspace", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new system_drop_keyspaceArgs();
         args.Keyspace = keyspace;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_system_drop_keyspace()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        system_drop_keyspace_result result = new system_drop_keyspace_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new system_drop_keyspaceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2857,59 +1407,28 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "system_drop_keyspace failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def)
+      public async Task<string> system_update_keyspaceAsync(KsDef ks_def, CancellationToken cancellationToken)
       {
-        return send_system_update_keyspace(callback, state, ks_def);
-      }
-
-      public string End_system_update_keyspace(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_system_update_keyspace();
-      }
-
-      public async Task<string> system_update_keyspaceAsync(KsDef ks_def)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return system_update_keyspace(ks_def);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// updates properties of a keyspace. returns the new schema id.
-      /// </summary>
-      /// <param name="ks_def"></param>
-      public string system_update_keyspace(KsDef ks_def)
-      {
-        var asyncResult = Begin_system_update_keyspace(null, null, ks_def);
-        return End_system_update_keyspace(asyncResult);
-
-      }
-      public IAsyncResult send_system_update_keyspace(AsyncCallback callback, object state, KsDef ks_def)
-      {
-        oprot_.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Call, seqid_));
-        system_update_keyspace_args args = new system_update_keyspace_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("system_update_keyspace", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new system_update_keyspaceArgs();
         args.Ks_def = ks_def;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_system_update_keyspace()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        system_update_keyspace_result result = new system_update_keyspace_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new system_update_keyspaceResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2922,59 +1441,28 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "system_update_keyspace failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def)
+      public async Task<string> system_update_column_familyAsync(CfDef cf_def, CancellationToken cancellationToken)
       {
-        return send_system_update_column_family(callback, state, cf_def);
-      }
-
-      public string End_system_update_column_family(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_system_update_column_family();
-      }
-
-      public async Task<string> system_update_column_familyAsync(CfDef cf_def)
-      {
-        string retval;
-        retval = await Task.Run(() =>
-        {
-          return system_update_column_family(cf_def);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// updates properties of a column family. returns the new schema id.
-      /// </summary>
-      /// <param name="cf_def"></param>
-      public string system_update_column_family(CfDef cf_def)
-      {
-        var asyncResult = Begin_system_update_column_family(null, null, cf_def);
-        return End_system_update_column_family(asyncResult);
-
-      }
-      public IAsyncResult send_system_update_column_family(AsyncCallback callback, object state, CfDef cf_def)
-      {
-        oprot_.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Call, seqid_));
-        system_update_column_family_args args = new system_update_column_family_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("system_update_column_family", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new system_update_column_familyArgs();
         args.Cf_def = cf_def;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public string recv_system_update_column_family()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        system_update_column_family_result result = new system_update_column_family_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new system_update_column_familyResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -2987,62 +1475,29 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "system_update_column_family failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
+      public async Task<CqlResult> execute_cql_queryAsync(byte[] query, Compression compression, CancellationToken cancellationToken)
       {
-        return send_execute_cql_query(callback, state, query, compression);
-      }
-
-      public CqlResult End_execute_cql_query(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_execute_cql_query();
-      }
-
-      public async Task<CqlResult> execute_cql_queryAsync(byte[] query, Compression compression)
-      {
-        CqlResult retval;
-        retval = await Task.Run(() =>
-        {
-          return execute_cql_query(query, compression);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Executes a CQL (Cassandra Query Language) statement and returns a
-      /// CqlResult containing the results.
-      /// </summary>
-      /// <param name="query"></param>
-      /// <param name="compression"></param>
-      public CqlResult execute_cql_query(byte[] query, Compression compression)
-      {
-        var asyncResult = Begin_execute_cql_query(null, null, query, compression);
-        return End_execute_cql_query(asyncResult);
-
-      }
-      public IAsyncResult send_execute_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
-      {
-        oprot_.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Call, seqid_));
-        execute_cql_query_args args = new execute_cql_query_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("execute_cql_query", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new execute_cql_queryArgs();
         args.Query = query;
         args.Compression = compression;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public CqlResult recv_execute_cql_query()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        execute_cql_query_result result = new execute_cql_query_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new execute_cql_queryResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -3061,64 +1516,29 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "execute_cql_query failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
+      public async Task<CqlPreparedResult> prepare_cql_queryAsync(byte[] query, Compression compression, CancellationToken cancellationToken)
       {
-        return send_prepare_cql_query(callback, state, query, compression);
-      }
-
-      public CqlPreparedResult End_prepare_cql_query(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_prepare_cql_query();
-      }
-
-      public async Task<CqlPreparedResult> prepare_cql_queryAsync(byte[] query, Compression compression)
-      {
-        CqlPreparedResult retval;
-        retval = await Task.Run(() =>
-        {
-          return prepare_cql_query(query, compression);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Prepare a CQL (Cassandra Query Language) statement by compiling and returning
-      /// - the type of CQL statement
-      /// - an id token of the compiled CQL stored on the server side.
-      /// - a count of the discovered bound markers in the statement
-      /// </summary>
-      /// <param name="query"></param>
-      /// <param name="compression"></param>
-      public CqlPreparedResult prepare_cql_query(byte[] query, Compression compression)
-      {
-        var asyncResult = Begin_prepare_cql_query(null, null, query, compression);
-        return End_prepare_cql_query(asyncResult);
-
-      }
-      public IAsyncResult send_prepare_cql_query(AsyncCallback callback, object state, byte[] query, Compression compression)
-      {
-        oprot_.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Call, seqid_));
-        prepare_cql_query_args args = new prepare_cql_query_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("prepare_cql_query", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new prepare_cql_queryArgs();
         args.Query = query;
         args.Compression = compression;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public CqlPreparedResult recv_prepare_cql_query()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        prepare_cql_query_result result = new prepare_cql_query_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new prepare_cql_queryResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -3128,62 +1548,29 @@ namespace Apache.Cassandra.Test
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "prepare_cql_query failed: unknown result");
       }
 
-      
-      public IAsyncResult Begin_execute_prepared_cql_query(AsyncCallback callback, object state, int itemId, List<string> values)
+      public async Task<CqlResult> execute_prepared_cql_queryAsync(int itemId, List<string> values, CancellationToken cancellationToken)
       {
-        return send_execute_prepared_cql_query(callback, state, itemId, values);
-      }
-
-      public CqlResult End_execute_prepared_cql_query(IAsyncResult asyncResult)
-      {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_execute_prepared_cql_query();
-      }
-
-      public async Task<CqlResult> execute_prepared_cql_queryAsync(int itemId, List<string> values)
-      {
-        CqlResult retval;
-        retval = await Task.Run(() =>
-        {
-          return execute_prepared_cql_query(itemId, values);
-        });
-        return retval;
-      }
-
-      /// <summary>
-      /// Executes a prepared CQL (Cassandra Query Language) statement by passing an id token and  a list of variables
-      /// to bind and returns a CqlResult containing the results.
-      /// </summary>
-      /// <param name="itemId"></param>
-      /// <param name="values"></param>
-      public CqlResult execute_prepared_cql_query(int itemId, List<string> values)
-      {
-        var asyncResult = Begin_execute_prepared_cql_query(null, null, itemId, values);
-        return End_execute_prepared_cql_query(asyncResult);
-
-      }
-      public IAsyncResult send_execute_prepared_cql_query(AsyncCallback callback, object state, int itemId, List<string> values)
-      {
-        oprot_.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Call, seqid_));
-        execute_prepared_cql_query_args args = new execute_prepared_cql_query_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("execute_prepared_cql_query", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new execute_prepared_cql_queryArgs();
         args.ItemId = itemId;
         args.Values = values;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public CqlResult recv_execute_prepared_cql_query()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        execute_prepared_cql_query_result result = new execute_prepared_cql_query_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new execute_prepared_cql_queryResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -3203,10 +1590,14 @@ namespace Apache.Cassandra.Test
       }
 
     }
-    public class AsyncProcessor : TAsyncProcessor {
-      public AsyncProcessor(IAsync iface)
+    public class AsyncProcessor : TAsyncProcessor
+    {
+      private IAsync _iAsync;
+
+      public AsyncProcessor(IAsync iAsync)
       {
-        iface_ = iface;
+        if (iAsync == null) throw new ArgumentNullException(nameof(iAsync));
+        _iAsync = iAsync;
         processMap_["login"] = login_ProcessAsync;
         processMap_["set_keyspace"] = set_keyspace_ProcessAsync;
         processMap_["get"] = get_ProcessAsync;
@@ -3242,28 +1633,27 @@ namespace Apache.Cassandra.Test
         processMap_["execute_prepared_cql_query"] = execute_prepared_cql_query_ProcessAsync;
       }
 
-      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
-      private IAsync iface_;
+      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken);
       protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
 
-      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
         try
         {
-          TMessage msg = iprot.ReadMessageBegin();
+          var msg = await iprot.ReadMessageBeginAsync(cancellationToken);
           ProcessFunction fn;
           processMap_.TryGetValue(msg.Name, out fn);
           if (fn == null) {
-            TProtocolUtil.Skip(iprot, TType.Struct);
-            iprot.ReadMessageEnd();
-            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
-            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
-            x.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
+            await TProtocolUtil.SkipAsync(iprot, TType.Struct, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+            await oprot.WriteMessageBeginAsync(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID), cancellationToken);
+            await x.WriteAsync(oprot, cancellationToken);
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
             return true;
           }
-          await fn(msg.SeqID, iprot, oprot);
+          await fn(msg.SeqID, iprot, oprot, cancellationToken);
         }
         catch (IOException)
         {
@@ -3271,18 +1661,17 @@ namespace Apache.Cassandra.Test
         }
         return true;
       }
-
-      public async Task login_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task login_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        login_args args = new login_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        login_result result = new login_result();
+        var args = new loginArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new loginResult();
         try
         {
           try
           {
-            await iface_.loginAsync(args.Auth_request);
+            await _iAsync.loginAsync(args.Auth_request, cancellationToken);
           }
           catch (AuthenticationException authnx)
           {
@@ -3292,8 +1681,8 @@ namespace Apache.Cassandra.Test
           {
             result.Authzx = authzx;
           }
-          oprot.WriteMessageBegin(new TMessage("login", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("login", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -3303,32 +1692,32 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("login", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("login", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public async Task set_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task set_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        set_keyspace_args args = new set_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        set_keyspace_result result = new set_keyspace_result();
+        var args = new set_keyspaceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new set_keyspaceResult();
         try
         {
           try
           {
-            await iface_.set_keyspaceAsync(args.Keyspace);
+            await _iAsync.set_keyspaceAsync(args.Keyspace, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("set_keyspace", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -3338,1387 +1727,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("set_keyspace", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public async Task get_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task get_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        get_args args = new get_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_result result = new get_result();
+        var args = new getArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new getResult();
         try
         {
           try
           {
-            result.Success = await iface_.@getAsync(args.Key, args.Column_path, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (NotFoundException nfe)
-          {
-            result.Nfe = nfe;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("get", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task get_slice_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        get_slice_args args = new get_slice_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_slice_result result = new get_slice_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.get_sliceAsync(args.Key, args.Column_parent, args.Predicate, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("get_slice", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_slice", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task get_count_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        get_count_args args = new get_count_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_count_result result = new get_count_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.get_countAsync(args.Key, args.Column_parent, args.Predicate, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("get_count", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_count", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task multiget_slice_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        multiget_slice_args args = new multiget_slice_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        multiget_slice_result result = new multiget_slice_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.multiget_sliceAsync(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task multiget_count_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        multiget_count_args args = new multiget_count_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        multiget_count_result result = new multiget_count_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.multiget_countAsync(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task get_range_slices_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        get_range_slices_args args = new get_range_slices_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_range_slices_result result = new get_range_slices_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.get_range_slicesAsync(args.Column_parent, args.Predicate, args.Range, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task get_indexed_slices_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        get_indexed_slices_args args = new get_indexed_slices_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_indexed_slices_result result = new get_indexed_slices_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.get_indexed_slicesAsync(args.Column_parent, args.Index_clause, args.Column_predicate, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task insert_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        insert_args args = new insert_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        insert_result result = new insert_result();
-        try
-        {
-          try
-          {
-            await iface_.insertAsync(args.Key, args.Column_parent, args.Column, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("insert", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("insert", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task add_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        add_args args = new add_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        add_result result = new add_result();
-        try
-        {
-          try
-          {
-            await iface_.@addAsync(args.Key, args.Column_parent, args.Column, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("add", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("add", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task remove_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        remove_args args = new remove_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        remove_result result = new remove_result();
-        try
-        {
-          try
-          {
-            await iface_.@removeAsync(args.Key, args.Column_path, args.Timestamp, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("remove", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("remove", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task remove_counter_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        remove_counter_args args = new remove_counter_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        remove_counter_result result = new remove_counter_result();
-        try
-        {
-          try
-          {
-            await iface_.remove_counterAsync(args.Key, args.Path, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task batch_mutate_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        batch_mutate_args args = new batch_mutate_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        batch_mutate_result result = new batch_mutate_result();
-        try
-        {
-          try
-          {
-            await iface_.batch_mutateAsync(args.Mutation_map, args.Consistency_level);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task truncate_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        truncate_args args = new truncate_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        truncate_result result = new truncate_result();
-        try
-        {
-          try
-          {
-            await iface_.truncateAsync(args.Cfname);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          oprot.WriteMessageBegin(new TMessage("truncate", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("truncate", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_schema_versions_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_schema_versions_args args = new describe_schema_versions_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_schema_versions_result result = new describe_schema_versions_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.describe_schema_versionsAsync();
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_keyspaces_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_keyspaces_args args = new describe_keyspaces_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_keyspaces_result result = new describe_keyspaces_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.describe_keyspacesAsync();
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_cluster_name_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_cluster_name_args args = new describe_cluster_name_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_cluster_name_result result = new describe_cluster_name_result();
-        try
-        {
-          result.Success = await iface_.describe_cluster_nameAsync();
-          oprot.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_version_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_version_args args = new describe_version_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_version_result result = new describe_version_result();
-        try
-        {
-          result.Success = await iface_.describe_versionAsync();
-          oprot.WriteMessageBegin(new TMessage("describe_version", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_version", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_ring_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_ring_args args = new describe_ring_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_ring_result result = new describe_ring_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.describe_ringAsync(args.Keyspace);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_partitioner_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_partitioner_args args = new describe_partitioner_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_partitioner_result result = new describe_partitioner_result();
-        try
-        {
-          result.Success = await iface_.describe_partitionerAsync();
-          oprot.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_snitch_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_snitch_args args = new describe_snitch_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_snitch_result result = new describe_snitch_result();
-        try
-        {
-          result.Success = await iface_.describe_snitchAsync();
-          oprot.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_keyspace_args args = new describe_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_keyspace_result result = new describe_keyspace_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.describe_keyspaceAsync(args.Keyspace);
-          }
-          catch (NotFoundException nfe)
-          {
-            result.Nfe = nfe;
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task describe_splits_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        describe_splits_args args = new describe_splits_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_splits_result result = new describe_splits_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.describe_splitsAsync(args.CfName, args.Start_token, args.End_token, args.Keys_per_split);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task system_add_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_add_column_family_args args = new system_add_column_family_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_add_column_family_result result = new system_add_column_family_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.system_add_column_familyAsync(args.Cf_def);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task system_drop_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_drop_column_family_args args = new system_drop_column_family_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_drop_column_family_result result = new system_drop_column_family_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.system_drop_column_familyAsync(args.Column_family);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task system_add_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_add_keyspace_args args = new system_add_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_add_keyspace_result result = new system_add_keyspace_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.system_add_keyspaceAsync(args.Ks_def);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task system_drop_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_drop_keyspace_args args = new system_drop_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_drop_keyspace_result result = new system_drop_keyspace_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.system_drop_keyspaceAsync(args.Keyspace);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task system_update_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_update_keyspace_args args = new system_update_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_update_keyspace_result result = new system_update_keyspace_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.system_update_keyspaceAsync(args.Ks_def);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task system_update_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_update_column_family_args args = new system_update_column_family_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_update_column_family_result result = new system_update_column_family_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.system_update_column_familyAsync(args.Cf_def);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task execute_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        execute_cql_query_args args = new execute_cql_query_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        execute_cql_query_result result = new execute_cql_query_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.execute_cql_queryAsync(args.Query, args.Compression);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task prepare_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        prepare_cql_query_args args = new prepare_cql_query_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        prepare_cql_query_result result = new prepare_cql_query_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.prepare_cql_queryAsync(args.Query, args.Compression);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public async Task execute_prepared_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        execute_prepared_cql_query_args args = new execute_prepared_cql_query_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        execute_prepared_cql_query_result result = new execute_prepared_cql_query_result();
-        try
-        {
-          try
-          {
-            result.Success = await iface_.execute_prepared_cql_queryAsync(args.ItemId, args.Values);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (UnavailableException ue)
-          {
-            result.Ue = ue;
-          }
-          catch (TimedOutException te)
-          {
-            result.Te = te;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-    }
-
-    public class Processor : TProcessor {
-      public Processor(ISync iface)
-      {
-        iface_ = iface;
-        processMap_["login"] = login_Process;
-        processMap_["set_keyspace"] = set_keyspace_Process;
-        processMap_["get"] = get_Process;
-        processMap_["get_slice"] = get_slice_Process;
-        processMap_["get_count"] = get_count_Process;
-        processMap_["multiget_slice"] = multiget_slice_Process;
-        processMap_["multiget_count"] = multiget_count_Process;
-        processMap_["get_range_slices"] = get_range_slices_Process;
-        processMap_["get_indexed_slices"] = get_indexed_slices_Process;
-        processMap_["insert"] = insert_Process;
-        processMap_["add"] = add_Process;
-        processMap_["remove"] = remove_Process;
-        processMap_["remove_counter"] = remove_counter_Process;
-        processMap_["batch_mutate"] = batch_mutate_Process;
-        processMap_["truncate"] = truncate_Process;
-        processMap_["describe_schema_versions"] = describe_schema_versions_Process;
-        processMap_["describe_keyspaces"] = describe_keyspaces_Process;
-        processMap_["describe_cluster_name"] = describe_cluster_name_Process;
-        processMap_["describe_version"] = describe_version_Process;
-        processMap_["describe_ring"] = describe_ring_Process;
-        processMap_["describe_partitioner"] = describe_partitioner_Process;
-        processMap_["describe_snitch"] = describe_snitch_Process;
-        processMap_["describe_keyspace"] = describe_keyspace_Process;
-        processMap_["describe_splits"] = describe_splits_Process;
-        processMap_["system_add_column_family"] = system_add_column_family_Process;
-        processMap_["system_drop_column_family"] = system_drop_column_family_Process;
-        processMap_["system_add_keyspace"] = system_add_keyspace_Process;
-        processMap_["system_drop_keyspace"] = system_drop_keyspace_Process;
-        processMap_["system_update_keyspace"] = system_update_keyspace_Process;
-        processMap_["system_update_column_family"] = system_update_column_family_Process;
-        processMap_["execute_cql_query"] = execute_cql_query_Process;
-        processMap_["prepare_cql_query"] = prepare_cql_query_Process;
-        processMap_["execute_prepared_cql_query"] = execute_prepared_cql_query_Process;
-      }
-
-      protected delegate void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
-      private ISync iface_;
-      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
-
-      public bool Process(TProtocol iprot, TProtocol oprot)
-      {
-        try
-        {
-          TMessage msg = iprot.ReadMessageBegin();
-          ProcessFunction fn;
-          processMap_.TryGetValue(msg.Name, out fn);
-          if (fn == null) {
-            TProtocolUtil.Skip(iprot, TType.Struct);
-            iprot.ReadMessageEnd();
-            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
-            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
-            x.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
-            return true;
-          }
-          fn(msg.SeqID, iprot, oprot);
-        }
-        catch (IOException)
-        {
-          return false;
-        }
-        return true;
-      }
-
-      public void login_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        login_args args = new login_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        login_result result = new login_result();
-        try
-        {
-          try
-          {
-            iface_.login(args.Auth_request);
-          }
-          catch (AuthenticationException authnx)
-          {
-            result.Authnx = authnx;
-          }
-          catch (AuthorizationException authzx)
-          {
-            result.Authzx = authzx;
-          }
-          oprot.WriteMessageBegin(new TMessage("login", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("login", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void set_keyspace_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        set_keyspace_args args = new set_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        set_keyspace_result result = new set_keyspace_result();
-        try
-        {
-          try
-          {
-            iface_.set_keyspace(args.Keyspace);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          oprot.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("set_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void get_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        get_args args = new get_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_result result = new get_result();
-        try
-        {
-          try
-          {
-            result.Success = iface_.@get(args.Key, args.Column_path, args.Consistency_level);
+            result.Success = await _iAsync.@getAsync(args.Key, args.Column_path, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4736,8 +1763,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("get", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("get", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -4747,25 +1774,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("get", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void get_slice_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task get_slice_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        get_slice_args args = new get_slice_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_slice_result result = new get_slice_result();
+        var args = new get_sliceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new get_sliceResult();
         try
         {
           try
           {
-            result.Success = iface_.get_slice(args.Key, args.Column_parent, args.Predicate, args.Consistency_level);
+            result.Success = await _iAsync.get_sliceAsync(args.Key, args.Column_parent, args.Predicate, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4779,8 +1806,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("get_slice", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("get_slice", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -4790,25 +1817,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_slice", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("get_slice", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void get_count_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task get_count_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        get_count_args args = new get_count_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_count_result result = new get_count_result();
+        var args = new get_countArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new get_countResult();
         try
         {
           try
           {
-            result.Success = iface_.get_count(args.Key, args.Column_parent, args.Predicate, args.Consistency_level);
+            result.Success = await _iAsync.get_countAsync(args.Key, args.Column_parent, args.Predicate, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4822,8 +1849,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("get_count", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("get_count", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -4833,25 +1860,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_count", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("get_count", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void multiget_slice_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task multiget_slice_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        multiget_slice_args args = new multiget_slice_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        multiget_slice_result result = new multiget_slice_result();
+        var args = new multiget_sliceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new multiget_sliceResult();
         try
         {
           try
           {
-            result.Success = iface_.multiget_slice(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level);
+            result.Success = await _iAsync.multiget_sliceAsync(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4865,8 +1892,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("multiget_slice", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -4876,25 +1903,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("multiget_slice", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("multiget_slice", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void multiget_count_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task multiget_count_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        multiget_count_args args = new multiget_count_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        multiget_count_result result = new multiget_count_result();
+        var args = new multiget_countArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new multiget_countResult();
         try
         {
           try
           {
-            result.Success = iface_.multiget_count(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level);
+            result.Success = await _iAsync.multiget_countAsync(args.Keys, args.Column_parent, args.Predicate, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4908,8 +1935,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("multiget_count", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -4919,25 +1946,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("multiget_count", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("multiget_count", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void get_range_slices_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task get_range_slices_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        get_range_slices_args args = new get_range_slices_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_range_slices_result result = new get_range_slices_result();
+        var args = new get_range_slicesArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new get_range_slicesResult();
         try
         {
           try
           {
-            result.Success = iface_.get_range_slices(args.Column_parent, args.Predicate, args.Range, args.Consistency_level);
+            result.Success = await _iAsync.get_range_slicesAsync(args.Column_parent, args.Predicate, args.Range, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4951,8 +1978,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("get_range_slices", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -4962,25 +1989,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_range_slices", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("get_range_slices", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void get_indexed_slices_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task get_indexed_slices_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        get_indexed_slices_args args = new get_indexed_slices_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        get_indexed_slices_result result = new get_indexed_slices_result();
+        var args = new get_indexed_slicesArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new get_indexed_slicesResult();
         try
         {
           try
           {
-            result.Success = iface_.get_indexed_slices(args.Column_parent, args.Index_clause, args.Column_predicate, args.Consistency_level);
+            result.Success = await _iAsync.get_indexed_slicesAsync(args.Column_parent, args.Index_clause, args.Column_predicate, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -4994,8 +2021,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("get_indexed_slices", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5005,25 +2032,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("get_indexed_slices", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("get_indexed_slices", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void insert_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task insert_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        insert_args args = new insert_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        insert_result result = new insert_result();
+        var args = new insertArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new insertResult();
         try
         {
           try
           {
-            iface_.insert(args.Key, args.Column_parent, args.Column, args.Consistency_level);
+            await _iAsync.insertAsync(args.Key, args.Column_parent, args.Column, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5037,8 +2064,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("insert", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("insert", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5048,25 +2075,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("insert", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("insert", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void add_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task add_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        add_args args = new add_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        add_result result = new add_result();
+        var args = new addArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new addResult();
         try
         {
           try
           {
-            iface_.@add(args.Key, args.Column_parent, args.Column, args.Consistency_level);
+            await _iAsync.@addAsync(args.Key, args.Column_parent, args.Column, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5080,8 +2107,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("add", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("add", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5091,25 +2118,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("add", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("add", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void remove_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task remove_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        remove_args args = new remove_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        remove_result result = new remove_result();
+        var args = new removeArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new removeResult();
         try
         {
           try
           {
-            iface_.@remove(args.Key, args.Column_path, args.Timestamp, args.Consistency_level);
+            await _iAsync.@removeAsync(args.Key, args.Column_path, args.Timestamp, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5123,8 +2150,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("remove", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("remove", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5134,25 +2161,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("remove", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("remove", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void remove_counter_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task remove_counter_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        remove_counter_args args = new remove_counter_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        remove_counter_result result = new remove_counter_result();
+        var args = new remove_counterArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new remove_counterResult();
         try
         {
           try
           {
-            iface_.remove_counter(args.Key, args.Path, args.Consistency_level);
+            await _iAsync.remove_counterAsync(args.Key, args.Path, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5166,8 +2193,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("remove_counter", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5177,25 +2204,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("remove_counter", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("remove_counter", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void batch_mutate_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task batch_mutate_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        batch_mutate_args args = new batch_mutate_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        batch_mutate_result result = new batch_mutate_result();
+        var args = new batch_mutateArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new batch_mutateResult();
         try
         {
           try
           {
-            iface_.batch_mutate(args.Mutation_map, args.Consistency_level);
+            await _iAsync.batch_mutateAsync(args.Mutation_map, args.Consistency_level, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5209,8 +2236,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("batch_mutate", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5220,25 +2247,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("batch_mutate", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("batch_mutate", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void truncate_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task truncate_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        truncate_args args = new truncate_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        truncate_result result = new truncate_result();
+        var args = new truncateArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new truncateResult();
         try
         {
           try
           {
-            iface_.truncate(args.Cfname);
+            await _iAsync.truncateAsync(args.Cfname, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5252,8 +2279,8 @@ namespace Apache.Cassandra.Test
           {
             result.Te = te;
           }
-          oprot.WriteMessageBegin(new TMessage("truncate", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("truncate", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5263,32 +2290,32 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("truncate", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("truncate", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_schema_versions_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_schema_versions_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_schema_versions_args args = new describe_schema_versions_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_schema_versions_result result = new describe_schema_versions_result();
+        var args = new describe_schema_versionsArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_schema_versionsResult();
         try
         {
           try
           {
-            result.Success = iface_.describe_schema_versions();
+            result.Success = await _iAsync.describe_schema_versionsAsync(cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_schema_versions", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5298,32 +2325,32 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_schema_versions", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_schema_versions", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_keyspaces_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_keyspaces_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_keyspaces_args args = new describe_keyspaces_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_keyspaces_result result = new describe_keyspaces_result();
+        var args = new describe_keyspacesArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_keyspacesResult();
         try
         {
           try
           {
-            result.Success = iface_.describe_keyspaces();
+            result.Success = await _iAsync.describe_keyspacesAsync(cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_keyspaces", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5333,25 +2360,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_keyspaces", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_keyspaces", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_cluster_name_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_cluster_name_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_cluster_name_args args = new describe_cluster_name_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_cluster_name_result result = new describe_cluster_name_result();
+        var args = new describe_cluster_nameArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_cluster_nameResult();
         try
         {
-          result.Success = iface_.describe_cluster_name();
-          oprot.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          result.Success = await _iAsync.describe_cluster_nameAsync(cancellationToken);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_cluster_name", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5361,25 +2388,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_cluster_name", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_cluster_name", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_version_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_version_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_version_args args = new describe_version_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_version_result result = new describe_version_result();
+        var args = new describe_versionArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_versionResult();
         try
         {
-          result.Success = iface_.describe_version();
-          oprot.WriteMessageBegin(new TMessage("describe_version", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          result.Success = await _iAsync.describe_versionAsync(cancellationToken);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_version", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5389,32 +2416,32 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_version", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_version", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_ring_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_ring_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_ring_args args = new describe_ring_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_ring_result result = new describe_ring_result();
+        var args = new describe_ringArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_ringResult();
         try
         {
           try
           {
-            result.Success = iface_.describe_ring(args.Keyspace);
+            result.Success = await _iAsync.describe_ringAsync(args.Keyspace, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_ring", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5424,25 +2451,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_ring", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_ring", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_partitioner_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_partitioner_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_partitioner_args args = new describe_partitioner_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_partitioner_result result = new describe_partitioner_result();
+        var args = new describe_partitionerArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_partitionerResult();
         try
         {
-          result.Success = iface_.describe_partitioner();
-          oprot.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          result.Success = await _iAsync.describe_partitionerAsync(cancellationToken);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_partitioner", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5452,25 +2479,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_partitioner", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_partitioner", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_snitch_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_snitch_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_snitch_args args = new describe_snitch_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_snitch_result result = new describe_snitch_result();
+        var args = new describe_snitchArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_snitchResult();
         try
         {
-          result.Success = iface_.describe_snitch();
-          oprot.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          result.Success = await _iAsync.describe_snitchAsync(cancellationToken);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_snitch", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5480,25 +2507,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_snitch", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_snitch", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_keyspace_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_keyspace_args args = new describe_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_keyspace_result result = new describe_keyspace_result();
+        var args = new describe_keyspaceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_keyspaceResult();
         try
         {
           try
           {
-            result.Success = iface_.describe_keyspace(args.Keyspace);
+            result.Success = await _iAsync.describe_keyspaceAsync(args.Keyspace, cancellationToken);
           }
           catch (NotFoundException nfe)
           {
@@ -5508,8 +2535,8 @@ namespace Apache.Cassandra.Test
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_keyspace", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5519,32 +2546,32 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_keyspace", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void describe_splits_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task describe_splits_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        describe_splits_args args = new describe_splits_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        describe_splits_result result = new describe_splits_result();
+        var args = new describe_splitsArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new describe_splitsResult();
         try
         {
           try
           {
-            result.Success = iface_.describe_splits(args.CfName, args.Start_token, args.End_token, args.Keys_per_split);
+            result.Success = await _iAsync.describe_splitsAsync(args.CfName, args.Start_token, args.End_token, args.Keys_per_split, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_splits", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5554,64 +2581,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("describe_splits", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("describe_splits", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void system_add_column_family_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task system_add_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        system_add_column_family_args args = new system_add_column_family_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_add_column_family_result result = new system_add_column_family_result();
+        var args = new system_add_column_familyArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new system_add_column_familyResult();
         try
         {
           try
           {
-            result.Success = iface_.system_add_column_family(args.Cf_def);
-          }
-          catch (InvalidRequestException ire)
-          {
-            result.Ire = ire;
-          }
-          catch (SchemaDisagreementException sde)
-          {
-            result.Sde = sde;
-          }
-          oprot.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_add_column_family", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-      public void system_drop_column_family_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        system_drop_column_family_args args = new system_drop_column_family_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_drop_column_family_result result = new system_drop_column_family_result();
-        try
-        {
-          try
-          {
-            result.Success = iface_.system_drop_column_family(args.Column_family);
+            result.Success = await _iAsync.system_add_column_familyAsync(args.Cf_def, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5621,8 +2609,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("system_add_column_family", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5632,25 +2620,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_drop_column_family", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("system_add_column_family", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void system_add_keyspace_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task system_drop_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        system_add_keyspace_args args = new system_add_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_add_keyspace_result result = new system_add_keyspace_result();
+        var args = new system_drop_column_familyArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new system_drop_column_familyResult();
         try
         {
           try
           {
-            result.Success = iface_.system_add_keyspace(args.Ks_def);
+            result.Success = await _iAsync.system_drop_column_familyAsync(args.Column_family, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5660,8 +2648,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("system_drop_column_family", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5671,25 +2659,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_add_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("system_drop_column_family", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void system_drop_keyspace_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task system_add_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        system_drop_keyspace_args args = new system_drop_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_drop_keyspace_result result = new system_drop_keyspace_result();
+        var args = new system_add_keyspaceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new system_add_keyspaceResult();
         try
         {
           try
           {
-            result.Success = iface_.system_drop_keyspace(args.Keyspace);
+            result.Success = await _iAsync.system_add_keyspaceAsync(args.Ks_def, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5699,8 +2687,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("system_add_keyspace", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5710,25 +2698,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_drop_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("system_add_keyspace", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void system_update_keyspace_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task system_drop_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        system_update_keyspace_args args = new system_update_keyspace_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_update_keyspace_result result = new system_update_keyspace_result();
+        var args = new system_drop_keyspaceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new system_drop_keyspaceResult();
         try
         {
           try
           {
-            result.Success = iface_.system_update_keyspace(args.Ks_def);
+            result.Success = await _iAsync.system_drop_keyspaceAsync(args.Keyspace, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5738,8 +2726,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("system_drop_keyspace", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5749,25 +2737,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_update_keyspace", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("system_drop_keyspace", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void system_update_column_family_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task system_update_keyspace_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        system_update_column_family_args args = new system_update_column_family_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        system_update_column_family_result result = new system_update_column_family_result();
+        var args = new system_update_keyspaceArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new system_update_keyspaceResult();
         try
         {
           try
           {
-            result.Success = iface_.system_update_column_family(args.Cf_def);
+            result.Success = await _iAsync.system_update_keyspaceAsync(args.Ks_def, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5777,8 +2765,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("system_update_keyspace", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5788,25 +2776,64 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("system_update_column_family", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("system_update_keyspace", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void execute_cql_query_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task system_update_column_family_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        execute_cql_query_args args = new execute_cql_query_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        execute_cql_query_result result = new execute_cql_query_result();
+        var args = new system_update_column_familyArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new system_update_column_familyResult();
         try
         {
           try
           {
-            result.Success = iface_.execute_cql_query(args.Query, args.Compression);
+            result.Success = await _iAsync.system_update_column_familyAsync(args.Cf_def, cancellationToken);
+          }
+          catch (InvalidRequestException ire)
+          {
+            result.Ire = ire;
+          }
+          catch (SchemaDisagreementException sde)
+          {
+            result.Sde = sde;
+          }
+          await oprot.WriteMessageBeginAsync(new TMessage("system_update_column_family", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
+        }
+        catch (TTransportException)
+        {
+          throw;
+        }
+        catch (Exception ex)
+        {
+          Console.Error.WriteLine("Error occurred in processor:");
+          Console.Error.WriteLine(ex.ToString());
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("system_update_column_family", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
+        }
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
+      }
+
+      public async Task execute_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
+      {
+        var args = new execute_cql_queryArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new execute_cql_queryResult();
+        try
+        {
+          try
+          {
+            result.Success = await _iAsync.execute_cql_queryAsync(args.Query, args.Compression, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5824,8 +2851,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("execute_cql_query", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5835,32 +2862,32 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("execute_cql_query", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("execute_cql_query", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void prepare_cql_query_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task prepare_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        prepare_cql_query_args args = new prepare_cql_query_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        prepare_cql_query_result result = new prepare_cql_query_result();
+        var args = new prepare_cql_queryArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new prepare_cql_queryResult();
         try
         {
           try
           {
-            result.Success = iface_.prepare_cql_query(args.Query, args.Compression);
+            result.Success = await _iAsync.prepare_cql_queryAsync(args.Query, args.Compression, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
             result.Ire = ire;
           }
-          oprot.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("prepare_cql_query", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5870,25 +2897,25 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("prepare_cql_query", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("prepare_cql_query", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
-      public void execute_prepared_cql_query_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task execute_prepared_cql_query_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        execute_prepared_cql_query_args args = new execute_prepared_cql_query_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        execute_prepared_cql_query_result result = new execute_prepared_cql_query_result();
+        var args = new execute_prepared_cql_queryArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new execute_prepared_cql_queryResult();
         try
         {
           try
           {
-            result.Success = iface_.execute_prepared_cql_query(args.ItemId, args.Values);
+            result.Success = await _iAsync.execute_prepared_cql_queryAsync(args.ItemId, args.Values, cancellationToken);
           }
           catch (InvalidRequestException ire)
           {
@@ -5906,8 +2933,8 @@ namespace Apache.Cassandra.Test
           {
             result.Sde = sde;
           }
-          oprot.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          await oprot.WriteMessageBeginAsync(new TMessage("execute_prepared_cql_query", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -5917,45 +2944,42 @@ namespace Apache.Cassandra.Test
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("execute_prepared_cql_query", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("execute_prepared_cql_query", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class login_args : TBase
+    public partial class loginArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public AuthenticationRequest Auth_request { get; set; }
 
-      public login_args() {
+      public loginArgs() {
       }
 
-      public login_args(AuthenticationRequest auth_request) : this() {
+      public loginArgs(AuthenticationRequest auth_request) : this() {
         this.Auth_request = auth_request;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_auth_request = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -5964,19 +2988,19 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Auth_request = new AuthenticationRequest();
-                  Auth_request.Read(iprot);
+                  await Auth_request.ReadAsync(iprot, cancellationToken);
                   isset_auth_request = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_auth_request)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -5986,21 +3010,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("login_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("login_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "auth_request";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Auth_request.Write(oprot);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Auth_request.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6009,21 +3033,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("login_args(");
-        __sb.Append(", Auth_request: ");
-        __sb.Append(Auth_request== null ? "<null>" : Auth_request.ToString());
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("login_args(");
+        sb.Append(", Auth_request: ");
+        sb.Append(Auth_request== null ? "<null>" : Auth_request.ToString());
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class login_result : TBase
+    public partial class loginResult : TBase
     {
       private AuthenticationException _authnx;
       private AuthorizationException _authzx;
@@ -6057,14 +3078,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool authnx;
         [DataMember]
@@ -6085,19 +3103,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public login_result() {
+      public loginResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -6106,26 +3124,26 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Authnx = new AuthenticationException();
-                  Authnx.Read(iprot);
+                  await Authnx.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Authzx = new AuthorizationException();
-                  Authzx.Read(iprot);
+                  await Authzx.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6133,35 +3151,35 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("login_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("login_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.authnx) {
             if (Authnx != null) {
               field.Name = "Authnx";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Authnx.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Authnx.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.authzx) {
             if (Authzx != null) {
               field.Name = "Authzx";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Authzx.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Authzx.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6170,55 +3188,52 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("login_result(");
+        var sb = new StringBuilder("login_result(");
         bool __first = true;
         if (Authnx != null && __isset.authnx) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Authnx: ");
-          __sb.Append(Authnx== null ? "<null>" : Authnx.ToString());
+          sb.Append("Authnx: ");
+          sb.Append(Authnx== null ? "<null>" : Authnx.ToString());
         }
         if (Authzx != null && __isset.authzx) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Authzx: ");
-          __sb.Append(Authzx== null ? "<null>" : Authzx.ToString());
+          sb.Append("Authzx: ");
+          sb.Append(Authzx== null ? "<null>" : Authzx.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class set_keyspace_args : TBase
+    public partial class set_keyspaceArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
-      public set_keyspace_args() {
+      public set_keyspaceArgs() {
       }
 
-      public set_keyspace_args(string keyspace) : this() {
+      public set_keyspaceArgs(string keyspace) : this() {
         this.Keyspace = keyspace;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_keyspace = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -6226,19 +3241,19 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Keyspace = iprot.ReadString();
+                  Keyspace = await iprot.ReadStringAsync(cancellationToken);
                   isset_keyspace = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_keyspace)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -6248,21 +3263,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("set_keyspace_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("set_keyspace_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "keyspace";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Keyspace);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Keyspace, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6271,21 +3286,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("set_keyspace_args(");
-        __sb.Append(", Keyspace: ");
-        __sb.Append(Keyspace);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("set_keyspace_args(");
+        sb.Append(", Keyspace: ");
+        sb.Append(Keyspace);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class set_keyspace_result : TBase
+    public partial class set_keyspaceResult : TBase
     {
       private InvalidRequestException _ire;
 
@@ -6304,14 +3316,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
       }
@@ -6325,19 +3334,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public set_keyspace_result() {
+      public set_keyspaceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -6346,18 +3355,18 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6365,26 +3374,26 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("set_keyspace_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("set_keyspace_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6393,26 +3402,23 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("set_keyspace_result(");
+        var sb = new StringBuilder("set_keyspace_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_args : TBase
+    public partial class getArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -6428,17 +3434,17 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public get_args() {
+      public getArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public get_args(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level) : this() {
+      public getArgs(byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level) : this() {
         this.Key = key;
         this.Column_path = column_path;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -6447,10 +3453,10 @@ namespace Apache.Cassandra.Test
           bool isset_column_path = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -6458,36 +3464,36 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_path = new ColumnPath();
-                  Column_path.Read(iprot);
+                  await Column_path.ReadAsync(iprot, cancellationToken);
                   isset_column_path = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_path)
@@ -6501,33 +3507,33 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_path";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_path.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_path.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6536,25 +3542,22 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Column_path: ");
-        __sb.Append(Column_path== null ? "<null>" : Column_path.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("get_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Column_path: ");
+        sb.Append(Column_path== null ? "<null>" : Column_path.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_result : TBase
+    public partial class getResult : TBase
     {
       private ColumnOrSuperColumn _success;
       private InvalidRequestException _ire;
@@ -6633,14 +3636,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -6682,19 +3682,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public get_result() {
+      public getResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -6703,50 +3703,50 @@ namespace Apache.Cassandra.Test
               case 0:
                 if (field.Type == TType.Struct) {
                   Success = new ColumnOrSuperColumn();
-                  Success.Read(iprot);
+                  await Success.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Nfe = new NotFoundException();
-                  Nfe.Read(iprot);
+                  await Nfe.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6754,62 +3754,62 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Struct;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              Success.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Success.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.nfe) {
             if (Nfe != null) {
               field.Name = "Nfe";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Nfe.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Nfe.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 4;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -6818,50 +3818,47 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_result(");
+        var sb = new StringBuilder("get_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success== null ? "<null>" : Success.ToString());
+          sb.Append("Success: ");
+          sb.Append(Success== null ? "<null>" : Success.ToString());
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Nfe != null && __isset.nfe) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Nfe: ");
-          __sb.Append(Nfe== null ? "<null>" : Nfe.ToString());
+          sb.Append("Nfe: ");
+          sb.Append(Nfe== null ? "<null>" : Nfe.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_slice_args : TBase
+    public partial class get_sliceArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -6880,18 +3877,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public get_slice_args() {
+      public get_sliceArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public get_slice_args(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
+      public get_sliceArgs(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
         this.Key = key;
         this.Column_parent = column_parent;
         this.Predicate = predicate;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -6901,10 +3898,10 @@ namespace Apache.Cassandra.Test
           bool isset_predicate = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -6912,45 +3909,45 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Predicate = new SlicePredicate();
-                  Predicate.Read(iprot);
+                  await Predicate.ReadAsync(iprot, cancellationToken);
                   isset_predicate = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_parent)
@@ -6966,39 +3963,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_slice_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_slice_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "predicate";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Predicate.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Predicate.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7007,27 +4004,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_slice_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Predicate: ");
-        __sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("get_slice_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Predicate: ");
+        sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_slice_result : TBase
+    public partial class get_sliceResult : TBase
     {
       private List<ColumnOrSuperColumn> _success;
       private InvalidRequestException _ire;
@@ -7091,14 +4085,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -7133,19 +4124,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public get_slice_result() {
+      public get_sliceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -7155,51 +4146,51 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Success = new List<ColumnOrSuperColumn>();
-                    TList _list83 = iprot.ReadListBegin();
-                    for( int _i84 = 0; _i84 < _list83.Count; ++_i84)
+                    TList _list83 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i84 = 0; _i84 < _list83.Count; ++_i84)
                     {
                       ColumnOrSuperColumn _elem85;
                       _elem85 = new ColumnOrSuperColumn();
-                      _elem85.Read(iprot);
+                      await _elem85.ReadAsync(iprot, cancellationToken);
                       Success.Add(_elem85);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7207,60 +4198,60 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_slice_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_slice_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.List;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteListBegin(new TList(TType.Struct, Success.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.Struct, Success.Count), cancellationToken);
                 foreach (ColumnOrSuperColumn _iter86 in Success)
                 {
-                  _iter86.Write(oprot);
+                  await _iter86.WriteAsync(oprot, cancellationToken);
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7269,44 +4260,41 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_slice_result(");
+        var sb = new StringBuilder("get_slice_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_count_args : TBase
+    public partial class get_countArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -7325,18 +4313,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public get_count_args() {
+      public get_countArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public get_count_args(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
+      public get_countArgs(byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
         this.Key = key;
         this.Column_parent = column_parent;
         this.Predicate = predicate;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -7346,10 +4334,10 @@ namespace Apache.Cassandra.Test
           bool isset_predicate = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -7357,45 +4345,45 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Predicate = new SlicePredicate();
-                  Predicate.Read(iprot);
+                  await Predicate.ReadAsync(iprot, cancellationToken);
                   isset_predicate = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_parent)
@@ -7411,39 +4399,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_count_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_count_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "predicate";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Predicate.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Predicate.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7452,27 +4440,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_count_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Predicate: ");
-        __sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("get_count_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Predicate: ");
+        sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_count_result : TBase
+    public partial class get_countResult : TBase
     {
       private int _success;
       private InvalidRequestException _ire;
@@ -7536,14 +4521,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -7578,19 +4560,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public get_count_result() {
+      public get_countResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -7598,42 +4580,42 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.I32) {
-                  Success = iprot.ReadI32();
+                  Success = await iprot.ReadI32Async(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7641,51 +4623,51 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_count_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_count_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             field.Name = "Success";
             field.Type = TType.I32;
             field.ID = 0;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32(Success);
-            oprot.WriteFieldEnd();
+            await oprot.WriteFieldBeginAsync(field, cancellationToken);
+            await oprot.WriteI32Async(Success, cancellationToken);
+            await oprot.WriteFieldEndAsync(cancellationToken);
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7694,44 +4676,41 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_count_result(");
+        var sb = new StringBuilder("get_count_result(");
         bool __first = true;
         if (__isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class multiget_slice_args : TBase
+    public partial class multiget_sliceArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -7750,18 +4729,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public multiget_slice_args() {
+      public multiget_sliceArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public multiget_slice_args(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
+      public multiget_sliceArgs(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
         this.Keys = keys;
         this.Column_parent = column_parent;
         this.Predicate = predicate;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -7771,10 +4750,10 @@ namespace Apache.Cassandra.Test
           bool isset_predicate = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -7784,53 +4763,53 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Keys = new List<byte[]>();
-                    TList _list87 = iprot.ReadListBegin();
-                    for( int _i88 = 0; _i88 < _list87.Count; ++_i88)
+                    TList _list87 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i88 = 0; _i88 < _list87.Count; ++_i88)
                     {
                       byte[] _elem89;
-                      _elem89 = iprot.ReadBinary();
+                      _elem89 = await iprot.ReadBinaryAsync(cancellationToken);
                       Keys.Add(_elem89);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                   isset_keys = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Predicate = new SlicePredicate();
-                  Predicate.Read(iprot);
+                  await Predicate.ReadAsync(iprot, cancellationToken);
                   isset_predicate = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_keys)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_parent)
@@ -7846,46 +4825,46 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("multiget_slice_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("multiget_slice_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "keys";
           field.Type = TType.List;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.String, Keys.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.String, Keys.Count), cancellationToken);
             foreach (byte[] _iter90 in Keys)
             {
-              oprot.WriteBinary(_iter90);
+              await oprot.WriteBinaryAsync(_iter90, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "predicate";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Predicate.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Predicate.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -7894,27 +4873,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("multiget_slice_args(");
-        __sb.Append(", Keys: ");
-        __sb.Append(Keys);
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Predicate: ");
-        __sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("multiget_slice_args(");
+        sb.Append(", Keys: ");
+        sb.Append(Keys);
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Predicate: ");
+        sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class multiget_slice_result : TBase
+    public partial class multiget_sliceResult : TBase
     {
       private Dictionary<byte[], List<ColumnOrSuperColumn>> _success;
       private InvalidRequestException _ire;
@@ -7978,14 +4954,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -8020,19 +4993,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public multiget_slice_result() {
+      public multiget_sliceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -8042,63 +5015,63 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.Map) {
                   {
                     Success = new Dictionary<byte[], List<ColumnOrSuperColumn>>();
-                    TMap _map91 = iprot.ReadMapBegin();
-                    for( int _i92 = 0; _i92 < _map91.Count; ++_i92)
+                    TMap _map91 = await iprot.ReadMapBeginAsync(cancellationToken);
+                    for(int _i92 = 0; _i92 < _map91.Count; ++_i92)
                     {
                       byte[] _key93;
                       List<ColumnOrSuperColumn> _val94;
-                      _key93 = iprot.ReadBinary();
+                      _key93 = await iprot.ReadBinaryAsync(cancellationToken);
                       {
                         _val94 = new List<ColumnOrSuperColumn>();
-                        TList _list95 = iprot.ReadListBegin();
-                        for( int _i96 = 0; _i96 < _list95.Count; ++_i96)
+                        TList _list95 = await iprot.ReadListBeginAsync(cancellationToken);
+                        for(int _i96 = 0; _i96 < _list95.Count; ++_i96)
                         {
                           ColumnOrSuperColumn _elem97;
                           _elem97 = new ColumnOrSuperColumn();
-                          _elem97.Read(iprot);
+                          await _elem97.ReadAsync(iprot, cancellationToken);
                           _val94.Add(_elem97);
                         }
-                        iprot.ReadListEnd();
+                        await iprot.ReadListEndAsync(cancellationToken);
                       }
                       Success[_key93] = _val94;
                     }
-                    iprot.ReadMapEnd();
+                    await iprot.ReadMapEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -8106,68 +5079,68 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("multiget_slice_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("multiget_slice_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Map;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteMapBegin(new TMap(TType.String, TType.List, Success.Count));
+                await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.List, Success.Count), cancellationToken);
                 foreach (byte[] _iter98 in Success.Keys)
                 {
-                  oprot.WriteBinary(_iter98);
+                  await oprot.WriteBinaryAsync(_iter98, cancellationToken);
                   {
-                    oprot.WriteListBegin(new TList(TType.Struct, Success[_iter98].Count));
+                    await oprot.WriteListBeginAsync(new TList(TType.Struct, Success[_iter98].Count), cancellationToken);
                     foreach (ColumnOrSuperColumn _iter99 in Success[_iter98])
                     {
-                      _iter99.Write(oprot);
+                      await _iter99.WriteAsync(oprot, cancellationToken);
                     }
-                    oprot.WriteListEnd();
+                    await oprot.WriteListEndAsync(cancellationToken);
                   }
                 }
-                oprot.WriteMapEnd();
+                await oprot.WriteMapEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -8176,44 +5149,41 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("multiget_slice_result(");
+        var sb = new StringBuilder("multiget_slice_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class multiget_count_args : TBase
+    public partial class multiget_countArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -8232,18 +5202,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public multiget_count_args() {
+      public multiget_countArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public multiget_count_args(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
+      public multiget_countArgs(List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level) : this() {
         this.Keys = keys;
         this.Column_parent = column_parent;
         this.Predicate = predicate;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -8253,10 +5223,10 @@ namespace Apache.Cassandra.Test
           bool isset_predicate = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -8266,53 +5236,53 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Keys = new List<byte[]>();
-                    TList _list100 = iprot.ReadListBegin();
-                    for( int _i101 = 0; _i101 < _list100.Count; ++_i101)
+                    TList _list100 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i101 = 0; _i101 < _list100.Count; ++_i101)
                     {
                       byte[] _elem102;
-                      _elem102 = iprot.ReadBinary();
+                      _elem102 = await iprot.ReadBinaryAsync(cancellationToken);
                       Keys.Add(_elem102);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                   isset_keys = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Predicate = new SlicePredicate();
-                  Predicate.Read(iprot);
+                  await Predicate.ReadAsync(iprot, cancellationToken);
                   isset_predicate = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_keys)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_parent)
@@ -8328,46 +5298,46 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("multiget_count_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("multiget_count_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "keys";
           field.Type = TType.List;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.String, Keys.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.String, Keys.Count), cancellationToken);
             foreach (byte[] _iter103 in Keys)
             {
-              oprot.WriteBinary(_iter103);
+              await oprot.WriteBinaryAsync(_iter103, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "predicate";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Predicate.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Predicate.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -8376,27 +5346,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("multiget_count_args(");
-        __sb.Append(", Keys: ");
-        __sb.Append(Keys);
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Predicate: ");
-        __sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("multiget_count_args(");
+        sb.Append(", Keys: ");
+        sb.Append(Keys);
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Predicate: ");
+        sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class multiget_count_result : TBase
+    public partial class multiget_countResult : TBase
     {
       private Dictionary<byte[], int> _success;
       private InvalidRequestException _ire;
@@ -8460,14 +5427,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -8502,19 +5466,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public multiget_count_result() {
+      public multiget_countResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -8524,52 +5488,52 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.Map) {
                   {
                     Success = new Dictionary<byte[], int>();
-                    TMap _map104 = iprot.ReadMapBegin();
-                    for( int _i105 = 0; _i105 < _map104.Count; ++_i105)
+                    TMap _map104 = await iprot.ReadMapBeginAsync(cancellationToken);
+                    for(int _i105 = 0; _i105 < _map104.Count; ++_i105)
                     {
                       byte[] _key106;
                       int _val107;
-                      _key106 = iprot.ReadBinary();
-                      _val107 = iprot.ReadI32();
+                      _key106 = await iprot.ReadBinaryAsync(cancellationToken);
+                      _val107 = await iprot.ReadI32Async(cancellationToken);
                       Success[_key106] = _val107;
                     }
-                    iprot.ReadMapEnd();
+                    await iprot.ReadMapEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -8577,61 +5541,61 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("multiget_count_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("multiget_count_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Map;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteMapBegin(new TMap(TType.String, TType.I32, Success.Count));
+                await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.I32, Success.Count), cancellationToken);
                 foreach (byte[] _iter108 in Success.Keys)
                 {
-                  oprot.WriteBinary(_iter108);
-                  oprot.WriteI32(Success[_iter108]);
+                  await oprot.WriteBinaryAsync(_iter108, cancellationToken);
+                  await oprot.WriteI32Async(Success[_iter108], cancellationToken);
                 }
-                oprot.WriteMapEnd();
+                await oprot.WriteMapEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -8640,44 +5604,41 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("multiget_count_result(");
+        var sb = new StringBuilder("multiget_count_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_range_slices_args : TBase
+    public partial class get_range_slicesArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -8696,18 +5657,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public get_range_slices_args() {
+      public get_range_slicesArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public get_range_slices_args(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level) : this() {
+      public get_range_slicesArgs(ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level) : this() {
         this.Column_parent = column_parent;
         this.Predicate = predicate;
         this.Range = range;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -8717,10 +5678,10 @@ namespace Apache.Cassandra.Test
           bool isset_range = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -8729,45 +5690,45 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Predicate = new SlicePredicate();
-                  Predicate.Read(iprot);
+                  await Predicate.ReadAsync(iprot, cancellationToken);
                   isset_predicate = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Range = new KeyRange();
-                  Range.Read(iprot);
+                  await Range.ReadAsync(iprot, cancellationToken);
                   isset_range = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_column_parent)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_predicate)
@@ -8783,39 +5744,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_range_slices_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_range_slices_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "predicate";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Predicate.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Predicate.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "range";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Range.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Range.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -8824,27 +5785,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_range_slices_args(");
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Predicate: ");
-        __sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
-        __sb.Append(", Range: ");
-        __sb.Append(Range== null ? "<null>" : Range.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("get_range_slices_args(");
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Predicate: ");
+        sb.Append(Predicate== null ? "<null>" : Predicate.ToString());
+        sb.Append(", Range: ");
+        sb.Append(Range== null ? "<null>" : Range.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_range_slices_result : TBase
+    public partial class get_range_slicesResult : TBase
     {
       private List<KeySlice> _success;
       private InvalidRequestException _ire;
@@ -8908,14 +5866,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -8950,19 +5905,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public get_range_slices_result() {
+      public get_range_slicesResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -8972,51 +5927,51 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Success = new List<KeySlice>();
-                    TList _list109 = iprot.ReadListBegin();
-                    for( int _i110 = 0; _i110 < _list109.Count; ++_i110)
+                    TList _list109 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i110 = 0; _i110 < _list109.Count; ++_i110)
                     {
                       KeySlice _elem111;
                       _elem111 = new KeySlice();
-                      _elem111.Read(iprot);
+                      await _elem111.ReadAsync(iprot, cancellationToken);
                       Success.Add(_elem111);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9024,60 +5979,60 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_range_slices_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_range_slices_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.List;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteListBegin(new TList(TType.Struct, Success.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.Struct, Success.Count), cancellationToken);
                 foreach (KeySlice _iter112 in Success)
                 {
-                  _iter112.Write(oprot);
+                  await _iter112.WriteAsync(oprot, cancellationToken);
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9086,44 +6041,41 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_range_slices_result(");
+        var sb = new StringBuilder("get_range_slices_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_indexed_slices_args : TBase
+    public partial class get_indexed_slicesArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -9142,18 +6094,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public get_indexed_slices_args() {
+      public get_indexed_slicesArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public get_indexed_slices_args(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level) : this() {
+      public get_indexed_slicesArgs(ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level) : this() {
         this.Column_parent = column_parent;
         this.Index_clause = index_clause;
         this.Column_predicate = column_predicate;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -9163,10 +6115,10 @@ namespace Apache.Cassandra.Test
           bool isset_column_predicate = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -9175,45 +6127,45 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Index_clause = new IndexClause();
-                  Index_clause.Read(iprot);
+                  await Index_clause.ReadAsync(iprot, cancellationToken);
                   isset_index_clause = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Column_predicate = new SlicePredicate();
-                  Column_predicate.Read(iprot);
+                  await Column_predicate.ReadAsync(iprot, cancellationToken);
                   isset_column_predicate = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_column_parent)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_index_clause)
@@ -9229,39 +6181,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_indexed_slices_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_indexed_slices_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "index_clause";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Index_clause.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Index_clause.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_predicate";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Column_predicate.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_predicate.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9270,27 +6222,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_indexed_slices_args(");
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Index_clause: ");
-        __sb.Append(Index_clause== null ? "<null>" : Index_clause.ToString());
-        __sb.Append(", Column_predicate: ");
-        __sb.Append(Column_predicate== null ? "<null>" : Column_predicate.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("get_indexed_slices_args(");
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Index_clause: ");
+        sb.Append(Index_clause== null ? "<null>" : Index_clause.ToString());
+        sb.Append(", Column_predicate: ");
+        sb.Append(Column_predicate== null ? "<null>" : Column_predicate.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class get_indexed_slices_result : TBase
+    public partial class get_indexed_slicesResult : TBase
     {
       private List<KeySlice> _success;
       private InvalidRequestException _ire;
@@ -9354,14 +6303,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -9396,19 +6342,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public get_indexed_slices_result() {
+      public get_indexed_slicesResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -9418,51 +6364,51 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Success = new List<KeySlice>();
-                    TList _list113 = iprot.ReadListBegin();
-                    for( int _i114 = 0; _i114 < _list113.Count; ++_i114)
+                    TList _list113 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i114 = 0; _i114 < _list113.Count; ++_i114)
                     {
                       KeySlice _elem115;
                       _elem115 = new KeySlice();
-                      _elem115.Read(iprot);
+                      await _elem115.ReadAsync(iprot, cancellationToken);
                       Success.Add(_elem115);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9470,60 +6416,60 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("get_indexed_slices_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("get_indexed_slices_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.List;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteListBegin(new TList(TType.Struct, Success.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.Struct, Success.Count), cancellationToken);
                 foreach (KeySlice _iter116 in Success)
                 {
-                  _iter116.Write(oprot);
+                  await _iter116.WriteAsync(oprot, cancellationToken);
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9532,44 +6478,41 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("get_indexed_slices_result(");
+        var sb = new StringBuilder("get_indexed_slices_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class insert_args : TBase
+    public partial class insertArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -9588,18 +6531,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public insert_args() {
+      public insertArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public insert_args(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level) : this() {
+      public insertArgs(byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level) : this() {
         this.Key = key;
         this.Column_parent = column_parent;
         this.Column = column;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -9609,10 +6552,10 @@ namespace Apache.Cassandra.Test
           bool isset_column = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -9620,45 +6563,45 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Column = new Column();
-                  Column.Read(iprot);
+                  await Column.ReadAsync(iprot, cancellationToken);
                   isset_column = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_parent)
@@ -9674,39 +6617,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("insert_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("insert_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Column.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9715,27 +6658,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("insert_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Column: ");
-        __sb.Append(Column== null ? "<null>" : Column.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("insert_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Column: ");
+        sb.Append(Column== null ? "<null>" : Column.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class insert_result : TBase
+    public partial class insertResult : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
@@ -9784,14 +6724,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
         [DataMember]
@@ -9819,19 +6756,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public insert_result() {
+      public insertResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -9840,34 +6777,34 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9875,44 +6812,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("insert_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("insert_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -9921,38 +6858,35 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("insert_result(");
+        var sb = new StringBuilder("insert_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class add_args : TBase
+    public partial class addArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -9971,18 +6905,18 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public add_args() {
+      public addArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public add_args(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level) : this() {
+      public addArgs(byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level) : this() {
         this.Key = key;
         this.Column_parent = column_parent;
         this.Column = column;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -9992,10 +6926,10 @@ namespace Apache.Cassandra.Test
           bool isset_column = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -10003,45 +6937,45 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_parent = new ColumnParent();
-                  Column_parent.Read(iprot);
+                  await Column_parent.ReadAsync(iprot, cancellationToken);
                   isset_column_parent = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Column = new CounterColumn();
-                  Column.Read(iprot);
+                  await Column.ReadAsync(iprot, cancellationToken);
                   isset_column = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_parent)
@@ -10057,39 +6991,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("add_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("add_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_parent";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_parent.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_parent.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column";
           field.Type = TType.Struct;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          Column.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10098,27 +7032,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("add_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Column_parent: ");
-        __sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
-        __sb.Append(", Column: ");
-        __sb.Append(Column== null ? "<null>" : Column.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("add_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Column_parent: ");
+        sb.Append(Column_parent== null ? "<null>" : Column_parent.ToString());
+        sb.Append(", Column: ");
+        sb.Append(Column== null ? "<null>" : Column.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class add_result : TBase
+    public partial class addResult : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
@@ -10167,14 +7098,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
         [DataMember]
@@ -10202,19 +7130,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public add_result() {
+      public addResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -10223,34 +7151,34 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10258,44 +7186,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("add_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("add_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10304,38 +7232,35 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("add_result(");
+        var sb = new StringBuilder("add_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class remove_args : TBase
+    public partial class removeArgs : TBase
     {
       private ConsistencyLevel _consistency_level;
 
@@ -10367,14 +7292,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool consistency_level;
       }
@@ -10388,18 +7310,18 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public remove_args() {
+      public removeArgs() {
         this._consistency_level = ConsistencyLevel.ONE;
         this.__isset.consistency_level = true;
       }
 
-      public remove_args(byte[] key, ColumnPath column_path, long timestamp) : this() {
+      public removeArgs(byte[] key, ColumnPath column_path, long timestamp) : this() {
         this.Key = key;
         this.Column_path = column_path;
         this.Timestamp = timestamp;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -10408,10 +7330,10 @@ namespace Apache.Cassandra.Test
           bool isset_column_path = false;
           bool isset_timestamp = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -10419,43 +7341,43 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Column_path = new ColumnPath();
-                  Column_path.Read(iprot);
+                  await Column_path.ReadAsync(iprot, cancellationToken);
                   isset_column_path = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.I64) {
-                  Timestamp = iprot.ReadI64();
+                  Timestamp = await iprot.ReadI64Async(cancellationToken);
                   isset_timestamp = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_column_path)
@@ -10469,41 +7391,41 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("remove_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("remove_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "column_path";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Column_path.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Column_path.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "timestamp";
           field.Type = TType.I64;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI64(Timestamp);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI64Async(Timestamp, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           if (__isset.consistency_level) {
             field.Name = "consistency_level";
             field.Type = TType.I32;
             field.ID = 4;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32((int)Consistency_level);
-            oprot.WriteFieldEnd();
+            await oprot.WriteFieldBeginAsync(field, cancellationToken);
+            await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+            await oprot.WriteFieldEndAsync(cancellationToken);
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10512,29 +7434,26 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("remove_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Column_path: ");
-        __sb.Append(Column_path== null ? "<null>" : Column_path.ToString());
-        __sb.Append(", Timestamp: ");
-        __sb.Append(Timestamp);
+        var sb = new StringBuilder("remove_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Column_path: ");
+        sb.Append(Column_path== null ? "<null>" : Column_path.ToString());
+        sb.Append(", Timestamp: ");
+        sb.Append(Timestamp);
         if (__isset.consistency_level) {
-          __sb.Append(", Consistency_level: ");
-          __sb.Append(Consistency_level);
+          sb.Append(", Consistency_level: ");
+          sb.Append(Consistency_level);
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class remove_result : TBase
+    public partial class removeResult : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
@@ -10583,14 +7502,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
         [DataMember]
@@ -10618,19 +7534,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public remove_result() {
+      public removeResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -10639,34 +7555,34 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10674,44 +7590,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("remove_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("remove_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10720,38 +7636,35 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("remove_result(");
+        var sb = new StringBuilder("remove_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class remove_counter_args : TBase
+    public partial class remove_counterArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -10767,17 +7680,17 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public remove_counter_args() {
+      public remove_counterArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public remove_counter_args(byte[] key, ColumnPath path, ConsistencyLevel consistency_level) : this() {
+      public remove_counterArgs(byte[] key, ColumnPath path, ConsistencyLevel consistency_level) : this() {
         this.Key = key;
         this.Path = path;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -10786,10 +7699,10 @@ namespace Apache.Cassandra.Test
           bool isset_path = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -10797,36 +7710,36 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Key = iprot.ReadBinary();
+                  Key = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_key = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Path = new ColumnPath();
-                  Path.Read(iprot);
+                  await Path.ReadAsync(iprot, cancellationToken);
                   isset_path = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_key)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_path)
@@ -10840,33 +7753,33 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("remove_counter_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("remove_counter_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "path";
           field.Type = TType.Struct;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          Path.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Path.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -10875,25 +7788,22 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("remove_counter_args(");
-        __sb.Append(", Key: ");
-        __sb.Append(Key);
-        __sb.Append(", Path: ");
-        __sb.Append(Path== null ? "<null>" : Path.ToString());
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("remove_counter_args(");
+        sb.Append(", Key: ");
+        sb.Append(Key);
+        sb.Append(", Path: ");
+        sb.Append(Path== null ? "<null>" : Path.ToString());
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class remove_counter_result : TBase
+    public partial class remove_counterResult : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
@@ -10942,14 +7852,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
         [DataMember]
@@ -10977,19 +7884,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public remove_counter_result() {
+      public remove_counterResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -10998,34 +7905,34 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11033,44 +7940,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("remove_counter_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("remove_counter_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11079,38 +7986,35 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("remove_counter_result(");
+        var sb = new StringBuilder("remove_counter_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class batch_mutate_args : TBase
+    public partial class batch_mutateArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -11123,16 +8027,16 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public ConsistencyLevel Consistency_level { get; set; }
 
-      public batch_mutate_args() {
+      public batch_mutateArgs() {
         this.Consistency_level = ConsistencyLevel.ONE;
       }
 
-      public batch_mutate_args(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level) : this() {
+      public batch_mutateArgs(Dictionary<byte[], Dictionary<string, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level) : this() {
         this.Mutation_map = mutation_map;
         this.Consistency_level = consistency_level;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -11140,10 +8044,10 @@ namespace Apache.Cassandra.Test
           bool isset_mutation_map = false;
           bool isset_consistency_level = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -11153,60 +8057,60 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.Map) {
                   {
                     Mutation_map = new Dictionary<byte[], Dictionary<string, List<Mutation>>>();
-                    TMap _map117 = iprot.ReadMapBegin();
-                    for( int _i118 = 0; _i118 < _map117.Count; ++_i118)
+                    TMap _map117 = await iprot.ReadMapBeginAsync(cancellationToken);
+                    for(int _i118 = 0; _i118 < _map117.Count; ++_i118)
                     {
                       byte[] _key119;
                       Dictionary<string, List<Mutation>> _val120;
-                      _key119 = iprot.ReadBinary();
+                      _key119 = await iprot.ReadBinaryAsync(cancellationToken);
                       {
                         _val120 = new Dictionary<string, List<Mutation>>();
-                        TMap _map121 = iprot.ReadMapBegin();
-                        for( int _i122 = 0; _i122 < _map121.Count; ++_i122)
+                        TMap _map121 = await iprot.ReadMapBeginAsync(cancellationToken);
+                        for(int _i122 = 0; _i122 < _map121.Count; ++_i122)
                         {
                           string _key123;
                           List<Mutation> _val124;
-                          _key123 = iprot.ReadString();
+                          _key123 = await iprot.ReadStringAsync(cancellationToken);
                           {
                             _val124 = new List<Mutation>();
-                            TList _list125 = iprot.ReadListBegin();
-                            for( int _i126 = 0; _i126 < _list125.Count; ++_i126)
+                            TList _list125 = await iprot.ReadListBeginAsync(cancellationToken);
+                            for(int _i126 = 0; _i126 < _list125.Count; ++_i126)
                             {
                               Mutation _elem127;
                               _elem127 = new Mutation();
-                              _elem127.Read(iprot);
+                              await _elem127.ReadAsync(iprot, cancellationToken);
                               _val124.Add(_elem127);
                             }
-                            iprot.ReadListEnd();
+                            await iprot.ReadListEndAsync(cancellationToken);
                           }
                           _val120[_key123] = _val124;
                         }
-                        iprot.ReadMapEnd();
+                        await iprot.ReadMapEndAsync(cancellationToken);
                       }
                       Mutation_map[_key119] = _val120;
                     }
-                    iprot.ReadMapEnd();
+                    await iprot.ReadMapEndAsync(cancellationToken);
                   }
                   isset_mutation_map = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.I32) {
-                  Consistency_level = (ConsistencyLevel)iprot.ReadI32();
+                  Consistency_level = (ConsistencyLevel)await iprot.ReadI32Async(cancellationToken);
                   isset_consistency_level = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_mutation_map)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_consistency_level)
@@ -11218,50 +8122,50 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("batch_mutate_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("batch_mutate_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "mutation_map";
           field.Type = TType.Map;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteMapBegin(new TMap(TType.String, TType.Map, Mutation_map.Count));
+            await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.Map, Mutation_map.Count), cancellationToken);
             foreach (byte[] _iter128 in Mutation_map.Keys)
             {
-              oprot.WriteBinary(_iter128);
+              await oprot.WriteBinaryAsync(_iter128, cancellationToken);
               {
-                oprot.WriteMapBegin(new TMap(TType.String, TType.List, Mutation_map[_iter128].Count));
+                await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.List, Mutation_map[_iter128].Count), cancellationToken);
                 foreach (string _iter129 in Mutation_map[_iter128].Keys)
                 {
-                  oprot.WriteString(_iter129);
+                  await oprot.WriteStringAsync(_iter129, cancellationToken);
                   {
-                    oprot.WriteListBegin(new TList(TType.Struct, Mutation_map[_iter128][_iter129].Count));
+                    await oprot.WriteListBeginAsync(new TList(TType.Struct, Mutation_map[_iter128][_iter129].Count), cancellationToken);
                     foreach (Mutation _iter130 in Mutation_map[_iter128][_iter129])
                     {
-                      _iter130.Write(oprot);
+                      await _iter130.WriteAsync(oprot, cancellationToken);
                     }
-                    oprot.WriteListEnd();
+                    await oprot.WriteListEndAsync(cancellationToken);
                   }
                 }
-                oprot.WriteMapEnd();
+                await oprot.WriteMapEndAsync(cancellationToken);
               }
             }
-            oprot.WriteMapEnd();
+            await oprot.WriteMapEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "consistency_level";
           field.Type = TType.I32;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Consistency_level);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Consistency_level, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11270,23 +8174,20 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("batch_mutate_args(");
-        __sb.Append(", Mutation_map: ");
-        __sb.Append(Mutation_map);
-        __sb.Append(", Consistency_level: ");
-        __sb.Append(Consistency_level);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("batch_mutate_args(");
+        sb.Append(", Mutation_map: ");
+        sb.Append(Mutation_map);
+        sb.Append(", Consistency_level: ");
+        sb.Append(Consistency_level);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class batch_mutate_result : TBase
+    public partial class batch_mutateResult : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
@@ -11335,14 +8236,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
         [DataMember]
@@ -11370,19 +8268,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public batch_mutate_result() {
+      public batch_mutateResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -11391,34 +8289,34 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11426,44 +8324,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("batch_mutate_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("batch_mutate_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11472,61 +8370,58 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("batch_mutate_result(");
+        var sb = new StringBuilder("batch_mutate_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class truncate_args : TBase
+    public partial class truncateArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public string Cfname { get; set; }
 
-      public truncate_args() {
+      public truncateArgs() {
       }
 
-      public truncate_args(string cfname) : this() {
+      public truncateArgs(string cfname) : this() {
         this.Cfname = cfname;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_cfname = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -11534,19 +8429,19 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Cfname = iprot.ReadString();
+                  Cfname = await iprot.ReadStringAsync(cancellationToken);
                   isset_cfname = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_cfname)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -11556,21 +8451,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("truncate_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("truncate_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "cfname";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Cfname);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Cfname, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11579,21 +8474,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("truncate_args(");
-        __sb.Append(", Cfname: ");
-        __sb.Append(Cfname);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("truncate_args(");
+        sb.Append(", Cfname: ");
+        sb.Append(Cfname);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class truncate_result : TBase
+    public partial class truncateResult : TBase
     {
       private InvalidRequestException _ire;
       private UnavailableException _ue;
@@ -11642,14 +8534,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool ire;
         [DataMember]
@@ -11677,19 +8566,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public truncate_result() {
+      public truncateResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -11698,34 +8587,34 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11733,44 +8622,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("truncate_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("truncate_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11779,65 +8668,62 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("truncate_result(");
+        var sb = new StringBuilder("truncate_result(");
         bool __first = true;
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_schema_versions_args : TBase
+    public partial class describe_schema_versionsArgs : TBase
     {
 
-      public describe_schema_versions_args() {
+      public describe_schema_versionsArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
             switch (field.ID)
             {
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11845,14 +8731,14 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_schema_versions_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          var struc = new TStruct("describe_schema_versions_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -11861,19 +8747,16 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_schema_versions_args(");
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_schema_versions_args(");
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_schema_versions_result : TBase
+    public partial class describe_schema_versionsResult : TBase
     {
       private Dictionary<string, List<string>> _success;
       private InvalidRequestException _ire;
@@ -11907,14 +8790,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -11935,19 +8815,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_schema_versions_result() {
+      public describe_schema_versionsResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -11957,46 +8837,46 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.Map) {
                   {
                     Success = new Dictionary<string, List<string>>();
-                    TMap _map131 = iprot.ReadMapBegin();
-                    for( int _i132 = 0; _i132 < _map131.Count; ++_i132)
+                    TMap _map131 = await iprot.ReadMapBeginAsync(cancellationToken);
+                    for(int _i132 = 0; _i132 < _map131.Count; ++_i132)
                     {
                       string _key133;
                       List<string> _val134;
-                      _key133 = iprot.ReadString();
+                      _key133 = await iprot.ReadStringAsync(cancellationToken);
                       {
                         _val134 = new List<string>();
-                        TList _list135 = iprot.ReadListBegin();
-                        for( int _i136 = 0; _i136 < _list135.Count; ++_i136)
+                        TList _list135 = await iprot.ReadListBeginAsync(cancellationToken);
+                        for(int _i136 = 0; _i136 < _list135.Count; ++_i136)
                         {
                           string _elem137;
-                          _elem137 = iprot.ReadString();
+                          _elem137 = await iprot.ReadStringAsync(cancellationToken);
                           _val134.Add(_elem137);
                         }
-                        iprot.ReadListEnd();
+                        await iprot.ReadListEndAsync(cancellationToken);
                       }
                       Success[_key133] = _val134;
                     }
-                    iprot.ReadMapEnd();
+                    await iprot.ReadMapEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12004,50 +8884,50 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_schema_versions_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_schema_versions_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Map;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteMapBegin(new TMap(TType.String, TType.List, Success.Count));
+                await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.List, Success.Count), cancellationToken);
                 foreach (string _iter138 in Success.Keys)
                 {
-                  oprot.WriteString(_iter138);
+                  await oprot.WriteStringAsync(_iter138, cancellationToken);
                   {
-                    oprot.WriteListBegin(new TList(TType.String, Success[_iter138].Count));
+                    await oprot.WriteListBeginAsync(new TList(TType.String, Success[_iter138].Count), cancellationToken);
                     foreach (string _iter139 in Success[_iter138])
                     {
-                      oprot.WriteString(_iter139);
+                      await oprot.WriteStringAsync(_iter139, cancellationToken);
                     }
-                    oprot.WriteListEnd();
+                    await oprot.WriteListEndAsync(cancellationToken);
                   }
                 }
-                oprot.WriteMapEnd();
+                await oprot.WriteMapEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12056,59 +8936,56 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_schema_versions_result(");
+        var sb = new StringBuilder("describe_schema_versions_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_keyspaces_args : TBase
+    public partial class describe_keyspacesArgs : TBase
     {
 
-      public describe_keyspaces_args() {
+      public describe_keyspacesArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
             switch (field.ID)
             {
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12116,14 +8993,14 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_keyspaces_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          var struc = new TStruct("describe_keyspaces_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12132,19 +9009,16 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_keyspaces_args(");
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_keyspaces_args(");
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_keyspaces_result : TBase
+    public partial class describe_keyspacesResult : TBase
     {
       private List<KsDef> _success;
       private InvalidRequestException _ire;
@@ -12178,14 +9052,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -12206,19 +9077,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_keyspaces_result() {
+      public describe_keyspacesResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -12228,35 +9099,35 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Success = new List<KsDef>();
-                    TList _list140 = iprot.ReadListBegin();
-                    for( int _i141 = 0; _i141 < _list140.Count; ++_i141)
+                    TList _list140 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i141 = 0; _i141 < _list140.Count; ++_i141)
                     {
                       KsDef _elem142;
                       _elem142 = new KsDef();
-                      _elem142.Read(iprot);
+                      await _elem142.ReadAsync(iprot, cancellationToken);
                       Success.Add(_elem142);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12264,42 +9135,42 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_keyspaces_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_keyspaces_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.List;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteListBegin(new TList(TType.Struct, Success.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.Struct, Success.Count), cancellationToken);
                 foreach (KsDef _iter143 in Success)
                 {
-                  _iter143.Write(oprot);
+                  await _iter143.WriteAsync(oprot, cancellationToken);
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12308,59 +9179,56 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_keyspaces_result(");
+        var sb = new StringBuilder("describe_keyspaces_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_cluster_name_args : TBase
+    public partial class describe_cluster_nameArgs : TBase
     {
 
-      public describe_cluster_name_args() {
+      public describe_cluster_nameArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
             switch (field.ID)
             {
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12368,14 +9236,14 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_cluster_name_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          var struc = new TStruct("describe_cluster_name_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12384,19 +9252,16 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_cluster_name_args(");
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_cluster_name_args(");
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_cluster_name_result : TBase
+    public partial class describe_cluster_nameResult : TBase
     {
       private string _success;
 
@@ -12415,14 +9280,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
       }
@@ -12436,19 +9298,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_cluster_name_result() {
+      public describe_cluster_nameResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -12456,18 +9318,18 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12475,26 +9337,26 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_cluster_name_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_cluster_name_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12503,53 +9365,50 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_cluster_name_result(");
+        var sb = new StringBuilder("describe_cluster_name_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_version_args : TBase
+    public partial class describe_versionArgs : TBase
     {
 
-      public describe_version_args() {
+      public describe_versionArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
             switch (field.ID)
             {
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12557,14 +9416,14 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_version_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          var struc = new TStruct("describe_version_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12573,19 +9432,16 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_version_args(");
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_version_args(");
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_version_result : TBase
+    public partial class describe_versionResult : TBase
     {
       private string _success;
 
@@ -12604,14 +9460,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
       }
@@ -12625,19 +9478,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_version_result() {
+      public describe_versionResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -12645,18 +9498,18 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12664,26 +9517,26 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_version_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_version_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12692,49 +9545,46 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_version_result(");
+        var sb = new StringBuilder("describe_version_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_ring_args : TBase
+    public partial class describe_ringArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
-      public describe_ring_args() {
+      public describe_ringArgs() {
       }
 
-      public describe_ring_args(string keyspace) : this() {
+      public describe_ringArgs(string keyspace) : this() {
         this.Keyspace = keyspace;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_keyspace = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -12742,19 +9592,19 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Keyspace = iprot.ReadString();
+                  Keyspace = await iprot.ReadStringAsync(cancellationToken);
                   isset_keyspace = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_keyspace)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -12764,21 +9614,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_ring_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_ring_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "keyspace";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Keyspace);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Keyspace, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12787,21 +9637,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_ring_args(");
-        __sb.Append(", Keyspace: ");
-        __sb.Append(Keyspace);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_ring_args(");
+        sb.Append(", Keyspace: ");
+        sb.Append(Keyspace);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_ring_result : TBase
+    public partial class describe_ringResult : TBase
     {
       private List<TokenRange> _success;
       private InvalidRequestException _ire;
@@ -12835,14 +9682,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -12863,19 +9707,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_ring_result() {
+      public describe_ringResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -12885,35 +9729,35 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Success = new List<TokenRange>();
-                    TList _list144 = iprot.ReadListBegin();
-                    for( int _i145 = 0; _i145 < _list144.Count; ++_i145)
+                    TList _list144 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i145 = 0; _i145 < _list144.Count; ++_i145)
                     {
                       TokenRange _elem146;
                       _elem146 = new TokenRange();
-                      _elem146.Read(iprot);
+                      await _elem146.ReadAsync(iprot, cancellationToken);
                       Success.Add(_elem146);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12921,42 +9765,42 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_ring_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_ring_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.List;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteListBegin(new TList(TType.Struct, Success.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.Struct, Success.Count), cancellationToken);
                 foreach (TokenRange _iter147 in Success)
                 {
-                  _iter147.Write(oprot);
+                  await _iter147.WriteAsync(oprot, cancellationToken);
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -12965,59 +9809,56 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_ring_result(");
+        var sb = new StringBuilder("describe_ring_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_partitioner_args : TBase
+    public partial class describe_partitionerArgs : TBase
     {
 
-      public describe_partitioner_args() {
+      public describe_partitionerArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
             switch (field.ID)
             {
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13025,14 +9866,14 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_partitioner_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          var struc = new TStruct("describe_partitioner_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13041,19 +9882,16 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_partitioner_args(");
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_partitioner_args(");
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_partitioner_result : TBase
+    public partial class describe_partitionerResult : TBase
     {
       private string _success;
 
@@ -13072,14 +9910,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
       }
@@ -13093,19 +9928,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_partitioner_result() {
+      public describe_partitionerResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -13113,18 +9948,18 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13132,26 +9967,26 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_partitioner_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_partitioner_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13160,53 +9995,50 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_partitioner_result(");
+        var sb = new StringBuilder("describe_partitioner_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_snitch_args : TBase
+    public partial class describe_snitchArgs : TBase
     {
 
-      public describe_snitch_args() {
+      public describe_snitchArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
             switch (field.ID)
             {
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13214,14 +10046,14 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_snitch_args");
-          oprot.WriteStructBegin(struc);
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          var struc = new TStruct("describe_snitch_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13230,19 +10062,16 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_snitch_args(");
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_snitch_args(");
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_snitch_result : TBase
+    public partial class describe_snitchResult : TBase
     {
       private string _success;
 
@@ -13261,14 +10090,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
       }
@@ -13282,19 +10108,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_snitch_result() {
+      public describe_snitchResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -13302,18 +10128,18 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13321,26 +10147,26 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_snitch_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_snitch_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13349,49 +10175,46 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_snitch_result(");
+        var sb = new StringBuilder("describe_snitch_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_keyspace_args : TBase
+    public partial class describe_keyspaceArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
-      public describe_keyspace_args() {
+      public describe_keyspaceArgs() {
       }
 
-      public describe_keyspace_args(string keyspace) : this() {
+      public describe_keyspaceArgs(string keyspace) : this() {
         this.Keyspace = keyspace;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_keyspace = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -13399,19 +10222,19 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Keyspace = iprot.ReadString();
+                  Keyspace = await iprot.ReadStringAsync(cancellationToken);
                   isset_keyspace = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_keyspace)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -13421,21 +10244,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_keyspace_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_keyspace_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "keyspace";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Keyspace);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Keyspace, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13444,21 +10267,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_keyspace_args(");
-        __sb.Append(", Keyspace: ");
-        __sb.Append(Keyspace);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_keyspace_args(");
+        sb.Append(", Keyspace: ");
+        sb.Append(Keyspace);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_keyspace_result : TBase
+    public partial class describe_keyspaceResult : TBase
     {
       private KsDef _success;
       private NotFoundException _nfe;
@@ -13507,14 +10327,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -13542,19 +10359,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_keyspace_result() {
+      public describe_keyspaceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -13563,34 +10380,34 @@ namespace Apache.Cassandra.Test
               case 0:
                 if (field.Type == TType.Struct) {
                   Success = new KsDef();
-                  Success.Read(iprot);
+                  await Success.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Nfe = new NotFoundException();
-                  Nfe.Read(iprot);
+                  await Nfe.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13598,44 +10415,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_keyspace_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_keyspace_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Struct;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              Success.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Success.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.nfe) {
             if (Nfe != null) {
               field.Name = "Nfe";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Nfe.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Nfe.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13644,38 +10461,35 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_keyspace_result(");
+        var sb = new StringBuilder("describe_keyspace_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success== null ? "<null>" : Success.ToString());
+          sb.Append("Success: ");
+          sb.Append(Success== null ? "<null>" : Success.ToString());
         }
         if (Nfe != null && __isset.nfe) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Nfe: ");
-          __sb.Append(Nfe== null ? "<null>" : Nfe.ToString());
+          sb.Append("Nfe: ");
+          sb.Append(Nfe== null ? "<null>" : Nfe.ToString());
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_splits_args : TBase
+    public partial class describe_splitsArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -13690,17 +10504,17 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public int Keys_per_split { get; set; }
 
-      public describe_splits_args() {
+      public describe_splitsArgs() {
       }
 
-      public describe_splits_args(string cfName, string start_token, string end_token, int keys_per_split) : this() {
+      public describe_splitsArgs(string cfName, string start_token, string end_token, int keys_per_split) : this() {
         this.CfName = cfName;
         this.Start_token = start_token;
         this.End_token = end_token;
         this.Keys_per_split = keys_per_split;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -13710,10 +10524,10 @@ namespace Apache.Cassandra.Test
           bool isset_end_token = false;
           bool isset_keys_per_split = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -13721,43 +10535,43 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  CfName = iprot.ReadString();
+                  CfName = await iprot.ReadStringAsync(cancellationToken);
                   isset_cfName = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.String) {
-                  Start_token = iprot.ReadString();
+                  Start_token = await iprot.ReadStringAsync(cancellationToken);
                   isset_start_token = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.String) {
-                  End_token = iprot.ReadString();
+                  End_token = await iprot.ReadStringAsync(cancellationToken);
                   isset_end_token = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.I32) {
-                  Keys_per_split = iprot.ReadI32();
+                  Keys_per_split = await iprot.ReadI32Async(cancellationToken);
                   isset_keys_per_split = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_cfName)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_start_token)
@@ -13773,39 +10587,39 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_splits_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_splits_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "cfName";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(CfName);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(CfName, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "start_token";
           field.Type = TType.String;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Start_token);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Start_token, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "end_token";
           field.Type = TType.String;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(End_token);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(End_token, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "keys_per_split";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Keys_per_split);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Keys_per_split, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13814,27 +10628,24 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_splits_args(");
-        __sb.Append(", CfName: ");
-        __sb.Append(CfName);
-        __sb.Append(", Start_token: ");
-        __sb.Append(Start_token);
-        __sb.Append(", End_token: ");
-        __sb.Append(End_token);
-        __sb.Append(", Keys_per_split: ");
-        __sb.Append(Keys_per_split);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("describe_splits_args(");
+        sb.Append(", CfName: ");
+        sb.Append(CfName);
+        sb.Append(", Start_token: ");
+        sb.Append(Start_token);
+        sb.Append(", End_token: ");
+        sb.Append(End_token);
+        sb.Append(", Keys_per_split: ");
+        sb.Append(Keys_per_split);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class describe_splits_result : TBase
+    public partial class describe_splitsResult : TBase
     {
       private List<string> _success;
       private InvalidRequestException _ire;
@@ -13868,14 +10679,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -13896,19 +10704,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public describe_splits_result() {
+      public describe_splitsResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -13918,34 +10726,34 @@ namespace Apache.Cassandra.Test
                 if (field.Type == TType.List) {
                   {
                     Success = new List<string>();
-                    TList _list148 = iprot.ReadListBegin();
-                    for( int _i149 = 0; _i149 < _list148.Count; ++_i149)
+                    TList _list148 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i149 = 0; _i149 < _list148.Count; ++_i149)
                     {
                       string _elem150;
-                      _elem150 = iprot.ReadString();
+                      _elem150 = await iprot.ReadStringAsync(cancellationToken);
                       Success.Add(_elem150);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13953,42 +10761,42 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("describe_splits_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("describe_splits_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.List;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
               {
-                oprot.WriteListBegin(new TList(TType.String, Success.Count));
+                await oprot.WriteListBeginAsync(new TList(TType.String, Success.Count), cancellationToken);
                 foreach (string _iter151 in Success)
                 {
-                  oprot.WriteString(_iter151);
+                  await oprot.WriteStringAsync(_iter151, cancellationToken);
                 }
-                oprot.WriteListEnd();
+                await oprot.WriteListEndAsync(cancellationToken);
               }
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -13997,55 +10805,52 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("describe_splits_result(");
+        var sb = new StringBuilder("describe_splits_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_add_column_family_args : TBase
+    public partial class system_add_column_familyArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public CfDef Cf_def { get; set; }
 
-      public system_add_column_family_args() {
+      public system_add_column_familyArgs() {
       }
 
-      public system_add_column_family_args(CfDef cf_def) : this() {
+      public system_add_column_familyArgs(CfDef cf_def) : this() {
         this.Cf_def = cf_def;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_cf_def = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14054,19 +10859,19 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Cf_def = new CfDef();
-                  Cf_def.Read(iprot);
+                  await Cf_def.ReadAsync(iprot, cancellationToken);
                   isset_cf_def = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_cf_def)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -14076,21 +10881,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_add_column_family_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_add_column_family_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "cf_def";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Cf_def.Write(oprot);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Cf_def.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14099,21 +10904,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_add_column_family_args(");
-        __sb.Append(", Cf_def: ");
-        __sb.Append(Cf_def== null ? "<null>" : Cf_def.ToString());
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("system_add_column_family_args(");
+        sb.Append(", Cf_def: ");
+        sb.Append(Cf_def== null ? "<null>" : Cf_def.ToString());
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_add_column_family_result : TBase
+    public partial class system_add_column_familyResult : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
@@ -14162,14 +10964,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -14197,19 +10996,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public system_add_column_family_result() {
+      public system_add_column_familyResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14217,34 +11016,34 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14252,44 +11051,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_add_column_family_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_add_column_family_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14298,61 +11097,58 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_add_column_family_result(");
+        var sb = new StringBuilder("system_add_column_family_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_drop_column_family_args : TBase
+    public partial class system_drop_column_familyArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public string Column_family { get; set; }
 
-      public system_drop_column_family_args() {
+      public system_drop_column_familyArgs() {
       }
 
-      public system_drop_column_family_args(string column_family) : this() {
+      public system_drop_column_familyArgs(string column_family) : this() {
         this.Column_family = column_family;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_column_family = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14360,19 +11156,19 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Column_family = iprot.ReadString();
+                  Column_family = await iprot.ReadStringAsync(cancellationToken);
                   isset_column_family = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_column_family)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -14382,21 +11178,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_drop_column_family_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_drop_column_family_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "column_family";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Column_family);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Column_family, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14405,21 +11201,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_drop_column_family_args(");
-        __sb.Append(", Column_family: ");
-        __sb.Append(Column_family);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("system_drop_column_family_args(");
+        sb.Append(", Column_family: ");
+        sb.Append(Column_family);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_drop_column_family_result : TBase
+    public partial class system_drop_column_familyResult : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
@@ -14468,14 +11261,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -14503,19 +11293,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public system_drop_column_family_result() {
+      public system_drop_column_familyResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14523,34 +11313,34 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14558,44 +11348,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_drop_column_family_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_drop_column_family_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14604,61 +11394,58 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_drop_column_family_result(");
+        var sb = new StringBuilder("system_drop_column_family_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_add_keyspace_args : TBase
+    public partial class system_add_keyspaceArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public KsDef Ks_def { get; set; }
 
-      public system_add_keyspace_args() {
+      public system_add_keyspaceArgs() {
       }
 
-      public system_add_keyspace_args(KsDef ks_def) : this() {
+      public system_add_keyspaceArgs(KsDef ks_def) : this() {
         this.Ks_def = ks_def;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_ks_def = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14667,19 +11454,19 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ks_def = new KsDef();
-                  Ks_def.Read(iprot);
+                  await Ks_def.ReadAsync(iprot, cancellationToken);
                   isset_ks_def = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_ks_def)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -14689,21 +11476,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_add_keyspace_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_add_keyspace_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "ks_def";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Ks_def.Write(oprot);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Ks_def.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14712,21 +11499,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_add_keyspace_args(");
-        __sb.Append(", Ks_def: ");
-        __sb.Append(Ks_def== null ? "<null>" : Ks_def.ToString());
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("system_add_keyspace_args(");
+        sb.Append(", Ks_def: ");
+        sb.Append(Ks_def== null ? "<null>" : Ks_def.ToString());
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_add_keyspace_result : TBase
+    public partial class system_add_keyspaceResult : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
@@ -14775,14 +11559,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -14810,19 +11591,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public system_add_keyspace_result() {
+      public system_add_keyspaceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14830,34 +11611,34 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14865,44 +11646,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_add_keyspace_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_add_keyspace_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -14911,61 +11692,58 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_add_keyspace_result(");
+        var sb = new StringBuilder("system_add_keyspace_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_drop_keyspace_args : TBase
+    public partial class system_drop_keyspaceArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public string Keyspace { get; set; }
 
-      public system_drop_keyspace_args() {
+      public system_drop_keyspaceArgs() {
       }
 
-      public system_drop_keyspace_args(string keyspace) : this() {
+      public system_drop_keyspaceArgs(string keyspace) : this() {
         this.Keyspace = keyspace;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_keyspace = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -14973,19 +11751,19 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Keyspace = iprot.ReadString();
+                  Keyspace = await iprot.ReadStringAsync(cancellationToken);
                   isset_keyspace = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_keyspace)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -14995,21 +11773,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_drop_keyspace_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_drop_keyspace_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "keyspace";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Keyspace);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Keyspace, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15018,21 +11796,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_drop_keyspace_args(");
-        __sb.Append(", Keyspace: ");
-        __sb.Append(Keyspace);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("system_drop_keyspace_args(");
+        sb.Append(", Keyspace: ");
+        sb.Append(Keyspace);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_drop_keyspace_result : TBase
+    public partial class system_drop_keyspaceResult : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
@@ -15081,14 +11856,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -15116,19 +11888,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public system_drop_keyspace_result() {
+      public system_drop_keyspaceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -15136,34 +11908,34 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15171,44 +11943,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_drop_keyspace_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_drop_keyspace_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15217,61 +11989,58 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_drop_keyspace_result(");
+        var sb = new StringBuilder("system_drop_keyspace_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_update_keyspace_args : TBase
+    public partial class system_update_keyspaceArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public KsDef Ks_def { get; set; }
 
-      public system_update_keyspace_args() {
+      public system_update_keyspaceArgs() {
       }
 
-      public system_update_keyspace_args(KsDef ks_def) : this() {
+      public system_update_keyspaceArgs(KsDef ks_def) : this() {
         this.Ks_def = ks_def;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_ks_def = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -15280,19 +12049,19 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Ks_def = new KsDef();
-                  Ks_def.Read(iprot);
+                  await Ks_def.ReadAsync(iprot, cancellationToken);
                   isset_ks_def = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_ks_def)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -15302,21 +12071,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_update_keyspace_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_update_keyspace_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "ks_def";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Ks_def.Write(oprot);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Ks_def.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15325,21 +12094,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_update_keyspace_args(");
-        __sb.Append(", Ks_def: ");
-        __sb.Append(Ks_def== null ? "<null>" : Ks_def.ToString());
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("system_update_keyspace_args(");
+        sb.Append(", Ks_def: ");
+        sb.Append(Ks_def== null ? "<null>" : Ks_def.ToString());
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_update_keyspace_result : TBase
+    public partial class system_update_keyspaceResult : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
@@ -15388,14 +12154,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -15423,19 +12186,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public system_update_keyspace_result() {
+      public system_update_keyspaceResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -15443,34 +12206,34 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15478,44 +12241,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_update_keyspace_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_update_keyspace_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15524,61 +12287,58 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_update_keyspace_result(");
+        var sb = new StringBuilder("system_update_keyspace_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_update_column_family_args : TBase
+    public partial class system_update_column_familyArgs : TBase
     {
 
       [DataMember(Order = 0)]
       public CfDef Cf_def { get; set; }
 
-      public system_update_column_family_args() {
+      public system_update_column_familyArgs() {
       }
 
-      public system_update_column_family_args(CfDef cf_def) : this() {
+      public system_update_column_familyArgs(CfDef cf_def) : this() {
         this.Cf_def = cf_def;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           bool isset_cf_def = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -15587,19 +12347,19 @@ namespace Apache.Cassandra.Test
               case 1:
                 if (field.Type == TType.Struct) {
                   Cf_def = new CfDef();
-                  Cf_def.Read(iprot);
+                  await Cf_def.ReadAsync(iprot, cancellationToken);
                   isset_cf_def = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_cf_def)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
         }
@@ -15609,21 +12369,21 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_update_column_family_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_update_column_family_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "cf_def";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Cf_def.Write(oprot);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Cf_def.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15632,21 +12392,18 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_update_column_family_args(");
-        __sb.Append(", Cf_def: ");
-        __sb.Append(Cf_def== null ? "<null>" : Cf_def.ToString());
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("system_update_column_family_args(");
+        sb.Append(", Cf_def: ");
+        sb.Append(Cf_def== null ? "<null>" : Cf_def.ToString());
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class system_update_column_family_result : TBase
+    public partial class system_update_column_familyResult : TBase
     {
       private string _success;
       private InvalidRequestException _ire;
@@ -15695,14 +12452,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -15730,19 +12484,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public system_update_column_family_result() {
+      public system_update_column_familyResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -15750,34 +12504,34 @@ namespace Apache.Cassandra.Test
             {
               case 0:
                 if (field.Type == TType.String) {
-                  Success = iprot.ReadString();
+                  Success = await iprot.ReadStringAsync(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15785,44 +12539,44 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("system_update_column_family_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("system_update_column_family_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.String;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              oprot.WriteString(Success);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await oprot.WriteStringAsync(Success, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15831,38 +12585,35 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("system_update_column_family_result(");
+        var sb = new StringBuilder("system_update_column_family_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success);
+          sb.Append("Success: ");
+          sb.Append(Success);
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class execute_cql_query_args : TBase
+    public partial class execute_cql_queryArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -15875,15 +12626,15 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public Compression Compression { get; set; }
 
-      public execute_cql_query_args() {
+      public execute_cql_queryArgs() {
       }
 
-      public execute_cql_query_args(byte[] query, Compression compression) : this() {
+      public execute_cql_queryArgs(byte[] query, Compression compression) : this() {
         this.Query = query;
         this.Compression = compression;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -15891,10 +12642,10 @@ namespace Apache.Cassandra.Test
           bool isset_query = false;
           bool isset_compression = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -15902,27 +12653,27 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Query = iprot.ReadBinary();
+                  Query = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_query = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.I32) {
-                  Compression = (Compression)iprot.ReadI32();
+                  Compression = (Compression)await iprot.ReadI32Async(cancellationToken);
                   isset_compression = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_query)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_compression)
@@ -15934,27 +12685,27 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("execute_cql_query_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("execute_cql_query_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "query";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Query);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Query, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "compression";
           field.Type = TType.I32;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Compression);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Compression, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -15963,23 +12714,20 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("execute_cql_query_args(");
-        __sb.Append(", Query: ");
-        __sb.Append(Query);
-        __sb.Append(", Compression: ");
-        __sb.Append(Compression);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("execute_cql_query_args(");
+        sb.Append(", Query: ");
+        sb.Append(Query);
+        sb.Append(", Compression: ");
+        sb.Append(Compression);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class execute_cql_query_result : TBase
+    public partial class execute_cql_queryResult : TBase
     {
       private CqlResult _success;
       private InvalidRequestException _ire;
@@ -16058,14 +12806,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -16107,19 +12852,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public execute_cql_query_result() {
+      public execute_cql_queryResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -16128,50 +12873,50 @@ namespace Apache.Cassandra.Test
               case 0:
                 if (field.Type == TType.Struct) {
                   Success = new CqlResult();
-                  Success.Read(iprot);
+                  await Success.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16179,62 +12924,62 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("execute_cql_query_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("execute_cql_query_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Struct;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              Success.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Success.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 4;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16243,50 +12988,47 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("execute_cql_query_result(");
+        var sb = new StringBuilder("execute_cql_query_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success== null ? "<null>" : Success.ToString());
+          sb.Append("Success: ");
+          sb.Append(Success== null ? "<null>" : Success.ToString());
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class prepare_cql_query_args : TBase
+    public partial class prepare_cql_queryArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -16299,15 +13041,15 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public Compression Compression { get; set; }
 
-      public prepare_cql_query_args() {
+      public prepare_cql_queryArgs() {
       }
 
-      public prepare_cql_query_args(byte[] query, Compression compression) : this() {
+      public prepare_cql_queryArgs(byte[] query, Compression compression) : this() {
         this.Query = query;
         this.Compression = compression;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -16315,10 +13057,10 @@ namespace Apache.Cassandra.Test
           bool isset_query = false;
           bool isset_compression = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -16326,27 +13068,27 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.String) {
-                  Query = iprot.ReadBinary();
+                  Query = await iprot.ReadBinaryAsync(cancellationToken);
                   isset_query = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.I32) {
-                  Compression = (Compression)iprot.ReadI32();
+                  Compression = (Compression)await iprot.ReadI32Async(cancellationToken);
                   isset_compression = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_query)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_compression)
@@ -16358,27 +13100,27 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("prepare_cql_query_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("prepare_cql_query_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "query";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Query);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Query, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "compression";
           field.Type = TType.I32;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Compression);
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async((int)Compression, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16387,23 +13129,20 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("prepare_cql_query_args(");
-        __sb.Append(", Query: ");
-        __sb.Append(Query);
-        __sb.Append(", Compression: ");
-        __sb.Append(Compression);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("prepare_cql_query_args(");
+        sb.Append(", Query: ");
+        sb.Append(Query);
+        sb.Append(", Compression: ");
+        sb.Append(Compression);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class prepare_cql_query_result : TBase
+    public partial class prepare_cql_queryResult : TBase
     {
       private CqlPreparedResult _success;
       private InvalidRequestException _ire;
@@ -16437,14 +13176,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -16465,19 +13201,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public prepare_cql_query_result() {
+      public prepare_cql_queryResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -16486,26 +13222,26 @@ namespace Apache.Cassandra.Test
               case 0:
                 if (field.Type == TType.Struct) {
                   Success = new CqlPreparedResult();
-                  Success.Read(iprot);
+                  await Success.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16513,35 +13249,35 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("prepare_cql_query_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("prepare_cql_query_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Struct;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              Success.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Success.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16550,32 +13286,29 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("prepare_cql_query_result(");
+        var sb = new StringBuilder("prepare_cql_query_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success== null ? "<null>" : Success.ToString());
+          sb.Append("Success: ");
+          sb.Append(Success== null ? "<null>" : Success.ToString());
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class execute_prepared_cql_query_args : TBase
+    public partial class execute_prepared_cql_queryArgs : TBase
     {
 
       [DataMember(Order = 0)]
@@ -16584,15 +13317,15 @@ namespace Apache.Cassandra.Test
       [DataMember(Order = 0)]
       public List<string> Values { get; set; }
 
-      public execute_prepared_cql_query_args() {
+      public execute_prepared_cql_queryArgs() {
       }
 
-      public execute_prepared_cql_query_args(int itemId, List<string> values) : this() {
+      public execute_prepared_cql_queryArgs(int itemId, List<string> values) : this() {
         this.ItemId = itemId;
         this.Values = values;
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
@@ -16600,10 +13333,10 @@ namespace Apache.Cassandra.Test
           bool isset_itemId = false;
           bool isset_values = false;
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -16611,37 +13344,37 @@ namespace Apache.Cassandra.Test
             {
               case 1:
                 if (field.Type == TType.I32) {
-                  ItemId = iprot.ReadI32();
+                  ItemId = await iprot.ReadI32Async(cancellationToken);
                   isset_itemId = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.List) {
                   {
                     Values = new List<string>();
-                    TList _list152 = iprot.ReadListBegin();
-                    for( int _i153 = 0; _i153 < _list152.Count; ++_i153)
+                    TList _list152 = await iprot.ReadListBeginAsync(cancellationToken);
+                    for(int _i153 = 0; _i153 < _list152.Count; ++_i153)
                     {
                       string _elem154;
-                      _elem154 = iprot.ReadString();
+                      _elem154 = await iprot.ReadStringAsync(cancellationToken);
                       Values.Add(_elem154);
                     }
-                    iprot.ReadListEnd();
+                    await iprot.ReadListEndAsync(cancellationToken);
                   }
                   isset_values = true;
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
           if (!isset_itemId)
             throw new TProtocolException(TProtocolException.INVALID_DATA);
           if (!isset_values)
@@ -16653,34 +13386,34 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("execute_prepared_cql_query_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("execute_prepared_cql_query_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           field.Name = "itemId";
           field.Type = TType.I32;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(ItemId);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(ItemId, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
           field.Name = "values";
           field.Type = TType.List;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.String, Values.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.String, Values.Count), cancellationToken);
             foreach (string _iter155 in Values)
             {
-              oprot.WriteString(_iter155);
+              await oprot.WriteStringAsync(_iter155, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16689,23 +13422,20 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("execute_prepared_cql_query_args(");
-        __sb.Append(", ItemId: ");
-        __sb.Append(ItemId);
-        __sb.Append(", Values: ");
-        __sb.Append(Values);
-        __sb.Append(")");
-        return __sb.ToString();
+        var sb = new StringBuilder("execute_prepared_cql_query_args(");
+        sb.Append(", ItemId: ");
+        sb.Append(ItemId);
+        sb.Append(", Values: ");
+        sb.Append(Values);
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class execute_prepared_cql_query_result : TBase
+    public partial class execute_prepared_cql_queryResult : TBase
     {
       private CqlResult _success;
       private InvalidRequestException _ire;
@@ -16784,14 +13514,11 @@ namespace Apache.Cassandra.Test
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
         [DataMember]
@@ -16833,19 +13560,19 @@ namespace Apache.Cassandra.Test
 
       #endregion XmlSerializer support
 
-      public execute_prepared_cql_query_result() {
+      public execute_prepared_cql_queryResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -16854,50 +13581,50 @@ namespace Apache.Cassandra.Test
               case 0:
                 if (field.Type == TType.Struct) {
                   Success = new CqlResult();
-                  Success.Read(iprot);
+                  await Success.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 1:
                 if (field.Type == TType.Struct) {
                   Ire = new InvalidRequestException();
-                  Ire.Read(iprot);
+                  await Ire.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 2:
                 if (field.Type == TType.Struct) {
                   Ue = new UnavailableException();
-                  Ue.Read(iprot);
+                  await Ue.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 3:
                 if (field.Type == TType.Struct) {
                   Te = new TimedOutException();
-                  Te.Read(iprot);
+                  await Te.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               case 4:
                 if (field.Type == TType.Struct) {
                   Sde = new SchemaDisagreementException();
-                  Sde.Read(iprot);
+                  await Sde.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16905,62 +13632,62 @@ namespace Apache.Cassandra.Test
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("execute_prepared_cql_query_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("execute_prepared_cql_query_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Struct;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              Success.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Success.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ire) {
             if (Ire != null) {
               field.Name = "Ire";
               field.Type = TType.Struct;
               field.ID = 1;
-              oprot.WriteFieldBegin(field);
-              Ire.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ire.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.ue) {
             if (Ue != null) {
               field.Name = "Ue";
               field.Type = TType.Struct;
               field.ID = 2;
-              oprot.WriteFieldBegin(field);
-              Ue.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Ue.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.te) {
             if (Te != null) {
               field.Name = "Te";
               field.Type = TType.Struct;
               field.ID = 3;
-              oprot.WriteFieldBegin(field);
-              Te.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Te.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           } else if (this.__isset.sde) {
             if (Sde != null) {
               field.Name = "Sde";
               field.Type = TType.Struct;
               field.ID = 4;
-              oprot.WriteFieldBegin(field);
-              Sde.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Sde.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -16969,40 +13696,40 @@ namespace Apache.Cassandra.Test
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("execute_prepared_cql_query_result(");
+        var sb = new StringBuilder("execute_prepared_cql_query_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success== null ? "<null>" : Success.ToString());
+          sb.Append("Success: ");
+          sb.Append(Success== null ? "<null>" : Success.ToString());
         }
         if (Ire != null && __isset.ire) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ire: ");
-          __sb.Append(Ire== null ? "<null>" : Ire.ToString());
+          sb.Append("Ire: ");
+          sb.Append(Ire== null ? "<null>" : Ire.ToString());
         }
         if (Ue != null && __isset.ue) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Ue: ");
-          __sb.Append(Ue== null ? "<null>" : Ue.ToString());
+          sb.Append("Ue: ");
+          sb.Append(Ue== null ? "<null>" : Ue.ToString());
         }
         if (Te != null && __isset.te) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Te: ");
-          __sb.Append(Te== null ? "<null>" : Te.ToString());
+          sb.Append("Te: ");
+          sb.Append(Te== null ? "<null>" : Te.ToString());
         }
         if (Sde != null && __isset.sde) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Sde: ");
-          __sb.Append(Sde== null ? "<null>" : Sde.ToString());
+          sb.Append("Sde: ");
+          sb.Append(Sde== null ? "<null>" : Sde.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }

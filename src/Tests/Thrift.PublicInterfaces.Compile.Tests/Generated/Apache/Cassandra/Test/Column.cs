@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -30,9 +30,6 @@ namespace Apache.Cassandra.Test
   /// @param timestamp. The timestamp is used for conflict detection/resolution when two columns with same name need to be compared.
   /// @param ttl. An optional, positive delay (in seconds) after which the column will be automatically deleted.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class Column : TBase
   {
@@ -86,14 +83,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool @value;
       [DataMember]
@@ -128,17 +122,17 @@ namespace Apache.Cassandra.Test
       this.Name = name;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_name = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -146,40 +140,40 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Name = iprot.ReadBinary();
+                Name = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_name = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Value = iprot.ReadBinary();
+                Value = await iprot.ReadBinaryAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.I64) {
-                Timestamp = iprot.ReadI64();
+                Timestamp = await iprot.ReadI64Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.I32) {
-                Ttl = iprot.ReadI32();
+                Ttl = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_name)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -189,45 +183,45 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("Column");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("Column");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "name";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Name);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Name, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (Value != null && __isset.@value) {
           field.Name = "value";
           field.Type = TType.String;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Value);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Value, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.timestamp) {
           field.Name = "timestamp";
           field.Type = TType.I64;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI64(Timestamp);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI64Async(Timestamp, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.ttl) {
           field.Name = "ttl";
           field.Type = TType.I32;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Ttl);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Ttl, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -236,23 +230,23 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("Column(");
-      __sb.Append(", Name: ");
-      __sb.Append(Name);
+      var sb = new StringBuilder("Column(");
+      sb.Append(", Name: ");
+      sb.Append(Name);
       if (Value != null && __isset.@value) {
-        __sb.Append(", Value: ");
-        __sb.Append(Value);
+        sb.Append(", Value: ");
+        sb.Append(Value);
       }
       if (__isset.timestamp) {
-        __sb.Append(", Timestamp: ");
-        __sb.Append(Timestamp);
+        sb.Append(", Timestamp: ");
+        sb.Append(Timestamp);
       }
       if (__isset.ttl) {
-        __sb.Append(", Ttl: ");
-        __sb.Append(Ttl);
+        sb.Append(", Ttl: ");
+        sb.Append(Ttl);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

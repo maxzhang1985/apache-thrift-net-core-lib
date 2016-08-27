@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class VersioningTestV1 : TBase
   {
@@ -76,14 +73,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool begin_in_both;
       [DataMember]
@@ -114,16 +108,16 @@ namespace ThriftAsync.Test
     public VersioningTestV1() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -131,32 +125,32 @@ namespace ThriftAsync.Test
           {
             case 1:
               if (field.Type == TType.I32) {
-                Begin_in_both = iprot.ReadI32();
+                Begin_in_both = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.String) {
-                Old_string = iprot.ReadString();
+                Old_string = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 12:
               if (field.Type == TType.I32) {
-                End_in_both = iprot.ReadI32();
+                End_in_both = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -164,39 +158,39 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("VersioningTestV1");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("VersioningTestV1");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (__isset.begin_in_both) {
           field.Name = "begin_in_both";
           field.Type = TType.I32;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Begin_in_both);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Begin_in_both, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Old_string != null && __isset.old_string) {
           field.Name = "old_string";
           field.Type = TType.String;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Old_string);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Old_string, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.end_in_both) {
           field.Name = "end_in_both";
           field.Type = TType.I32;
           field.ID = 12;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(End_in_both);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(End_in_both, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -205,28 +199,28 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("VersioningTestV1(");
+      var sb = new StringBuilder("VersioningTestV1(");
       bool __first = true;
       if (__isset.begin_in_both) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Begin_in_both: ");
-        __sb.Append(Begin_in_both);
+        sb.Append("Begin_in_both: ");
+        sb.Append(Begin_in_both);
       }
       if (Old_string != null && __isset.old_string) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Old_string: ");
-        __sb.Append(Old_string);
+        sb.Append("Old_string: ");
+        sb.Append(Old_string);
       }
       if (__isset.end_in_both) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("End_in_both: ");
-        __sb.Append(End_in_both);
+        sb.Append("End_in_both: ");
+        sb.Append(End_in_both);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

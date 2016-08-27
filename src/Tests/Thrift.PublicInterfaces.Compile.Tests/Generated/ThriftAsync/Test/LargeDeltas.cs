@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class LargeDeltas : TBase
   {
@@ -181,14 +178,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool b1;
       [DataMember]
@@ -268,16 +262,16 @@ namespace ThriftAsync.Test
     public LargeDeltas() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -286,106 +280,106 @@ namespace ThriftAsync.Test
             case 1:
               if (field.Type == TType.Struct) {
                 B1 = new Bools();
-                B1.Read(iprot);
+                await B1.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 10:
               if (field.Type == TType.Struct) {
                 B10 = new Bools();
-                B10.Read(iprot);
+                await B10.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 100:
               if (field.Type == TType.Struct) {
                 B100 = new Bools();
-                B100.Read(iprot);
+                await B100.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 500:
               if (field.Type == TType.Bool) {
-                Check_true = iprot.ReadBool();
+                Check_true = await iprot.ReadBoolAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 1000:
               if (field.Type == TType.Struct) {
                 B1000 = new Bools();
-                B1000.Read(iprot);
+                await B1000.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 1500:
               if (field.Type == TType.Bool) {
-                Check_false = iprot.ReadBool();
+                Check_false = await iprot.ReadBoolAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2000:
               if (field.Type == TType.Struct) {
                 Vertwo2000 = new VersioningTestV2();
-                Vertwo2000.Read(iprot);
+                await Vertwo2000.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2500:
               if (field.Type == TType.Set) {
                 {
                   A_set2500 = new THashSet<string>();
-                  TSet _set70 = iprot.ReadSetBegin();
-                  for( int _i71 = 0; _i71 < _set70.Count; ++_i71)
+                  TSet _set70 = await iprot.ReadSetBeginAsync(cancellationToken);
+                  for(int _i71 = 0; _i71 < _set70.Count; ++_i71)
                   {
                     string _elem72;
-                    _elem72 = iprot.ReadString();
+                    _elem72 = await iprot.ReadStringAsync(cancellationToken);
                     A_set2500.Add(_elem72);
                   }
-                  iprot.ReadSetEnd();
+                  await iprot.ReadSetEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3000:
               if (field.Type == TType.Struct) {
                 Vertwo3000 = new VersioningTestV2();
-                Vertwo3000.Read(iprot);
+                await Vertwo3000.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4000:
               if (field.Type == TType.List) {
                 {
                   Big_numbers = new List<int>();
-                  TList _list73 = iprot.ReadListBegin();
-                  for( int _i74 = 0; _i74 < _list73.Count; ++_i74)
+                  TList _list73 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i74 = 0; _i74 < _list73.Count; ++_i74)
                   {
                     int _elem75;
-                    _elem75 = iprot.ReadI32();
+                    _elem75 = await iprot.ReadI32Async(cancellationToken);
                     Big_numbers.Add(_elem75);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -393,109 +387,109 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("LargeDeltas");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("LargeDeltas");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (B1 != null && __isset.b1) {
           field.Name = "b1";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          B1.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await B1.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (B10 != null && __isset.b10) {
           field.Name = "b10";
           field.Type = TType.Struct;
           field.ID = 10;
-          oprot.WriteFieldBegin(field);
-          B10.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await B10.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (B100 != null && __isset.b100) {
           field.Name = "b100";
           field.Type = TType.Struct;
           field.ID = 100;
-          oprot.WriteFieldBegin(field);
-          B100.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await B100.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.check_true) {
           field.Name = "check_true";
           field.Type = TType.Bool;
           field.ID = 500;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBool(Check_true);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBoolAsync(Check_true, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (B1000 != null && __isset.b1000) {
           field.Name = "b1000";
           field.Type = TType.Struct;
           field.ID = 1000;
-          oprot.WriteFieldBegin(field);
-          B1000.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await B1000.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.check_false) {
           field.Name = "check_false";
           field.Type = TType.Bool;
           field.ID = 1500;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBool(Check_false);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBoolAsync(Check_false, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Vertwo2000 != null && __isset.vertwo2000) {
           field.Name = "vertwo2000";
           field.Type = TType.Struct;
           field.ID = 2000;
-          oprot.WriteFieldBegin(field);
-          Vertwo2000.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Vertwo2000.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (A_set2500 != null && __isset.a_set2500) {
           field.Name = "a_set2500";
           field.Type = TType.Set;
           field.ID = 2500;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteSetBegin(new TSet(TType.String, A_set2500.Count));
+            await oprot.WriteSetBeginAsync(new TSet(TType.String, A_set2500.Count), cancellationToken);
             foreach (string _iter76 in A_set2500)
             {
-              oprot.WriteString(_iter76);
+              await oprot.WriteStringAsync(_iter76, cancellationToken);
             }
-            oprot.WriteSetEnd();
+            await oprot.WriteSetEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Vertwo3000 != null && __isset.vertwo3000) {
           field.Name = "vertwo3000";
           field.Type = TType.Struct;
           field.ID = 3000;
-          oprot.WriteFieldBegin(field);
-          Vertwo3000.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Vertwo3000.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Big_numbers != null && __isset.big_numbers) {
           field.Name = "big_numbers";
           field.Type = TType.List;
           field.ID = 4000;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.I32, Big_numbers.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.I32, Big_numbers.Count), cancellationToken);
             foreach (int _iter77 in Big_numbers)
             {
-              oprot.WriteI32(_iter77);
+              await oprot.WriteI32Async(_iter77, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -504,70 +498,70 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("LargeDeltas(");
+      var sb = new StringBuilder("LargeDeltas(");
       bool __first = true;
       if (B1 != null && __isset.b1) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("B1: ");
-        __sb.Append(B1== null ? "<null>" : B1.ToString());
+        sb.Append("B1: ");
+        sb.Append(B1== null ? "<null>" : B1.ToString());
       }
       if (B10 != null && __isset.b10) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("B10: ");
-        __sb.Append(B10== null ? "<null>" : B10.ToString());
+        sb.Append("B10: ");
+        sb.Append(B10== null ? "<null>" : B10.ToString());
       }
       if (B100 != null && __isset.b100) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("B100: ");
-        __sb.Append(B100== null ? "<null>" : B100.ToString());
+        sb.Append("B100: ");
+        sb.Append(B100== null ? "<null>" : B100.ToString());
       }
       if (__isset.check_true) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Check_true: ");
-        __sb.Append(Check_true);
+        sb.Append("Check_true: ");
+        sb.Append(Check_true);
       }
       if (B1000 != null && __isset.b1000) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("B1000: ");
-        __sb.Append(B1000== null ? "<null>" : B1000.ToString());
+        sb.Append("B1000: ");
+        sb.Append(B1000== null ? "<null>" : B1000.ToString());
       }
       if (__isset.check_false) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Check_false: ");
-        __sb.Append(Check_false);
+        sb.Append("Check_false: ");
+        sb.Append(Check_false);
       }
       if (Vertwo2000 != null && __isset.vertwo2000) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Vertwo2000: ");
-        __sb.Append(Vertwo2000== null ? "<null>" : Vertwo2000.ToString());
+        sb.Append("Vertwo2000: ");
+        sb.Append(Vertwo2000== null ? "<null>" : Vertwo2000.ToString());
       }
       if (A_set2500 != null && __isset.a_set2500) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("A_set2500: ");
-        __sb.Append(A_set2500);
+        sb.Append("A_set2500: ");
+        sb.Append(A_set2500);
       }
       if (Vertwo3000 != null && __isset.vertwo3000) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Vertwo3000: ");
-        __sb.Append(Vertwo3000== null ? "<null>" : Vertwo3000.ToString());
+        sb.Append("Vertwo3000: ");
+        sb.Append(Vertwo3000== null ? "<null>" : Vertwo3000.ToString());
       }
       if (Big_numbers != null && __isset.big_numbers) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Big_numbers: ");
-        __sb.Append(Big_numbers);
+        sb.Append("Big_numbers: ");
+        sb.Append(Big_numbers);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

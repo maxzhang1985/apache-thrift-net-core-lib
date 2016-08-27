@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class CfDef : TBase
   {
@@ -322,14 +319,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool column_type;
       [DataMember]
@@ -483,7 +477,7 @@ namespace Apache.Cassandra.Test
       this.Name = name;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -491,10 +485,10 @@ namespace Apache.Cassandra.Test
         bool isset_keyspace = false;
         bool isset_name = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -502,195 +496,195 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Keyspace = iprot.ReadString();
+                Keyspace = await iprot.ReadStringAsync(cancellationToken);
                 isset_keyspace = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                Name = iprot.ReadString();
+                Name = await iprot.ReadStringAsync(cancellationToken);
                 isset_name = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.String) {
-                Column_type = iprot.ReadString();
+                Column_type = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 5:
               if (field.Type == TType.String) {
-                Comparator_type = iprot.ReadString();
+                Comparator_type = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 6:
               if (field.Type == TType.String) {
-                Subcomparator_type = iprot.ReadString();
+                Subcomparator_type = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 8:
               if (field.Type == TType.String) {
-                Comment = iprot.ReadString();
+                Comment = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 12:
               if (field.Type == TType.Double) {
-                Read_repair_chance = iprot.ReadDouble();
+                Read_repair_chance = await iprot.ReadDoubleAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 13:
               if (field.Type == TType.List) {
                 {
                   Column_metadata = new List<ColumnDef>();
-                  TList _list42 = iprot.ReadListBegin();
-                  for( int _i43 = 0; _i43 < _list42.Count; ++_i43)
+                  TList _list42 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i43 = 0; _i43 < _list42.Count; ++_i43)
                   {
                     ColumnDef _elem44;
                     _elem44 = new ColumnDef();
-                    _elem44.Read(iprot);
+                    await _elem44.ReadAsync(iprot, cancellationToken);
                     Column_metadata.Add(_elem44);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 14:
               if (field.Type == TType.I32) {
-                Gc_grace_seconds = iprot.ReadI32();
+                Gc_grace_seconds = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 15:
               if (field.Type == TType.String) {
-                Default_validation_class = iprot.ReadString();
+                Default_validation_class = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 16:
               if (field.Type == TType.I32) {
-                Id = iprot.ReadI32();
+                Id = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 17:
               if (field.Type == TType.I32) {
-                Min_compaction_threshold = iprot.ReadI32();
+                Min_compaction_threshold = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 18:
               if (field.Type == TType.I32) {
-                Max_compaction_threshold = iprot.ReadI32();
+                Max_compaction_threshold = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 24:
               if (field.Type == TType.Bool) {
-                Replicate_on_write = iprot.ReadBool();
+                Replicate_on_write = await iprot.ReadBoolAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 25:
               if (field.Type == TType.Double) {
-                Merge_shards_chance = iprot.ReadDouble();
+                Merge_shards_chance = await iprot.ReadDoubleAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 26:
               if (field.Type == TType.String) {
-                Key_validation_class = iprot.ReadString();
+                Key_validation_class = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 28:
               if (field.Type == TType.String) {
-                Key_alias = iprot.ReadBinary();
+                Key_alias = await iprot.ReadBinaryAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 29:
               if (field.Type == TType.String) {
-                Compaction_strategy = iprot.ReadString();
+                Compaction_strategy = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 30:
               if (field.Type == TType.Map) {
                 {
                   Compaction_strategy_options = new Dictionary<string, string>();
-                  TMap _map45 = iprot.ReadMapBegin();
-                  for( int _i46 = 0; _i46 < _map45.Count; ++_i46)
+                  TMap _map45 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i46 = 0; _i46 < _map45.Count; ++_i46)
                   {
                     string _key47;
                     string _val48;
-                    _key47 = iprot.ReadString();
-                    _val48 = iprot.ReadString();
+                    _key47 = await iprot.ReadStringAsync(cancellationToken);
+                    _val48 = await iprot.ReadStringAsync(cancellationToken);
                     Compaction_strategy_options[_key47] = _val48;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 32:
               if (field.Type == TType.Map) {
                 {
                   Compression_options = new Dictionary<string, string>();
-                  TMap _map49 = iprot.ReadMapBegin();
-                  for( int _i50 = 0; _i50 < _map49.Count; ++_i50)
+                  TMap _map49 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i50 = 0; _i50 < _map49.Count; ++_i50)
                   {
                     string _key51;
                     string _val52;
-                    _key51 = iprot.ReadString();
-                    _val52 = iprot.ReadString();
+                    _key51 = await iprot.ReadStringAsync(cancellationToken);
+                    _val52 = await iprot.ReadStringAsync(cancellationToken);
                     Compression_options[_key51] = _val52;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 33:
               if (field.Type == TType.Double) {
-                Bloom_filter_fp_chance = iprot.ReadDouble();
+                Bloom_filter_fp_chance = await iprot.ReadDoubleAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_keyspace)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_name)
@@ -702,202 +696,202 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("CfDef");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("CfDef");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "keyspace";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Keyspace);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Keyspace, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "name";
         field.Type = TType.String;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Name);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Name, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (Column_type != null && __isset.column_type) {
           field.Name = "column_type";
           field.Type = TType.String;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Column_type);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Column_type, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Comparator_type != null && __isset.comparator_type) {
           field.Name = "comparator_type";
           field.Type = TType.String;
           field.ID = 5;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Comparator_type);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Comparator_type, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Subcomparator_type != null && __isset.subcomparator_type) {
           field.Name = "subcomparator_type";
           field.Type = TType.String;
           field.ID = 6;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Subcomparator_type);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Subcomparator_type, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Comment != null && __isset.comment) {
           field.Name = "comment";
           field.Type = TType.String;
           field.ID = 8;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Comment);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Comment, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.read_repair_chance) {
           field.Name = "read_repair_chance";
           field.Type = TType.Double;
           field.ID = 12;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteDouble(Read_repair_chance);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteDoubleAsync(Read_repair_chance, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Column_metadata != null && __isset.column_metadata) {
           field.Name = "column_metadata";
           field.Type = TType.List;
           field.ID = 13;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.Struct, Column_metadata.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.Struct, Column_metadata.Count), cancellationToken);
             foreach (ColumnDef _iter53 in Column_metadata)
             {
-              _iter53.Write(oprot);
+              await _iter53.WriteAsync(oprot, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.gc_grace_seconds) {
           field.Name = "gc_grace_seconds";
           field.Type = TType.I32;
           field.ID = 14;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Gc_grace_seconds);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Gc_grace_seconds, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Default_validation_class != null && __isset.default_validation_class) {
           field.Name = "default_validation_class";
           field.Type = TType.String;
           field.ID = 15;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Default_validation_class);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Default_validation_class, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.id) {
           field.Name = "id";
           field.Type = TType.I32;
           field.ID = 16;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Id);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Id, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.min_compaction_threshold) {
           field.Name = "min_compaction_threshold";
           field.Type = TType.I32;
           field.ID = 17;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Min_compaction_threshold);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Min_compaction_threshold, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.max_compaction_threshold) {
           field.Name = "max_compaction_threshold";
           field.Type = TType.I32;
           field.ID = 18;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Max_compaction_threshold);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Max_compaction_threshold, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.replicate_on_write) {
           field.Name = "replicate_on_write";
           field.Type = TType.Bool;
           field.ID = 24;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBool(Replicate_on_write);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBoolAsync(Replicate_on_write, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.merge_shards_chance) {
           field.Name = "merge_shards_chance";
           field.Type = TType.Double;
           field.ID = 25;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteDouble(Merge_shards_chance);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteDoubleAsync(Merge_shards_chance, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Key_validation_class != null && __isset.key_validation_class) {
           field.Name = "key_validation_class";
           field.Type = TType.String;
           field.ID = 26;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Key_validation_class);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Key_validation_class, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Key_alias != null && __isset.key_alias) {
           field.Name = "key_alias";
           field.Type = TType.String;
           field.ID = 28;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Key_alias);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Key_alias, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Compaction_strategy != null && __isset.compaction_strategy) {
           field.Name = "compaction_strategy";
           field.Type = TType.String;
           field.ID = 29;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Compaction_strategy);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Compaction_strategy, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Compaction_strategy_options != null && __isset.compaction_strategy_options) {
           field.Name = "compaction_strategy_options";
           field.Type = TType.Map;
           field.ID = 30;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteMapBegin(new TMap(TType.String, TType.String, Compaction_strategy_options.Count));
+            await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Compaction_strategy_options.Count), cancellationToken);
             foreach (string _iter54 in Compaction_strategy_options.Keys)
             {
-              oprot.WriteString(_iter54);
-              oprot.WriteString(Compaction_strategy_options[_iter54]);
+              await oprot.WriteStringAsync(_iter54, cancellationToken);
+              await oprot.WriteStringAsync(Compaction_strategy_options[_iter54], cancellationToken);
             }
-            oprot.WriteMapEnd();
+            await oprot.WriteMapEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Compression_options != null && __isset.compression_options) {
           field.Name = "compression_options";
           field.Type = TType.Map;
           field.ID = 32;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteMapBegin(new TMap(TType.String, TType.String, Compression_options.Count));
+            await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Compression_options.Count), cancellationToken);
             foreach (string _iter55 in Compression_options.Keys)
             {
-              oprot.WriteString(_iter55);
-              oprot.WriteString(Compression_options[_iter55]);
+              await oprot.WriteStringAsync(_iter55, cancellationToken);
+              await oprot.WriteStringAsync(Compression_options[_iter55], cancellationToken);
             }
-            oprot.WriteMapEnd();
+            await oprot.WriteMapEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.bloom_filter_fp_chance) {
           field.Name = "bloom_filter_fp_chance";
           field.Type = TType.Double;
           field.ID = 33;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteDouble(Bloom_filter_fp_chance);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteDoubleAsync(Bloom_filter_fp_chance, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -906,89 +900,89 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("CfDef(");
-      __sb.Append(", Keyspace: ");
-      __sb.Append(Keyspace);
-      __sb.Append(", Name: ");
-      __sb.Append(Name);
+      var sb = new StringBuilder("CfDef(");
+      sb.Append(", Keyspace: ");
+      sb.Append(Keyspace);
+      sb.Append(", Name: ");
+      sb.Append(Name);
       if (Column_type != null && __isset.column_type) {
-        __sb.Append(", Column_type: ");
-        __sb.Append(Column_type);
+        sb.Append(", Column_type: ");
+        sb.Append(Column_type);
       }
       if (Comparator_type != null && __isset.comparator_type) {
-        __sb.Append(", Comparator_type: ");
-        __sb.Append(Comparator_type);
+        sb.Append(", Comparator_type: ");
+        sb.Append(Comparator_type);
       }
       if (Subcomparator_type != null && __isset.subcomparator_type) {
-        __sb.Append(", Subcomparator_type: ");
-        __sb.Append(Subcomparator_type);
+        sb.Append(", Subcomparator_type: ");
+        sb.Append(Subcomparator_type);
       }
       if (Comment != null && __isset.comment) {
-        __sb.Append(", Comment: ");
-        __sb.Append(Comment);
+        sb.Append(", Comment: ");
+        sb.Append(Comment);
       }
       if (__isset.read_repair_chance) {
-        __sb.Append(", Read_repair_chance: ");
-        __sb.Append(Read_repair_chance);
+        sb.Append(", Read_repair_chance: ");
+        sb.Append(Read_repair_chance);
       }
       if (Column_metadata != null && __isset.column_metadata) {
-        __sb.Append(", Column_metadata: ");
-        __sb.Append(Column_metadata);
+        sb.Append(", Column_metadata: ");
+        sb.Append(Column_metadata);
       }
       if (__isset.gc_grace_seconds) {
-        __sb.Append(", Gc_grace_seconds: ");
-        __sb.Append(Gc_grace_seconds);
+        sb.Append(", Gc_grace_seconds: ");
+        sb.Append(Gc_grace_seconds);
       }
       if (Default_validation_class != null && __isset.default_validation_class) {
-        __sb.Append(", Default_validation_class: ");
-        __sb.Append(Default_validation_class);
+        sb.Append(", Default_validation_class: ");
+        sb.Append(Default_validation_class);
       }
       if (__isset.id) {
-        __sb.Append(", Id: ");
-        __sb.Append(Id);
+        sb.Append(", Id: ");
+        sb.Append(Id);
       }
       if (__isset.min_compaction_threshold) {
-        __sb.Append(", Min_compaction_threshold: ");
-        __sb.Append(Min_compaction_threshold);
+        sb.Append(", Min_compaction_threshold: ");
+        sb.Append(Min_compaction_threshold);
       }
       if (__isset.max_compaction_threshold) {
-        __sb.Append(", Max_compaction_threshold: ");
-        __sb.Append(Max_compaction_threshold);
+        sb.Append(", Max_compaction_threshold: ");
+        sb.Append(Max_compaction_threshold);
       }
       if (__isset.replicate_on_write) {
-        __sb.Append(", Replicate_on_write: ");
-        __sb.Append(Replicate_on_write);
+        sb.Append(", Replicate_on_write: ");
+        sb.Append(Replicate_on_write);
       }
       if (__isset.merge_shards_chance) {
-        __sb.Append(", Merge_shards_chance: ");
-        __sb.Append(Merge_shards_chance);
+        sb.Append(", Merge_shards_chance: ");
+        sb.Append(Merge_shards_chance);
       }
       if (Key_validation_class != null && __isset.key_validation_class) {
-        __sb.Append(", Key_validation_class: ");
-        __sb.Append(Key_validation_class);
+        sb.Append(", Key_validation_class: ");
+        sb.Append(Key_validation_class);
       }
       if (Key_alias != null && __isset.key_alias) {
-        __sb.Append(", Key_alias: ");
-        __sb.Append(Key_alias);
+        sb.Append(", Key_alias: ");
+        sb.Append(Key_alias);
       }
       if (Compaction_strategy != null && __isset.compaction_strategy) {
-        __sb.Append(", Compaction_strategy: ");
-        __sb.Append(Compaction_strategy);
+        sb.Append(", Compaction_strategy: ");
+        sb.Append(Compaction_strategy);
       }
       if (Compaction_strategy_options != null && __isset.compaction_strategy_options) {
-        __sb.Append(", Compaction_strategy_options: ");
-        __sb.Append(Compaction_strategy_options);
+        sb.Append(", Compaction_strategy_options: ");
+        sb.Append(Compaction_strategy_options);
       }
       if (Compression_options != null && __isset.compression_options) {
-        __sb.Append(", Compression_options: ");
-        __sb.Append(Compression_options);
+        sb.Append(", Compression_options: ");
+        sb.Append(Compression_options);
       }
       if (__isset.bloom_filter_fp_chance) {
-        __sb.Append(", Bloom_filter_fp_chance: ");
-        __sb.Append(Bloom_filter_fp_chance);
+        sb.Append(", Bloom_filter_fp_chance: ");
+        sb.Append(Bloom_filter_fp_chance);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

@@ -15,7 +15,7 @@
 
   "scripts": {
     "precompile": [
-      //"%project:Directory%/../../thrift.exe -r -out %project:Directory% --gen csharp:async,wcf %project:Directory%/tutorial.thrift"
+      //"%project:Directory%/../../thrift.exe -r -out %project:Directory% --gen netcore:wcf %project:Directory%/tutorial.thrift"
     ]
   }
 }

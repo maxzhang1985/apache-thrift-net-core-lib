@@ -3,7 +3,8 @@
 
   "dependencies": {
     "NETStandard.Library": "1.6.0",
-    "Thrift": "1.0.0-*"
+    "Thrift": "1.0.0-*",
+    "System.ServiceModel.Primitives": "4.0.0"
   },
 
   "frameworks": {
@@ -15,10 +16,9 @@
   "scripts": {
     "precompile": [
       /*
-      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp:async,wcf %project:Directory%/ThriftTest.thrift",
-      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp:async,wcf %project:Directory%/ThriftTestAsync.thrift",
-      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp:async,wcf %project:Directory%/Facebook303Test.thrift",
-      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen csharp:async,wcf %project:Directory%/CassandraTest.thrift"
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen netcore:wcf %project:Directory%/ThriftTestAsync.thrift",
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen netcore:wcf %project:Directory%/Facebook303Test.thrift",
+      "%project:Directory%/../../thrift.exe -r -out %project:Directory%/Generated --gen netcore:wcf %project:Directory%/CassandraTest.thrift"
       */
     ]
   }

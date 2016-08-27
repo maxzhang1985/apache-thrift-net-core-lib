@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class StructB : TBase
   {
@@ -49,14 +46,11 @@ namespace ThriftAsync.Test
     public StructA Ab { get; set; }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool aa;
     }
@@ -77,17 +71,17 @@ namespace ThriftAsync.Test
       this.Ab = ab;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_ab = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -96,27 +90,27 @@ namespace ThriftAsync.Test
             case 1:
               if (field.Type == TType.Struct) {
                 Aa = new StructA();
-                Aa.Read(iprot);
+                await Aa.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.Struct) {
                 Ab = new StructA();
-                Ab.Read(iprot);
+                await Ab.ReadAsync(iprot, cancellationToken);
                 isset_ab = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_ab)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -126,29 +120,29 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("StructB");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("StructB");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Aa != null && __isset.aa) {
           field.Name = "aa";
           field.Type = TType.Struct;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Aa.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Aa.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         field.Name = "ab";
         field.Type = TType.Struct;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        Ab.Write(oprot);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await Ab.WriteAsync(oprot, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -157,19 +151,19 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("StructB(");
+      var sb = new StringBuilder("StructB(");
       bool __first = true;
       if (Aa != null && __isset.aa) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Aa: ");
-        __sb.Append(Aa== null ? "<null>" : Aa.ToString());
+        sb.Append("Aa: ");
+        sb.Append(Aa== null ? "<null>" : Aa.ToString());
       }
-      if(!__first) { __sb.Append(", "); }
-      __sb.Append("Ab: ");
-      __sb.Append(Ab== null ? "<null>" : Ab.ToString());
-      __sb.Append(")");
-      return __sb.ToString();
+      if(!__first) { sb.Append(", "); }
+      sb.Append("Ab: ");
+      sb.Append(Ab== null ? "<null>" : Ab.ToString());
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

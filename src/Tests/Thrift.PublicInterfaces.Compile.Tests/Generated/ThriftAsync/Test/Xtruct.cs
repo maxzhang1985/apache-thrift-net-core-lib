@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class Xtruct : TBase
   {
@@ -106,14 +103,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool string_thing;
       [DataMember]
@@ -158,16 +152,16 @@ namespace ThriftAsync.Test
     public Xtruct() {
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -175,46 +169,46 @@ namespace ThriftAsync.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                String_thing = iprot.ReadString();
+                String_thing = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.Byte) {
-                Byte_thing = iprot.ReadByte();
+                Byte_thing = await iprot.ReadByteAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 7:
               if (field.Type == TType.I16) {
-                I16_thing = iprot.ReadI16();
+                I16_thing = await iprot.ReadI16Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 9:
               if (field.Type == TType.I32) {
-                I32_thing = iprot.ReadI32();
+                I32_thing = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 11:
               if (field.Type == TType.I64) {
-                I64_thing = iprot.ReadI64();
+                I64_thing = await iprot.ReadI64Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -222,55 +216,55 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("Xtruct");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("Xtruct");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (String_thing != null && __isset.string_thing) {
           field.Name = "string_thing";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(String_thing);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(String_thing, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.byte_thing) {
           field.Name = "byte_thing";
           field.Type = TType.Byte;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteByte(Byte_thing);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteByteAsync(Byte_thing, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.i16_thing) {
           field.Name = "i16_thing";
           field.Type = TType.I16;
           field.ID = 7;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI16(I16_thing);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI16Async(I16_thing, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.i32_thing) {
           field.Name = "i32_thing";
           field.Type = TType.I32;
           field.ID = 9;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(I32_thing);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(I32_thing, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.i64_thing) {
           field.Name = "i64_thing";
           field.Type = TType.I64;
           field.ID = 11;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI64(I64_thing);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI64Async(I64_thing, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -279,40 +273,40 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("Xtruct(");
+      var sb = new StringBuilder("Xtruct(");
       bool __first = true;
       if (String_thing != null && __isset.string_thing) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("String_thing: ");
-        __sb.Append(String_thing);
+        sb.Append("String_thing: ");
+        sb.Append(String_thing);
       }
       if (__isset.byte_thing) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Byte_thing: ");
-        __sb.Append(Byte_thing);
+        sb.Append("Byte_thing: ");
+        sb.Append(Byte_thing);
       }
       if (__isset.i16_thing) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("I16_thing: ");
-        __sb.Append(I16_thing);
+        sb.Append("I16_thing: ");
+        sb.Append(I16_thing);
       }
       if (__isset.i32_thing) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("I32_thing: ");
-        __sb.Append(I32_thing);
+        sb.Append("I32_thing: ");
+        sb.Append(I32_thing);
       }
       if (__isset.i64_thing) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("I64_thing: ");
-        __sb.Append(I64_thing);
+        sb.Append("I64_thing: ");
+        sb.Append(I64_thing);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

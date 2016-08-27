@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class CqlResult : TBase
   {
@@ -83,14 +80,11 @@ namespace Apache.Cassandra.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool rows;
       [DataMember]
@@ -125,17 +119,17 @@ namespace Apache.Cassandra.Test
       this.Type = type;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_type = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -143,52 +137,52 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.I32) {
-                Type = (CqlResultType)iprot.ReadI32();
+                Type = (CqlResultType)await iprot.ReadI32Async(cancellationToken);
                 isset_type = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.List) {
                 {
                   Rows = new List<CqlRow>();
-                  TList _list79 = iprot.ReadListBegin();
-                  for( int _i80 = 0; _i80 < _list79.Count; ++_i80)
+                  TList _list79 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i80 = 0; _i80 < _list79.Count; ++_i80)
                   {
                     CqlRow _elem81;
                     _elem81 = new CqlRow();
-                    _elem81.Read(iprot);
+                    await _elem81.ReadAsync(iprot, cancellationToken);
                     Rows.Add(_elem81);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.I32) {
-                Num = iprot.ReadI32();
+                Num = await iprot.ReadI32Async(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.Struct) {
                 Schema = new CqlMetadata();
-                Schema.Read(iprot);
+                await Schema.ReadAsync(iprot, cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_type)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -198,52 +192,52 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("CqlResult");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("CqlResult");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "type";
         field.Type = TType.I32;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteI32((int)Type);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteI32Async((int)Type, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (Rows != null && __isset.rows) {
           field.Name = "rows";
           field.Type = TType.List;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteListBegin(new TList(TType.Struct, Rows.Count));
+            await oprot.WriteListBeginAsync(new TList(TType.Struct, Rows.Count), cancellationToken);
             foreach (CqlRow _iter82 in Rows)
             {
-              _iter82.Write(oprot);
+              await _iter82.WriteAsync(oprot, cancellationToken);
             }
-            oprot.WriteListEnd();
+            await oprot.WriteListEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (__isset.num) {
           field.Name = "num";
           field.Type = TType.I32;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Num);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteI32Async(Num, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Schema != null && __isset.schema) {
           field.Name = "schema";
           field.Type = TType.Struct;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          Schema.Write(oprot);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await Schema.WriteAsync(oprot, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -252,23 +246,23 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("CqlResult(");
-      __sb.Append(", Type: ");
-      __sb.Append(Type);
+      var sb = new StringBuilder("CqlResult(");
+      sb.Append(", Type: ");
+      sb.Append(Type);
       if (Rows != null && __isset.rows) {
-        __sb.Append(", Rows: ");
-        __sb.Append(Rows);
+        sb.Append(", Rows: ");
+        sb.Append(Rows);
       }
       if (__isset.num) {
-        __sb.Append(", Num: ");
-        __sb.Append(Num);
+        sb.Append(", Num: ");
+        sb.Append(Num);
       }
       if (Schema != null && __isset.schema) {
-        __sb.Append(", Schema: ");
-        __sb.Append(Schema== null ? "<null>" : Schema.ToString());
+        sb.Append(", Schema: ");
+        sb.Append(Schema== null ? "<null>" : Schema.ToString());
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

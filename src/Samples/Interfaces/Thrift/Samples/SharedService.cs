@@ -9,67 +9,64 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Thrift.Samples
 {
   public partial class SharedService {
-    [ServiceContract(Namespace="")]
-    public interface ISync {
-      [OperationContract]
-      SharedStruct GetStruct(int key);
-    }
+
 
     [ServiceContract(Namespace="")]
     public interface IAsync {
       [OperationContract]
-      Task<SharedStruct> GetStructAsync(int key);
+      Task<SharedStruct> GetStructAsync(int key, CancellationToken cancellationToken);
+
     }
 
-    [ServiceContract(Namespace="")]
-    public interface Iface : ISync, IAsync {
-      IAsyncResult Begin_GetStruct(AsyncCallback callback, object state, int key);
-      SharedStruct End_GetStruct(IAsyncResult asyncResult);
-    }
 
-    public class Client : IDisposable, Iface {
-      public Client(TProtocol prot) : this(prot, prot)
+    public class Client : IDisposable, IAsync
+    {
+      public Client(TProtocol protocol) : this(protocol, protocol)
       {
       }
 
-      public Client(TProtocol iprot, TProtocol oprot)
+      public Client(TProtocol inputProtocol, TProtocol outputProtocol)
       {
-        iprot_ = iprot;
-        oprot_ = oprot;
+        if (inputProtocol == null) throw new ArgumentNullException(nameof(inputProtocol));
+        if (outputProtocol == null) throw new ArgumentNullException(nameof(outputProtocol));
+        _inputProtocol = inputProtocol;
+        _outputProtocol = outputProtocol;
       }
 
-      protected TProtocol iprot_;
-      protected TProtocol oprot_;
-      protected int seqid_;
-
+      private TProtocol _inputProtocol;
+      private TProtocol _outputProtocol;
+      private int _seqId;
       public TProtocol InputProtocol
       {
-        get { return iprot_; }
+        get { return _inputProtocol; }
       }
+
       public TProtocol OutputProtocol
       {
-        get { return oprot_; }
+        get { return _outputProtocol; }
       }
 
+      public int SeqId
+      {
+        get { return _seqId; }
+      }
 
-      #region " IDisposable Support "
-      private bool _IsDisposed;
+      private bool _isDisposed;
 
-      // IDisposable
       public void Dispose()
       {
         Dispose(true);
@@ -78,74 +75,45 @@ namespace Thrift.Samples
 
       protected virtual void Dispose(bool disposing)
       {
-        if (!_IsDisposed)
+        if (!_isDisposed)
         {
           if (disposing)
           {
-            if (iprot_ != null)
+            if (_inputProtocol != null)
             {
-              ((IDisposable)iprot_).Dispose();
+              ((IDisposable)_inputProtocol).Dispose();
             }
-            if (oprot_ != null)
+            if (_outputProtocol != null)
             {
-              ((IDisposable)oprot_).Dispose();
+              ((IDisposable)_outputProtocol).Dispose();
             }
           }
         }
-        _IsDisposed = true;
-      }
-      #endregion
-
-
-      
-      public IAsyncResult Begin_GetStruct(AsyncCallback callback, object state, int key)
-      {
-        return send_GetStruct(callback, state, key);
+        _isDisposed = true;
       }
 
-      public SharedStruct End_GetStruct(IAsyncResult asyncResult)
+      public async Task<SharedStruct> GetStructAsync(int key, CancellationToken cancellationToken)
       {
-        oprot_.Transport.EndFlush(asyncResult);
-        return recv_GetStruct();
-      }
-
-      public async Task<SharedStruct> GetStructAsync(int key)
-      {
-        SharedStruct retval;
-        retval = await Task.Run(() =>
-        {
-          return GetStruct(key);
-        });
-        return retval;
-      }
-
-      public SharedStruct GetStruct(int key)
-      {
-        var asyncResult = Begin_GetStruct(null, null, key);
-        return End_GetStruct(asyncResult);
-
-      }
-      public IAsyncResult send_GetStruct(AsyncCallback callback, object state, int key)
-      {
-        oprot_.WriteMessageBegin(new TMessage("GetStruct", TMessageType.Call, seqid_));
-        GetStruct_args args = new GetStruct_args();
+        await OutputProtocol.WriteMessageBeginAsync(new TMessage("GetStruct", TMessageType.Call, SeqId), cancellationToken);
+        
+        var args = new GetStructArgs();
         args.Key = key;
-        args.Write(oprot_);
-        oprot_.WriteMessageEnd();
-        return oprot_.Transport.BeginFlush(callback, state);
-      }
-
-      public SharedStruct recv_GetStruct()
-      {
-        TMessage msg = iprot_.ReadMessageBegin();
-        if (msg.Type == TMessageType.Exception) {
-          TApplicationException x = TApplicationException.Read(iprot_);
-          iprot_.ReadMessageEnd();
+        
+        await args.WriteAsync(OutputProtocol, cancellationToken);
+        await OutputProtocol.WriteMessageEndAsync(cancellationToken);
+        await OutputProtocol.Transport.FlushAsync(cancellationToken);
+        
+        var msg = await InputProtocol.ReadMessageBeginAsync(cancellationToken);
+        if (msg.Type == TMessageType.Exception)
+        {
+          var x = await TApplicationException.ReadAsync(InputProtocol, cancellationToken);
+          await InputProtocol.ReadMessageEndAsync(cancellationToken);
           throw x;
         }
-        GetStruct_result result = new GetStruct_result();
-        result.Read(iprot_);
-        iprot_.ReadMessageEnd();
+
+        var result = new GetStructResult();
+        await result.ReadAsync(InputProtocol, cancellationToken);
+        await InputProtocol.ReadMessageEndAsync(cancellationToken);
         if (result.__isset.success) {
           return result.Success;
         }
@@ -153,35 +121,38 @@ namespace Thrift.Samples
       }
 
     }
-    public class AsyncProcessor : TAsyncProcessor {
-      public AsyncProcessor(IAsync iface)
+    public class AsyncProcessor : TAsyncProcessor
+    {
+      private IAsync _iAsync;
+
+      public AsyncProcessor(IAsync iAsync)
       {
-        iface_ = iface;
+        if (iAsync == null) throw new ArgumentNullException(nameof(iAsync));
+        _iAsync = iAsync;
         processMap_["GetStruct"] = GetStruct_ProcessAsync;
       }
 
-      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
-      private IAsync iface_;
+      protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken);
       protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
 
-      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+      public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
         try
         {
-          TMessage msg = iprot.ReadMessageBegin();
+          var msg = await iprot.ReadMessageBeginAsync(cancellationToken);
           ProcessFunction fn;
           processMap_.TryGetValue(msg.Name, out fn);
           if (fn == null) {
-            TProtocolUtil.Skip(iprot, TType.Struct);
-            iprot.ReadMessageEnd();
-            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
-            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
-            x.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
+            await TProtocolUtil.SkipAsync(iprot, TType.Struct, cancellationToken);
+            await iprot.ReadMessageEndAsync(cancellationToken);
+            var x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
+            await oprot.WriteMessageBeginAsync(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID), cancellationToken);
+            await x.WriteAsync(oprot, cancellationToken);
+            await oprot.WriteMessageEndAsync(cancellationToken);
+            await oprot.Transport.FlushAsync(cancellationToken);
             return true;
           }
-          await fn(msg.SeqID, iprot, oprot);
+          await fn(msg.SeqID, iprot, oprot, cancellationToken);
         }
         catch (IOException)
         {
@@ -189,18 +160,17 @@ namespace Thrift.Samples
         }
         return true;
       }
-
-      public async Task GetStruct_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot)
+      public async Task GetStruct_ProcessAsync(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
       {
-        GetStruct_args args = new GetStruct_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        GetStruct_result result = new GetStruct_result();
+        var args = new GetStructArgs();
+        await args.ReadAsync(iprot, cancellationToken);
+        await iprot.ReadMessageEndAsync(cancellationToken);
+        var result = new GetStructResult();
         try
         {
-          result.Success = await iface_.GetStructAsync(args.Key);
-          oprot.WriteMessageBegin(new TMessage("GetStruct", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
+          result.Success = await _iAsync.GetStructAsync(args.Key, cancellationToken);
+          await oprot.WriteMessageBeginAsync(new TMessage("GetStruct", TMessageType.Reply, seqid), cancellationToken); 
+          await result.WriteAsync(oprot, cancellationToken);
         }
         catch (TTransportException)
         {
@@ -210,89 +180,19 @@ namespace Thrift.Samples
         {
           Console.Error.WriteLine("Error occurred in processor:");
           Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("GetStruct", TMessageType.Exception, seqid));
-          x.Write(oprot);
+          var x = new TApplicationException(TApplicationException.ExceptionType.InternalError," Internal error.");
+          await oprot.WriteMessageBeginAsync(new TMessage("GetStruct", TMessageType.Exception, seqid), cancellationToken);
+          await x.WriteAsync(oprot, cancellationToken);
         }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
-      }
-
-    }
-
-    public class Processor : TProcessor {
-      public Processor(ISync iface)
-      {
-        iface_ = iface;
-        processMap_["GetStruct"] = GetStruct_Process;
-      }
-
-      protected delegate void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
-      private ISync iface_;
-      protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
-
-      public bool Process(TProtocol iprot, TProtocol oprot)
-      {
-        try
-        {
-          TMessage msg = iprot.ReadMessageBegin();
-          ProcessFunction fn;
-          processMap_.TryGetValue(msg.Name, out fn);
-          if (fn == null) {
-            TProtocolUtil.Skip(iprot, TType.Struct);
-            iprot.ReadMessageEnd();
-            TApplicationException x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
-            oprot.WriteMessageBegin(new TMessage(msg.Name, TMessageType.Exception, msg.SeqID));
-            x.Write(oprot);
-            oprot.WriteMessageEnd();
-            oprot.Transport.Flush();
-            return true;
-          }
-          fn(msg.SeqID, iprot, oprot);
-        }
-        catch (IOException)
-        {
-          return false;
-        }
-        return true;
-      }
-
-      public void GetStruct_Process(int seqid, TProtocol iprot, TProtocol oprot)
-      {
-        GetStruct_args args = new GetStruct_args();
-        args.Read(iprot);
-        iprot.ReadMessageEnd();
-        GetStruct_result result = new GetStruct_result();
-        try
-        {
-          result.Success = iface_.GetStruct(args.Key);
-          oprot.WriteMessageBegin(new TMessage("GetStruct", TMessageType.Reply, seqid)); 
-          result.Write(oprot);
-        }
-        catch (TTransportException)
-        {
-          throw;
-        }
-        catch (Exception ex)
-        {
-          Console.Error.WriteLine("Error occurred in processor:");
-          Console.Error.WriteLine(ex.ToString());
-          TApplicationException x = new TApplicationException        (TApplicationException.ExceptionType.InternalError," Internal error.");
-          oprot.WriteMessageBegin(new TMessage("GetStruct", TMessageType.Exception, seqid));
-          x.Write(oprot);
-        }
-        oprot.WriteMessageEnd();
-        oprot.Transport.Flush();
+        await oprot.WriteMessageEndAsync(cancellationToken);
+        await oprot.Transport.FlushAsync(cancellationToken);
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class GetStruct_args : TBase
+    public partial class GetStructArgs : TBase
     {
       private int _key;
 
@@ -311,14 +211,11 @@ namespace Thrift.Samples
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool key;
       }
@@ -332,19 +229,19 @@ namespace Thrift.Samples
 
       #endregion XmlSerializer support
 
-      public GetStruct_args() {
+      public GetStructArgs() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -352,18 +249,18 @@ namespace Thrift.Samples
             {
               case 1:
                 if (field.Type == TType.I32) {
-                  Key = iprot.ReadI32();
+                  Key = await iprot.ReadI32Async(cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -371,23 +268,23 @@ namespace Thrift.Samples
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("GetStruct_args");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("GetStruct_args");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
           if (__isset.key) {
             field.Name = "key";
             field.Type = TType.I32;
             field.ID = 1;
-            oprot.WriteFieldBegin(field);
-            oprot.WriteI32(Key);
-            oprot.WriteFieldEnd();
+            await oprot.WriteFieldBeginAsync(field, cancellationToken);
+            await oprot.WriteI32Async(Key, cancellationToken);
+            await oprot.WriteFieldEndAsync(cancellationToken);
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -396,26 +293,23 @@ namespace Thrift.Samples
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("GetStruct_args(");
+        var sb = new StringBuilder("GetStruct_args(");
         bool __first = true;
         if (__isset.key) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Key: ");
-          __sb.Append(Key);
+          sb.Append("Key: ");
+          sb.Append(Key);
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }
 
 
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract(Namespace="")]
-    public partial class GetStruct_result : TBase
+    public partial class GetStructResult : TBase
     {
       private SharedStruct _success;
 
@@ -434,14 +328,11 @@ namespace Thrift.Samples
       }
 
 
-      [XmlIgnore] // XmlSerializer
-      [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+      [DataMember(Order = 1)]
       public Isset __isset;
-      #if !SILVERLIGHT
-      [Serializable]
-      #endif
       [DataContract]
-      public struct Isset {
+      public struct Isset
+      {
         [DataMember]
         public bool success;
       }
@@ -455,19 +346,19 @@ namespace Thrift.Samples
 
       #endregion XmlSerializer support
 
-      public GetStruct_result() {
+      public GetStructResult() {
       }
 
-      public void Read (TProtocol iprot)
+      public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
       {
         iprot.IncrementRecursionDepth();
         try
         {
           TField field;
-          iprot.ReadStructBegin();
+          await iprot.ReadStructBeginAsync(cancellationToken);
           while (true)
           {
-            field = iprot.ReadFieldBegin();
+            field = await iprot.ReadFieldBeginAsync(cancellationToken);
             if (field.Type == TType.Stop) { 
               break;
             }
@@ -476,18 +367,18 @@ namespace Thrift.Samples
               case 0:
                 if (field.Type == TType.Struct) {
                   Success = new SharedStruct();
-                  Success.Read(iprot);
+                  await Success.ReadAsync(iprot, cancellationToken);
                 } else { 
-                  TProtocolUtil.Skip(iprot, field.Type);
+                 await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 }
                 break;
               default: 
-                TProtocolUtil.Skip(iprot, field.Type);
+                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
                 break;
             }
-            iprot.ReadFieldEnd();
+            await iprot.ReadFieldEndAsync(cancellationToken);
           }
-          iprot.ReadStructEnd();
+          await iprot.ReadStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -495,26 +386,26 @@ namespace Thrift.Samples
         }
       }
 
-      public void Write(TProtocol oprot) {
+      public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
         oprot.IncrementRecursionDepth();
         try
         {
-          TStruct struc = new TStruct("GetStruct_result");
-          oprot.WriteStructBegin(struc);
-          TField field = new TField();
+          var struc = new TStruct("GetStruct_result");
+          await oprot.WriteStructBeginAsync(struc, cancellationToken);
+          var field = new TField();
 
           if (this.__isset.success) {
             if (Success != null) {
               field.Name = "Success";
               field.Type = TType.Struct;
               field.ID = 0;
-              oprot.WriteFieldBegin(field);
-              Success.Write(oprot);
-              oprot.WriteFieldEnd();
+              await oprot.WriteFieldBeginAsync(field, cancellationToken);
+              await Success.WriteAsync(oprot, cancellationToken);
+              await oprot.WriteFieldEndAsync(cancellationToken);
             }
           }
-          oprot.WriteFieldStop();
-          oprot.WriteStructEnd();
+          await oprot.WriteFieldStopAsync(cancellationToken);
+          await oprot.WriteStructEndAsync(cancellationToken);
         }
         finally
         {
@@ -523,16 +414,16 @@ namespace Thrift.Samples
       }
 
       public override string ToString() {
-        StringBuilder __sb = new StringBuilder("GetStruct_result(");
+        var sb = new StringBuilder("GetStruct_result(");
         bool __first = true;
         if (Success != null && __isset.success) {
-          if(!__first) { __sb.Append(", "); }
+          if(!__first) { sb.Append(", "); }
           __first = false;
-          __sb.Append("Success: ");
-          __sb.Append(Success== null ? "<null>" : Success.ToString());
+          sb.Append("Success: ");
+          sb.Append(Success== null ? "<null>" : Success.ToString());
         }
-        __sb.Append(")");
-        return __sb.ToString();
+        sb.Append(")");
+        return sb.ToString();
       }
 
     }

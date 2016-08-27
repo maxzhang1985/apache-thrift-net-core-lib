@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class CqlMetadata : TBase
   {
@@ -52,7 +49,7 @@ namespace Apache.Cassandra.Test
       this.Default_value_type = default_value_type;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -62,10 +59,10 @@ namespace Apache.Cassandra.Test
         bool isset_default_name_type = false;
         bool isset_default_value_type = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -75,65 +72,65 @@ namespace Apache.Cassandra.Test
               if (field.Type == TType.Map) {
                 {
                   Name_types = new Dictionary<byte[], string>();
-                  TMap _map69 = iprot.ReadMapBegin();
-                  for( int _i70 = 0; _i70 < _map69.Count; ++_i70)
+                  TMap _map69 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i70 = 0; _i70 < _map69.Count; ++_i70)
                   {
                     byte[] _key71;
                     string _val72;
-                    _key71 = iprot.ReadBinary();
-                    _val72 = iprot.ReadString();
+                    _key71 = await iprot.ReadBinaryAsync(cancellationToken);
+                    _val72 = await iprot.ReadStringAsync(cancellationToken);
                     Name_types[_key71] = _val72;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
                 isset_name_types = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.Map) {
                 {
                   Value_types = new Dictionary<byte[], string>();
-                  TMap _map73 = iprot.ReadMapBegin();
-                  for( int _i74 = 0; _i74 < _map73.Count; ++_i74)
+                  TMap _map73 = await iprot.ReadMapBeginAsync(cancellationToken);
+                  for(int _i74 = 0; _i74 < _map73.Count; ++_i74)
                   {
                     byte[] _key75;
                     string _val76;
-                    _key75 = iprot.ReadBinary();
-                    _val76 = iprot.ReadString();
+                    _key75 = await iprot.ReadBinaryAsync(cancellationToken);
+                    _val76 = await iprot.ReadStringAsync(cancellationToken);
                     Value_types[_key75] = _val76;
                   }
-                  iprot.ReadMapEnd();
+                  await iprot.ReadMapEndAsync(cancellationToken);
                 }
                 isset_value_types = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.String) {
-                Default_name_type = iprot.ReadString();
+                Default_name_type = await iprot.ReadStringAsync(cancellationToken);
                 isset_default_name_type = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.String) {
-                Default_value_type = iprot.ReadString();
+                Default_value_type = await iprot.ReadStringAsync(cancellationToken);
                 isset_default_value_type = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_name_types)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_value_types)
@@ -149,55 +146,55 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("CqlMetadata");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("CqlMetadata");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "name_types";
         field.Type = TType.Map;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteMapBegin(new TMap(TType.String, TType.String, Name_types.Count));
+          await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Name_types.Count), cancellationToken);
           foreach (byte[] _iter77 in Name_types.Keys)
           {
-            oprot.WriteBinary(_iter77);
-            oprot.WriteString(Name_types[_iter77]);
+            await oprot.WriteBinaryAsync(_iter77, cancellationToken);
+            await oprot.WriteStringAsync(Name_types[_iter77], cancellationToken);
           }
-          oprot.WriteMapEnd();
+          await oprot.WriteMapEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "value_types";
         field.Type = TType.Map;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteMapBegin(new TMap(TType.String, TType.String, Value_types.Count));
+          await oprot.WriteMapBeginAsync(new TMap(TType.String, TType.String, Value_types.Count), cancellationToken);
           foreach (byte[] _iter78 in Value_types.Keys)
           {
-            oprot.WriteBinary(_iter78);
-            oprot.WriteString(Value_types[_iter78]);
+            await oprot.WriteBinaryAsync(_iter78, cancellationToken);
+            await oprot.WriteStringAsync(Value_types[_iter78], cancellationToken);
           }
-          oprot.WriteMapEnd();
+          await oprot.WriteMapEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "default_name_type";
         field.Type = TType.String;
         field.ID = 3;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Default_name_type);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Default_name_type, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "default_value_type";
         field.Type = TType.String;
         field.ID = 4;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteString(Default_value_type);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteStringAsync(Default_value_type, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -206,17 +203,17 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("CqlMetadata(");
-      __sb.Append(", Name_types: ");
-      __sb.Append(Name_types);
-      __sb.Append(", Value_types: ");
-      __sb.Append(Value_types);
-      __sb.Append(", Default_name_type: ");
-      __sb.Append(Default_name_type);
-      __sb.Append(", Default_value_type: ");
-      __sb.Append(Default_value_type);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("CqlMetadata(");
+      sb.Append(", Name_types: ");
+      sb.Append(Name_types);
+      sb.Append(", Value_types: ");
+      sb.Append(Value_types);
+      sb.Append(", Default_name_type: ");
+      sb.Append(Default_name_type);
+      sb.Append(", Default_value_type: ");
+      sb.Append(Default_value_type);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class KeyCount : TBase
   {
@@ -44,7 +41,7 @@ namespace Apache.Cassandra.Test
       this.Count = count;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -52,10 +49,10 @@ namespace Apache.Cassandra.Test
         bool isset_key = false;
         bool isset_count = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -63,27 +60,27 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Key = iprot.ReadBinary();
+                Key = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_key = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.I32) {
-                Count = iprot.ReadI32();
+                Count = await iprot.ReadI32Async(cancellationToken);
                 isset_count = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_key)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_count)
@@ -95,27 +92,27 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyCount");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("KeyCount");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "key";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Key);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Key, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "count";
         field.Type = TType.I32;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteI32(Count);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteI32Async(Count, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -124,13 +121,13 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyCount(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      __sb.Append(", Count: ");
-      __sb.Append(Count);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("KeyCount(");
+      sb.Append(", Key: ");
+      sb.Append(Key);
+      sb.Append(", Count: ");
+      sb.Append(Count);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

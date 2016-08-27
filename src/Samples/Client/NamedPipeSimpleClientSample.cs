@@ -21,10 +21,10 @@ namespace Client
 
                 try
                 {
-                    client.PingAsync().GetAwaiter().GetResult();
+                    client.PingAsync(CancellationToken.None).GetAwaiter().GetResult();
                     Console.WriteLine("Ping()");
 
-                    var sum = client.AddAsync(1, 1).GetAwaiter().GetResult();
+                    var sum = client.AddAsync(1, 1, CancellationToken.None).GetAwaiter().GetResult();
                     Console.WriteLine("1+1={0}", sum);
 
                     var work = new Work
@@ -36,7 +36,7 @@ namespace Client
 
                     try
                     {
-                        client.CalculateAsync(1, work).GetAwaiter().GetResult();
+                        client.CalculateAsync(1, work, CancellationToken.None).GetAwaiter().GetResult();
                         Console.WriteLine("Whoa we can divide by 0");
                     }
                     catch (InvalidOperation io)
@@ -50,7 +50,7 @@ namespace Client
 
                     try
                     {
-                        var diff = client.CalculateAsync(1, work).GetAwaiter().GetResult(); ;
+                        var diff = client.CalculateAsync(1, work, CancellationToken.None).GetAwaiter().GetResult(); ;
                         Console.WriteLine("15-10={0}", diff);
                     }
                     catch (InvalidOperation io)
@@ -58,7 +58,7 @@ namespace Client
                         Console.WriteLine("Invalid operation: " + io.Why);
                     }
 
-                    var log = client.GetStructAsync(1).GetAwaiter().GetResult(); ;
+                    var log = client.GetStructAsync(1, CancellationToken.None).GetAwaiter().GetResult(); ;
                     Console.WriteLine("Check log: {0}", log.Value);
 
                 }

@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class IndexExpression : TBase
   {
@@ -52,7 +49,7 @@ namespace Apache.Cassandra.Test
       this.Value = value;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -61,10 +58,10 @@ namespace Apache.Cassandra.Test
         bool isset_op = false;
         bool isset_value = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -72,35 +69,35 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Column_name = iprot.ReadBinary();
+                Column_name = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_column_name = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.I32) {
-                Op = (IndexOperator)iprot.ReadI32();
+                Op = (IndexOperator)await iprot.ReadI32Async(cancellationToken);
                 isset_op = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.String) {
-                Value = iprot.ReadBinary();
+                Value = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_value = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_column_name)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_op)
@@ -114,33 +111,33 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("IndexExpression");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("IndexExpression");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "column_name";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Column_name);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Column_name, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "op";
         field.Type = TType.I32;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteI32((int)Op);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteI32Async((int)Op, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "value";
         field.Type = TType.String;
         field.ID = 3;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Value);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Value, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -149,15 +146,15 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("IndexExpression(");
-      __sb.Append(", Column_name: ");
-      __sb.Append(Column_name);
-      __sb.Append(", Op: ");
-      __sb.Append(Op);
-      __sb.Append(", Value: ");
-      __sb.Append(Value);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("IndexExpression(");
+      sb.Append(", Column_name: ");
+      sb.Append(Column_name);
+      sb.Append(", Op: ");
+      sb.Append(Op);
+      sb.Append(", Value: ");
+      sb.Append(Value);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -31,9 +31,6 @@ namespace Apache.Cassandra.Test
   /// one-element range, but a range from tokenY to tokenY is the
   /// full ring.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class KeyRange : TBase
   {
@@ -102,14 +99,11 @@ namespace Apache.Cassandra.Test
     public int Count { get; set; }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool start_key;
       [DataMember]
@@ -152,17 +146,17 @@ namespace Apache.Cassandra.Test
       this.Count = count;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_count = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -170,47 +164,47 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Start_key = iprot.ReadBinary();
+                Start_key = await iprot.ReadBinaryAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.String) {
-                End_key = iprot.ReadBinary();
+                End_key = await iprot.ReadBinaryAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.String) {
-                Start_token = iprot.ReadString();
+                Start_token = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.String) {
-                End_token = iprot.ReadString();
+                End_token = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 5:
               if (field.Type == TType.I32) {
-                Count = iprot.ReadI32();
+                Count = await iprot.ReadI32Async(cancellationToken);
                 isset_count = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_count)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -220,53 +214,53 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeyRange");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("KeyRange");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (Start_key != null && __isset.start_key) {
           field.Name = "start_key";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Start_key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Start_key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (End_key != null && __isset.end_key) {
           field.Name = "end_key";
           field.Type = TType.String;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(End_key);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(End_key, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Start_token != null && __isset.start_token) {
           field.Name = "start_token";
           field.Type = TType.String;
           field.ID = 3;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(Start_token);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(Start_token, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (End_token != null && __isset.end_token) {
           field.Name = "end_token";
           field.Type = TType.String;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(End_token);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(End_token, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         field.Name = "count";
         field.Type = TType.I32;
         field.ID = 5;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteI32(Count);
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteI32Async(Count, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -275,37 +269,37 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeyRange(");
+      var sb = new StringBuilder("KeyRange(");
       bool __first = true;
       if (Start_key != null && __isset.start_key) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Start_key: ");
-        __sb.Append(Start_key);
+        sb.Append("Start_key: ");
+        sb.Append(Start_key);
       }
       if (End_key != null && __isset.end_key) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("End_key: ");
-        __sb.Append(End_key);
+        sb.Append("End_key: ");
+        sb.Append(End_key);
       }
       if (Start_token != null && __isset.start_token) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Start_token: ");
-        __sb.Append(Start_token);
+        sb.Append("Start_token: ");
+        sb.Append(Start_token);
       }
       if (End_token != null && __isset.end_token) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("End_token: ");
-        __sb.Append(End_token);
+        sb.Append("End_token: ");
+        sb.Append(End_token);
       }
-      if(!__first) { __sb.Append(", "); }
-      __sb.Append("Count: ");
-      __sb.Append(Count);
-      __sb.Append(")");
-      return __sb.ToString();
+      if(!__first) { sb.Append(", "); }
+      sb.Append("Count: ");
+      sb.Append(Count);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

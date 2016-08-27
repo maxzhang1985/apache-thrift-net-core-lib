@@ -9,16 +9,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace Apache.Cassandra.Test
 {
@@ -30,9 +30,6 @@ namespace Apache.Cassandra.Test
   /// @param columns. List of data represented by the key. Typically, the list is pared down to only the columns specified by
   ///                 a SlicePredicate.
   /// </summary>
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class KeySlice : TBase
   {
@@ -51,7 +48,7 @@ namespace Apache.Cassandra.Test
       this.Columns = columns;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
@@ -59,10 +56,10 @@ namespace Apache.Cassandra.Test
         bool isset_key = false;
         bool isset_columns = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -70,38 +67,38 @@ namespace Apache.Cassandra.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                Key = iprot.ReadBinary();
+                Key = await iprot.ReadBinaryAsync(cancellationToken);
                 isset_key = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.List) {
                 {
                   Columns = new List<ColumnOrSuperColumn>();
-                  TList _list16 = iprot.ReadListBegin();
-                  for( int _i17 = 0; _i17 < _list16.Count; ++_i17)
+                  TList _list16 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i17 = 0; _i17 < _list16.Count; ++_i17)
                   {
                     ColumnOrSuperColumn _elem18;
                     _elem18 = new ColumnOrSuperColumn();
-                    _elem18.Read(iprot);
+                    await _elem18.ReadAsync(iprot, cancellationToken);
                     Columns.Add(_elem18);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
                 isset_columns = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_key)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
         if (!isset_columns)
@@ -113,34 +110,34 @@ namespace Apache.Cassandra.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KeySlice");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("KeySlice");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         field.Name = "key";
         field.Type = TType.String;
         field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Key);
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
+        await oprot.WriteBinaryAsync(Key, cancellationToken);
+        await oprot.WriteFieldEndAsync(cancellationToken);
         field.Name = "columns";
         field.Type = TType.List;
         field.ID = 2;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteListBegin(new TList(TType.Struct, Columns.Count));
+          await oprot.WriteListBeginAsync(new TList(TType.Struct, Columns.Count), cancellationToken);
           foreach (ColumnOrSuperColumn _iter19 in Columns)
           {
-            _iter19.Write(oprot);
+            await _iter19.WriteAsync(oprot, cancellationToken);
           }
-          oprot.WriteListEnd();
+          await oprot.WriteListEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -149,13 +146,13 @@ namespace Apache.Cassandra.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KeySlice(");
-      __sb.Append(", Key: ");
-      __sb.Append(Key);
-      __sb.Append(", Columns: ");
-      __sb.Append(Columns);
-      __sb.Append(")");
-      return __sb.ToString();
+      var sb = new StringBuilder("KeySlice(");
+      sb.Append(", Key: ");
+      sb.Append(Key);
+      sb.Append(", Columns: ");
+      sb.Append(Columns);
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }

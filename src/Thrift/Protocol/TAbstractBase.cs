@@ -17,14 +17,14 @@
  * under the License.
  */
 
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Thrift.Protocol
 {
     // ReSharper disable once InconsistentNaming
     public interface TAbstractBase
     {
-        ///
-        /// Writes the objects out to the protocol
-        ///
-        void Write(TProtocol tProtocol);
+        Task WriteAsync(TProtocol tProtocol, CancellationToken cancellationToken);
     }
 }

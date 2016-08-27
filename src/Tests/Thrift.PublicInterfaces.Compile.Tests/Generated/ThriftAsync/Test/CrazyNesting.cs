@@ -9,23 +9,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
-#if !SILVERLIGHT
-using System.Xml.Serialization;
-#endif
-//using System.ServiceModel;
+using System.ServiceModel;
 using System.Runtime.Serialization;
+
 using Thrift.Protocol;
 using Thrift.Transport;
+
 
 namespace ThriftAsync.Test
 {
 
-  #if !SILVERLIGHT
-  [Serializable]
-  #endif
   [DataContract(Namespace="")]
   public partial class CrazyNesting : TBase
   {
@@ -79,14 +76,11 @@ namespace ThriftAsync.Test
     }
 
 
-    [XmlIgnore] // XmlSerializer
-    [DataMember(Order = 1)]  // XmlObjectSerializer, DataContractJsonSerializer, etc.
+    [DataMember(Order = 1)]
     public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
     [DataContract]
-    public struct Isset {
+    public struct Isset
+    {
       [DataMember]
       public bool string_field;
       [DataMember]
@@ -121,17 +115,17 @@ namespace ThriftAsync.Test
       this.List_field = list_field;
     }
 
-    public void Read (TProtocol iprot)
+    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
     {
       iprot.IncrementRecursionDepth();
       try
       {
         bool isset_list_field = false;
         TField field;
-        iprot.ReadStructBegin();
+        await iprot.ReadStructBeginAsync(cancellationToken);
         while (true)
         {
-          field = iprot.ReadFieldBegin();
+          field = await iprot.ReadFieldBeginAsync(cancellationToken);
           if (field.Type == TType.Stop) { 
             break;
           }
@@ -139,128 +133,128 @@ namespace ThriftAsync.Test
           {
             case 1:
               if (field.Type == TType.String) {
-                String_field = iprot.ReadString();
+                String_field = await iprot.ReadStringAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 2:
               if (field.Type == TType.Set) {
                 {
                   Set_field = new THashSet<Insanity>();
-                  TSet _set9 = iprot.ReadSetBegin();
-                  for( int _i10 = 0; _i10 < _set9.Count; ++_i10)
+                  TSet _set9 = await iprot.ReadSetBeginAsync(cancellationToken);
+                  for(int _i10 = 0; _i10 < _set9.Count; ++_i10)
                   {
                     Insanity _elem11;
                     _elem11 = new Insanity();
-                    _elem11.Read(iprot);
+                    await _elem11.ReadAsync(iprot, cancellationToken);
                     Set_field.Add(_elem11);
                   }
-                  iprot.ReadSetEnd();
+                  await iprot.ReadSetEndAsync(cancellationToken);
                 }
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 3:
               if (field.Type == TType.List) {
                 {
                   List_field = new List<Dictionary<THashSet<int>, Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>>>>();
-                  TList _list12 = iprot.ReadListBegin();
-                  for( int _i13 = 0; _i13 < _list12.Count; ++_i13)
+                  TList _list12 = await iprot.ReadListBeginAsync(cancellationToken);
+                  for(int _i13 = 0; _i13 < _list12.Count; ++_i13)
                   {
                     Dictionary<THashSet<int>, Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>>> _elem14;
                     {
                       _elem14 = new Dictionary<THashSet<int>, Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>>>();
-                      TMap _map15 = iprot.ReadMapBegin();
-                      for( int _i16 = 0; _i16 < _map15.Count; ++_i16)
+                      TMap _map15 = await iprot.ReadMapBeginAsync(cancellationToken);
+                      for(int _i16 = 0; _i16 < _map15.Count; ++_i16)
                       {
                         THashSet<int> _key17;
                         Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>> _val18;
                         {
                           _key17 = new THashSet<int>();
-                          TSet _set19 = iprot.ReadSetBegin();
-                          for( int _i20 = 0; _i20 < _set19.Count; ++_i20)
+                          TSet _set19 = await iprot.ReadSetBeginAsync(cancellationToken);
+                          for(int _i20 = 0; _i20 < _set19.Count; ++_i20)
                           {
                             int _elem21;
-                            _elem21 = iprot.ReadI32();
+                            _elem21 = await iprot.ReadI32Async(cancellationToken);
                             _key17.Add(_elem21);
                           }
-                          iprot.ReadSetEnd();
+                          await iprot.ReadSetEndAsync(cancellationToken);
                         }
                         {
                           _val18 = new Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>>();
-                          TMap _map22 = iprot.ReadMapBegin();
-                          for( int _i23 = 0; _i23 < _map22.Count; ++_i23)
+                          TMap _map22 = await iprot.ReadMapBeginAsync(cancellationToken);
+                          for(int _i23 = 0; _i23 < _map22.Count; ++_i23)
                           {
                             int _key24;
                             THashSet<List<Dictionary<Insanity, string>>> _val25;
-                            _key24 = iprot.ReadI32();
+                            _key24 = await iprot.ReadI32Async(cancellationToken);
                             {
                               _val25 = new THashSet<List<Dictionary<Insanity, string>>>();
-                              TSet _set26 = iprot.ReadSetBegin();
-                              for( int _i27 = 0; _i27 < _set26.Count; ++_i27)
+                              TSet _set26 = await iprot.ReadSetBeginAsync(cancellationToken);
+                              for(int _i27 = 0; _i27 < _set26.Count; ++_i27)
                               {
                                 List<Dictionary<Insanity, string>> _elem28;
                                 {
                                   _elem28 = new List<Dictionary<Insanity, string>>();
-                                  TList _list29 = iprot.ReadListBegin();
-                                  for( int _i30 = 0; _i30 < _list29.Count; ++_i30)
+                                  TList _list29 = await iprot.ReadListBeginAsync(cancellationToken);
+                                  for(int _i30 = 0; _i30 < _list29.Count; ++_i30)
                                   {
                                     Dictionary<Insanity, string> _elem31;
                                     {
                                       _elem31 = new Dictionary<Insanity, string>();
-                                      TMap _map32 = iprot.ReadMapBegin();
-                                      for( int _i33 = 0; _i33 < _map32.Count; ++_i33)
+                                      TMap _map32 = await iprot.ReadMapBeginAsync(cancellationToken);
+                                      for(int _i33 = 0; _i33 < _map32.Count; ++_i33)
                                       {
                                         Insanity _key34;
                                         string _val35;
                                         _key34 = new Insanity();
-                                        _key34.Read(iprot);
-                                        _val35 = iprot.ReadString();
+                                        await _key34.ReadAsync(iprot, cancellationToken);
+                                        _val35 = await iprot.ReadStringAsync(cancellationToken);
                                         _elem31[_key34] = _val35;
                                       }
-                                      iprot.ReadMapEnd();
+                                      await iprot.ReadMapEndAsync(cancellationToken);
                                     }
                                     _elem28.Add(_elem31);
                                   }
-                                  iprot.ReadListEnd();
+                                  await iprot.ReadListEndAsync(cancellationToken);
                                 }
                                 _val25.Add(_elem28);
                               }
-                              iprot.ReadSetEnd();
+                              await iprot.ReadSetEndAsync(cancellationToken);
                             }
                             _val18[_key24] = _val25;
                           }
-                          iprot.ReadMapEnd();
+                          await iprot.ReadMapEndAsync(cancellationToken);
                         }
                         _elem14[_key17] = _val18;
                       }
-                      iprot.ReadMapEnd();
+                      await iprot.ReadMapEndAsync(cancellationToken);
                     }
                     List_field.Add(_elem14);
                   }
-                  iprot.ReadListEnd();
+                  await iprot.ReadListEndAsync(cancellationToken);
                 }
                 isset_list_field = true;
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             case 4:
               if (field.Type == TType.String) {
-                Binary_field = iprot.ReadBinary();
+                Binary_field = await iprot.ReadBinaryAsync(cancellationToken);
               } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
+               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               }
               break;
             default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
               break;
           }
-          iprot.ReadFieldEnd();
+          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        iprot.ReadStructEnd();
+        await iprot.ReadStructEndAsync(cancellationToken);
         if (!isset_list_field)
           throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
@@ -270,104 +264,104 @@ namespace ThriftAsync.Test
       }
     }
 
-    public void Write(TProtocol oprot) {
+    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("CrazyNesting");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        var struc = new TStruct("CrazyNesting");
+        await oprot.WriteStructBeginAsync(struc, cancellationToken);
+        var field = new TField();
         if (String_field != null && __isset.string_field) {
           field.Name = "string_field";
           field.Type = TType.String;
           field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteString(String_field);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteStringAsync(String_field, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         if (Set_field != null && __isset.set_field) {
           field.Name = "set_field";
           field.Type = TType.Set;
           field.ID = 2;
-          oprot.WriteFieldBegin(field);
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
           {
-            oprot.WriteSetBegin(new TSet(TType.Struct, Set_field.Count));
+            await oprot.WriteSetBeginAsync(new TSet(TType.Struct, Set_field.Count), cancellationToken);
             foreach (Insanity _iter36 in Set_field)
             {
-              _iter36.Write(oprot);
+              await _iter36.WriteAsync(oprot, cancellationToken);
             }
-            oprot.WriteSetEnd();
+            await oprot.WriteSetEndAsync(cancellationToken);
           }
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
         field.Name = "list_field";
         field.Type = TType.List;
         field.ID = 3;
-        oprot.WriteFieldBegin(field);
+        await oprot.WriteFieldBeginAsync(field, cancellationToken);
         {
-          oprot.WriteListBegin(new TList(TType.Map, List_field.Count));
+          await oprot.WriteListBeginAsync(new TList(TType.Map, List_field.Count), cancellationToken);
           foreach (Dictionary<THashSet<int>, Dictionary<int, THashSet<List<Dictionary<Insanity, string>>>>> _iter37 in List_field)
           {
             {
-              oprot.WriteMapBegin(new TMap(TType.Set, TType.Map, _iter37.Count));
+              await oprot.WriteMapBeginAsync(new TMap(TType.Set, TType.Map, _iter37.Count), cancellationToken);
               foreach (THashSet<int> _iter38 in _iter37.Keys)
               {
                 {
-                  oprot.WriteSetBegin(new TSet(TType.I32, _iter38.Count));
+                  await oprot.WriteSetBeginAsync(new TSet(TType.I32, _iter38.Count), cancellationToken);
                   foreach (int _iter39 in _iter38)
                   {
-                    oprot.WriteI32(_iter39);
+                    await oprot.WriteI32Async(_iter39, cancellationToken);
                   }
-                  oprot.WriteSetEnd();
+                  await oprot.WriteSetEndAsync(cancellationToken);
                 }
                 {
-                  oprot.WriteMapBegin(new TMap(TType.I32, TType.Set, _iter37[_iter38].Count));
+                  await oprot.WriteMapBeginAsync(new TMap(TType.I32, TType.Set, _iter37[_iter38].Count), cancellationToken);
                   foreach (int _iter40 in _iter37[_iter38].Keys)
                   {
-                    oprot.WriteI32(_iter40);
+                    await oprot.WriteI32Async(_iter40, cancellationToken);
                     {
-                      oprot.WriteSetBegin(new TSet(TType.List, _iter37[_iter38][_iter40].Count));
+                      await oprot.WriteSetBeginAsync(new TSet(TType.List, _iter37[_iter38][_iter40].Count), cancellationToken);
                       foreach (List<Dictionary<Insanity, string>> _iter41 in _iter37[_iter38][_iter40])
                       {
                         {
-                          oprot.WriteListBegin(new TList(TType.Map, _iter41.Count));
+                          await oprot.WriteListBeginAsync(new TList(TType.Map, _iter41.Count), cancellationToken);
                           foreach (Dictionary<Insanity, string> _iter42 in _iter41)
                           {
                             {
-                              oprot.WriteMapBegin(new TMap(TType.Struct, TType.String, _iter42.Count));
+                              await oprot.WriteMapBeginAsync(new TMap(TType.Struct, TType.String, _iter42.Count), cancellationToken);
                               foreach (Insanity _iter43 in _iter42.Keys)
                               {
-                                _iter43.Write(oprot);
-                                oprot.WriteString(_iter42[_iter43]);
+                                await _iter43.WriteAsync(oprot, cancellationToken);
+                                await oprot.WriteStringAsync(_iter42[_iter43], cancellationToken);
                               }
-                              oprot.WriteMapEnd();
+                              await oprot.WriteMapEndAsync(cancellationToken);
                             }
                           }
-                          oprot.WriteListEnd();
+                          await oprot.WriteListEndAsync(cancellationToken);
                         }
                       }
-                      oprot.WriteSetEnd();
+                      await oprot.WriteSetEndAsync(cancellationToken);
                     }
                   }
-                  oprot.WriteMapEnd();
+                  await oprot.WriteMapEndAsync(cancellationToken);
                 }
               }
-              oprot.WriteMapEnd();
+              await oprot.WriteMapEndAsync(cancellationToken);
             }
           }
-          oprot.WriteListEnd();
+          await oprot.WriteListEndAsync(cancellationToken);
         }
-        oprot.WriteFieldEnd();
+        await oprot.WriteFieldEndAsync(cancellationToken);
         if (Binary_field != null && __isset.binary_field) {
           field.Name = "binary_field";
           field.Type = TType.String;
           field.ID = 4;
-          oprot.WriteFieldBegin(field);
-          oprot.WriteBinary(Binary_field);
-          oprot.WriteFieldEnd();
+          await oprot.WriteFieldBeginAsync(field, cancellationToken);
+          await oprot.WriteBinaryAsync(Binary_field, cancellationToken);
+          await oprot.WriteFieldEndAsync(cancellationToken);
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        await oprot.WriteFieldStopAsync(cancellationToken);
+        await oprot.WriteStructEndAsync(cancellationToken);
       }
       finally
       {
@@ -376,29 +370,29 @@ namespace ThriftAsync.Test
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("CrazyNesting(");
+      var sb = new StringBuilder("CrazyNesting(");
       bool __first = true;
       if (String_field != null && __isset.string_field) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("String_field: ");
-        __sb.Append(String_field);
+        sb.Append("String_field: ");
+        sb.Append(String_field);
       }
       if (Set_field != null && __isset.set_field) {
-        if(!__first) { __sb.Append(", "); }
+        if(!__first) { sb.Append(", "); }
         __first = false;
-        __sb.Append("Set_field: ");
-        __sb.Append(Set_field);
+        sb.Append("Set_field: ");
+        sb.Append(Set_field);
       }
-      if(!__first) { __sb.Append(", "); }
-      __sb.Append("List_field: ");
-      __sb.Append(List_field);
+      if(!__first) { sb.Append(", "); }
+      sb.Append("List_field: ");
+      sb.Append(List_field);
       if (Binary_field != null && __isset.binary_field) {
-        __sb.Append(", Binary_field: ");
-        __sb.Append(Binary_field);
+        sb.Append(", Binary_field: ");
+        sb.Append(Binary_field);
       }
-      __sb.Append(")");
-      return __sb.ToString();
+      sb.Append(")");
+      return sb.ToString();
     }
 
   }
