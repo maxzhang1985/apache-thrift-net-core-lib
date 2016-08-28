@@ -23,197 +23,213 @@ using Thrift.Transport;
 namespace ThriftAsync.Test
 {
 
-  public partial class Xception : TException, TBase
-  {
-    private int _errorCode;
-    private string _message;
-
-    [DataMember(Order = 0)]
-    public int ErrorCode
+    public partial class Xception : TException, TBase
     {
-      get
-      {
-        return _errorCode;
-      }
-      set
-      {
-        __isset.errorCode = true;
-        this._errorCode = value;
-      }
-    }
+        private int _errorCode;
+        private string _message;
 
-    [DataMember(Order = 0)]
-    public string Message
-    {
-      get
-      {
-        return _message;
-      }
-      set
-      {
-        __isset.message = true;
-        this._message = value;
-      }
-    }
-
-
-    [DataMember(Order = 1)]
-    public Isset __isset;
-    [DataContract]
-    public struct Isset
-    {
-      [DataMember]
-      public bool errorCode;
-      [DataMember]
-      public bool message;
-    }
-
-    #region XmlSerializer support
-
-    public bool ShouldSerializeErrorCode()
-    {
-      return __isset.errorCode;
-    }
-
-    public bool ShouldSerializeMessage()
-    {
-      return __isset.message;
-    }
-
-    #endregion XmlSerializer support
-
-    public Xception() {
-    }
-
-    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
-    {
-      iprot.IncrementRecursionDepth();
-      try
-      {
-        TField field;
-        await iprot.ReadStructBeginAsync(cancellationToken);
-        while (true)
+        [DataMember(Order = 0)]
+        public int ErrorCode
         {
-          field = await iprot.ReadFieldBeginAsync(cancellationToken);
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
-          {
-            case 1:
-              if (field.Type == TType.I32) {
-                ErrorCode = await iprot.ReadI32Async(cancellationToken);
-              } else { 
-               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              }
-              break;
-            case 2:
-              if (field.Type == TType.String) {
-                Message = await iprot.ReadStringAsync(cancellationToken);
-              } else { 
-               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              }
-              break;
-            default: 
-              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              break;
-          }
-          await iprot.ReadFieldEndAsync(cancellationToken);
+            get
+            {
+                return _errorCode;
+            }
+            set
+            {
+                __isset.errorCode = true;
+                this._errorCode = value;
+            }
         }
-        await iprot.ReadStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        iprot.DecrementRecursionDepth();
-      }
+
+        [DataMember(Order = 0)]
+        public string Message
+        {
+            get
+            {
+                return _message;
+            }
+            set
+            {
+                __isset.message = true;
+                this._message = value;
+            }
+        }
+
+
+        [DataMember(Order = 1)]
+        public Isset __isset;
+        [DataContract]
+        public struct Isset
+        {
+            [DataMember]
+            public bool errorCode;
+            [DataMember]
+            public bool message;
+        }
+
+        #region XmlSerializer support
+
+        public bool ShouldSerializeErrorCode()
+        {
+            return __isset.errorCode;
+        }
+
+        public bool ShouldSerializeMessage()
+        {
+            return __isset.message;
+        }
+
+        #endregion XmlSerializer support
+
+        public Xception()
+        {
+        }
+
+        public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+        {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+                TField field;
+                await iprot.ReadStructBeginAsync(cancellationToken);
+                while (true)
+                {
+                    field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                    if (field.Type == TType.Stop)
+                    {
+                        break;
+                    }
+
+                    switch (field.ID)
+                    {
+                        case 1:
+                            if (field.Type == TType.I32)
+                            {
+                                ErrorCode = await iprot.ReadI32Async(cancellationToken);
+                            }
+                            else
+                            {
+                                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            }
+                            break;
+                        case 2:
+                            if (field.Type == TType.String)
+                            {
+                                Message = await iprot.ReadStringAsync(cancellationToken);
+                            }
+                            else
+                            {
+                                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            }
+                            break;
+                        default: 
+                            await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            break;
+                    }
+
+                    await iprot.ReadFieldEndAsync(cancellationToken);
+                }
+
+                await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                iprot.DecrementRecursionDepth();
+            }
+        }
+
+        public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken)
+        {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+                var struc = new TStruct("Xception");
+                await oprot.WriteStructBeginAsync(struc, cancellationToken);
+                var field = new TField();
+                if (__isset.errorCode)
+                {
+                    field.Name = "errorCode";
+                    field.Type = TType.I32;
+                    field.ID = 1;
+                    await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                    await oprot.WriteI32Async(ErrorCode, cancellationToken);
+                    await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+                if (Message != null && __isset.message)
+                {
+                    field.Name = "message";
+                    field.Type = TType.String;
+                    field.ID = 2;
+                    await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                    await oprot.WriteStringAsync(Message, cancellationToken);
+                    await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+                await oprot.WriteFieldStopAsync(cancellationToken);
+                await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                oprot.DecrementRecursionDepth();
+            }
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder("Xception(");
+            bool __first = true;
+            if (__isset.errorCode)
+            {
+                if(!__first) { sb.Append(", "); }
+                __first = false;
+                sb.Append("ErrorCode: ");
+                sb.Append(ErrorCode);
+            }
+            if (Message != null && __isset.message)
+            {
+                if(!__first) { sb.Append(", "); }
+                __first = false;
+                sb.Append("Message: ");
+                sb.Append(Message);
+            }
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
 
-    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
-      oprot.IncrementRecursionDepth();
-      try
-      {
-        var struc = new TStruct("Xception");
-        await oprot.WriteStructBeginAsync(struc, cancellationToken);
-        var field = new TField();
-        if (__isset.errorCode) {
-          field.Name = "errorCode";
-          field.Type = TType.I32;
-          field.ID = 1;
-          await oprot.WriteFieldBeginAsync(field, cancellationToken);
-          await oprot.WriteI32Async(ErrorCode, cancellationToken);
-          await oprot.WriteFieldEndAsync(cancellationToken);
-        }
-        if (Message != null && __isset.message) {
-          field.Name = "message";
-          field.Type = TType.String;
-          field.ID = 2;
-          await oprot.WriteFieldBeginAsync(field, cancellationToken);
-          await oprot.WriteStringAsync(Message, cancellationToken);
-          await oprot.WriteFieldEndAsync(cancellationToken);
-        }
-        await oprot.WriteFieldStopAsync(cancellationToken);
-        await oprot.WriteStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        oprot.DecrementRecursionDepth();
-      }
-    }
 
-    public override string ToString() {
-      var sb = new StringBuilder("Xception(");
-      bool __first = true;
-      if (__isset.errorCode) {
-        if(!__first) { sb.Append(", "); }
-        __first = false;
-        sb.Append("ErrorCode: ");
-        sb.Append(ErrorCode);
-      }
-      if (Message != null && __isset.message) {
-        if(!__first) { sb.Append(", "); }
-        __first = false;
-        sb.Append("Message: ");
-        sb.Append(Message);
-      }
-      sb.Append(")");
-      return sb.ToString();
-    }
-
-  }
-
-
-  [DataContract]
-  public partial class XceptionFault
-  {
-    private int _errorCode;
-    private string _message;
-
-    [DataMember(Order = 0)]
-    public int ErrorCode
+    [DataContract]
+    public partial class XceptionFault
     {
-      get
-      {
-        return _errorCode;
-      }
-      set
-      {
-        this._errorCode = value;
-      }
-    }
+        private int _errorCode;
+        private string _message;
 
-    [DataMember(Order = 0)]
-    public string Message
-    {
-      get
-      {
-        return _message;
-      }
-      set
-      {
-        this._message = value;
-      }
-    }
+        [DataMember(Order = 0)]
+        public int ErrorCode
+        {
+            get
+            {
+                return _errorCode;
+            }
+            set
+            {
+                this._errorCode = value;
+            }
+        }
 
-  }
+        [DataMember(Order = 0)]
+        public string Message
+        {
+            get
+            {
+                return _message;
+            }
+            set
+            {
+                this._message = value;
+            }
+        }
+
+    }
 
 }

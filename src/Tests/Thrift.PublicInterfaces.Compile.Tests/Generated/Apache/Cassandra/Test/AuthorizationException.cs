@@ -23,103 +23,115 @@ using Thrift.Transport;
 namespace Apache.Cassandra.Test
 {
 
-  /// <summary>
-  /// invalid authorization request (user does not have access to keyspace)
-  /// </summary>
-  public partial class AuthorizationException : TException, TBase
-  {
-
-    [DataMember(Order = 0)]
-    public string Why { get; set; }
-
-    public AuthorizationException() {
-    }
-
-    public AuthorizationException(string why) : this() {
-      this.Why = why;
-    }
-
-    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+    /// <summary>
+    /// invalid authorization request (user does not have access to keyspace)
+    /// </summary>
+    public partial class AuthorizationException : TException, TBase
     {
-      iprot.IncrementRecursionDepth();
-      try
-      {
-        bool isset_why = false;
-        TField field;
-        await iprot.ReadStructBeginAsync(cancellationToken);
-        while (true)
+
+        [DataMember(Order = 0)]
+        public string Why { get; set; }
+
+        public AuthorizationException()
         {
-          field = await iprot.ReadFieldBeginAsync(cancellationToken);
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
-          {
-            case 1:
-              if (field.Type == TType.String) {
-                Why = await iprot.ReadStringAsync(cancellationToken);
-                isset_why = true;
-              } else { 
-               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              }
-              break;
-            default: 
-              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              break;
-          }
-          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        await iprot.ReadStructEndAsync(cancellationToken);
-        if (!isset_why)
-          throw new TProtocolException(TProtocolException.INVALID_DATA);
-      }
-      finally
-      {
-        iprot.DecrementRecursionDepth();
-      }
+
+        public AuthorizationException(string why) : this()
+        {
+            this.Why = why;
+        }
+
+        public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+        {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+                bool isset_why = false;
+                TField field;
+                await iprot.ReadStructBeginAsync(cancellationToken);
+                while (true)
+                {
+                    field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                    if (field.Type == TType.Stop)
+                    {
+                        break;
+                    }
+
+                    switch (field.ID)
+                    {
+                        case 1:
+                            if (field.Type == TType.String)
+                            {
+                                Why = await iprot.ReadStringAsync(cancellationToken);
+                                isset_why = true;
+                            }
+                            else
+                            {
+                                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            }
+                            break;
+                        default: 
+                            await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            break;
+                    }
+
+                    await iprot.ReadFieldEndAsync(cancellationToken);
+                }
+
+                await iprot.ReadStructEndAsync(cancellationToken);
+                if (!isset_why)
+                {
+                    throw new TProtocolException(TProtocolException.INVALID_DATA);
+                }
+            }
+            finally
+            {
+                iprot.DecrementRecursionDepth();
+            }
+        }
+
+        public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken)
+        {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+                var struc = new TStruct("AuthorizationException");
+                await oprot.WriteStructBeginAsync(struc, cancellationToken);
+                var field = new TField();
+                field.Name = "why";
+                field.Type = TType.String;
+                field.ID = 1;
+                await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                await oprot.WriteStringAsync(Why, cancellationToken);
+                await oprot.WriteFieldEndAsync(cancellationToken);
+                await oprot.WriteFieldStopAsync(cancellationToken);
+                await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                oprot.DecrementRecursionDepth();
+            }
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder("AuthorizationException(");
+            sb.Append(", Why: ");
+            sb.Append(Why);
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
 
-    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
-      oprot.IncrementRecursionDepth();
-      try
-      {
-        var struc = new TStruct("AuthorizationException");
-        await oprot.WriteStructBeginAsync(struc, cancellationToken);
-        var field = new TField();
-        field.Name = "why";
-        field.Type = TType.String;
-        field.ID = 1;
-        await oprot.WriteFieldBeginAsync(field, cancellationToken);
-        await oprot.WriteStringAsync(Why, cancellationToken);
-        await oprot.WriteFieldEndAsync(cancellationToken);
-        await oprot.WriteFieldStopAsync(cancellationToken);
-        await oprot.WriteStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        oprot.DecrementRecursionDepth();
-      }
+
+    [DataContract]
+    public partial class AuthorizationExceptionFault
+    {
+        private string _why;
+
+        [DataMember(Order = 0)]
+        public string Why { get; set; }
+
     }
-
-    public override string ToString() {
-      var sb = new StringBuilder("AuthorizationException(");
-      sb.Append(", Why: ");
-      sb.Append(Why);
-      sb.Append(")");
-      return sb.ToString();
-    }
-
-  }
-
-
-  [DataContract]
-  public partial class AuthorizationExceptionFault
-  {
-    private string _why;
-
-    [DataMember(Order = 0)]
-    public string Why { get; set; }
-
-  }
 
 }

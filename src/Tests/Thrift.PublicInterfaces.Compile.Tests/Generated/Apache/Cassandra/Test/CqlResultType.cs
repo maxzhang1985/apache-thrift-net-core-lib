@@ -7,10 +7,10 @@
 
 namespace Apache.Cassandra.Test
 {
-  public enum CqlResultType
-  {
-    ROWS = 1,
-    VOID = 2,
-    INT = 3,
-  }
+    public enum CqlResultType
+    {
+        ROWS = 1,
+        VOID = 2,
+        INT = 3,
+    }
 }

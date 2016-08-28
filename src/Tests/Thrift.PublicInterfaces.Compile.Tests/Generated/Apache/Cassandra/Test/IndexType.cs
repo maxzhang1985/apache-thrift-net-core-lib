@@ -7,9 +7,9 @@
 
 namespace Apache.Cassandra.Test
 {
-  public enum IndexType
-  {
-    KEYS = 0,
-    CUSTOM = 1,
-  }
+    public enum IndexType
+    {
+        KEYS = 0,
+        CUSTOM = 1,
+    }
 }

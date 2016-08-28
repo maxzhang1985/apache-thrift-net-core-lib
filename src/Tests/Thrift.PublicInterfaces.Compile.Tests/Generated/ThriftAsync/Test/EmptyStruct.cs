@@ -23,63 +23,69 @@ using Thrift.Transport;
 namespace ThriftAsync.Test
 {
 
-  [DataContract(Namespace="")]
-  public partial class EmptyStruct : TBase
-  {
-
-    public EmptyStruct() {
-    }
-
-    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+    [DataContract(Namespace="")]
+    public partial class EmptyStruct : TBase
     {
-      iprot.IncrementRecursionDepth();
-      try
-      {
-        TField field;
-        await iprot.ReadStructBeginAsync(cancellationToken);
-        while (true)
+
+        public EmptyStruct()
         {
-          field = await iprot.ReadFieldBeginAsync(cancellationToken);
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
-          {
-            default: 
-              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              break;
-          }
-          await iprot.ReadFieldEndAsync(cancellationToken);
         }
-        await iprot.ReadStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        iprot.DecrementRecursionDepth();
-      }
-    }
 
-    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
-      oprot.IncrementRecursionDepth();
-      try
-      {
-        var struc = new TStruct("EmptyStruct");
-        await oprot.WriteStructBeginAsync(struc, cancellationToken);
-        await oprot.WriteFieldStopAsync(cancellationToken);
-        await oprot.WriteStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        oprot.DecrementRecursionDepth();
-      }
-    }
+        public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+        {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+                TField field;
+                await iprot.ReadStructBeginAsync(cancellationToken);
+                while (true)
+                {
+                    field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                    if (field.Type == TType.Stop)
+                    {
+                        break;
+                    }
 
-    public override string ToString() {
-      var sb = new StringBuilder("EmptyStruct(");
-      sb.Append(")");
-      return sb.ToString();
-    }
+                    switch (field.ID)
+                    {
+                        default: 
+                            await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            break;
+                    }
 
-  }
+                    await iprot.ReadFieldEndAsync(cancellationToken);
+                }
+
+                await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                iprot.DecrementRecursionDepth();
+            }
+        }
+
+        public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken)
+        {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+                var struc = new TStruct("EmptyStruct");
+                await oprot.WriteStructBeginAsync(struc, cancellationToken);
+                await oprot.WriteFieldStopAsync(cancellationToken);
+                await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                oprot.DecrementRecursionDepth();
+            }
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder("EmptyStruct(");
+            sb.Append(")");
+            return sb.ToString();
+        }
+    }
 
 }

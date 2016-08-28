@@ -7,15 +7,15 @@
 
 namespace Thrift.Samples
 {
-  /// <summary>
-  /// You can define enums, which are just 32 bit integers. Values are optional
-  /// and start at 1 if not supplied, C style again.
-  /// </summary>
-  public enum Operation
-  {
-    Add = 1,
-    Substract = 2,
-    Multiply = 3,
-    Divide = 4,
-  }
+    /// <summary>
+    /// You can define enums, which are just 32 bit integers. Values are optional
+    /// and start at 1 if not supplied, C style again.
+    /// </summary>
+    public enum Operation
+    {
+        Add = 1,
+        Substract = 2,
+        Multiply = 3,
+        Divide = 4,
+    }
 }

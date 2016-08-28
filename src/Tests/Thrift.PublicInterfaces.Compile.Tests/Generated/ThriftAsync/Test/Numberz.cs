@@ -7,16 +7,16 @@
 
 namespace ThriftAsync.Test
 {
-  /// <summary>
-  /// Docstring!
-  /// </summary>
-  public enum Numberz
-  {
-    ONE = 1,
-    TWO = 2,
-    THREE = 3,
-    FIVE = 5,
-    SIX = 6,
-    EIGHT = 8,
-  }
+    /// <summary>
+    /// Docstring!
+    /// </summary>
+    public enum Numberz
+    {
+        ONE = 1,
+        TWO = 2,
+        THREE = 3,
+        FIVE = 5,
+        SIX = 6,
+        EIGHT = 8,
+    }
 }

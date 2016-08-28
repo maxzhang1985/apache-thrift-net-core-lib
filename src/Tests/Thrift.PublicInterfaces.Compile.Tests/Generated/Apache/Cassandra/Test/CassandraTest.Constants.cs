@@ -19,8 +19,8 @@ using System.Runtime.Serialization;
 
 namespace Apache.Cassandra.Test
 {
-  public static class CassandraTestConstants
-  {
-    public const string VERSION = "19.24.0";
-  }
+    public static class CassandraTestConstants
+    {
+        public const string VERSION = "19.24.0";
+    }
 }

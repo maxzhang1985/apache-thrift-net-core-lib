@@ -7,12 +7,12 @@
 
 namespace Apache.Cassandra.Test
 {
-  /// <summary>
-  /// CQL query compression
-  /// </summary>
-  public enum Compression
-  {
-    GZIP = 1,
-    NONE = 2,
-  }
+    /// <summary>
+    /// CQL query compression
+    /// </summary>
+    public enum Compression
+    {
+        GZIP = 1,
+        NONE = 2,
+    }
 }

@@ -19,8 +19,8 @@ using System.Runtime.Serialization;
 
 namespace ThriftAsync.Test
 {
-  public static class ThriftTestAsyncConstants
-  {
-    public static Numberz myNumberz = Numberz.ONE;
-  }
+    public static class ThriftTestAsyncConstants
+    {
+        public static Numberz myNumberz = Numberz.ONE;
+    }
 }

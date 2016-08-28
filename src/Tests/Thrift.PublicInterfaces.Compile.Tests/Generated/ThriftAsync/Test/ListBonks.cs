@@ -23,138 +23,149 @@ using Thrift.Transport;
 namespace ThriftAsync.Test
 {
 
-  [DataContract(Namespace="")]
-  public partial class ListBonks : TBase
-  {
-    private List<Bonk> _bonk;
-
-    [DataMember(Order = 0)]
-    public List<Bonk> Bonk
+    [DataContract(Namespace="")]
+    public partial class ListBonks : TBase
     {
-      get
-      {
-        return _bonk;
-      }
-      set
-      {
-        __isset.bonk = true;
-        this._bonk = value;
-      }
-    }
+        private List<Bonk> _bonk;
 
-
-    [DataMember(Order = 1)]
-    public Isset __isset;
-    [DataContract]
-    public struct Isset
-    {
-      [DataMember]
-      public bool bonk;
-    }
-
-    #region XmlSerializer support
-
-    public bool ShouldSerializeBonk()
-    {
-      return __isset.bonk;
-    }
-
-    #endregion XmlSerializer support
-
-    public ListBonks() {
-    }
-
-    public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
-    {
-      iprot.IncrementRecursionDepth();
-      try
-      {
-        TField field;
-        await iprot.ReadStructBeginAsync(cancellationToken);
-        while (true)
+        [DataMember(Order = 0)]
+        public List<Bonk> Bonk
         {
-          field = await iprot.ReadFieldBeginAsync(cancellationToken);
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
-          {
-            case 1:
-              if (field.Type == TType.List) {
-                {
-                  Bonk = new List<Bonk>();
-                  TList _list128 = await iprot.ReadListBeginAsync(cancellationToken);
-                  for(int _i129 = 0; _i129 < _list128.Count; ++_i129)
-                  {
-                    Bonk _elem130;
-                    _elem130 = new Bonk();
-                    await _elem130.ReadAsync(iprot, cancellationToken);
-                    Bonk.Add(_elem130);
-                  }
-                  await iprot.ReadListEndAsync(cancellationToken);
-                }
-              } else { 
-               await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              }
-              break;
-            default: 
-              await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
-              break;
-          }
-          await iprot.ReadFieldEndAsync(cancellationToken);
-        }
-        await iprot.ReadStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        iprot.DecrementRecursionDepth();
-      }
-    }
-
-    public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken) {
-      oprot.IncrementRecursionDepth();
-      try
-      {
-        var struc = new TStruct("ListBonks");
-        await oprot.WriteStructBeginAsync(struc, cancellationToken);
-        var field = new TField();
-        if (Bonk != null && __isset.bonk) {
-          field.Name = "bonk";
-          field.Type = TType.List;
-          field.ID = 1;
-          await oprot.WriteFieldBeginAsync(field, cancellationToken);
-          {
-            await oprot.WriteListBeginAsync(new TList(TType.Struct, Bonk.Count), cancellationToken);
-            foreach (Bonk _iter131 in Bonk)
+            get
             {
-              await _iter131.WriteAsync(oprot, cancellationToken);
+                return _bonk;
             }
-            await oprot.WriteListEndAsync(cancellationToken);
-          }
-          await oprot.WriteFieldEndAsync(cancellationToken);
+            set
+            {
+                __isset.bonk = true;
+                this._bonk = value;
+            }
         }
-        await oprot.WriteFieldStopAsync(cancellationToken);
-        await oprot.WriteStructEndAsync(cancellationToken);
-      }
-      finally
-      {
-        oprot.DecrementRecursionDepth();
-      }
-    }
 
-    public override string ToString() {
-      var sb = new StringBuilder("ListBonks(");
-      bool __first = true;
-      if (Bonk != null && __isset.bonk) {
-        if(!__first) { sb.Append(", "); }
-        __first = false;
-        sb.Append("Bonk: ");
-        sb.Append(Bonk);
-      }
-      sb.Append(")");
-      return sb.ToString();
-    }
 
-  }
+        [DataMember(Order = 1)]
+        public Isset __isset;
+        [DataContract]
+        public struct Isset
+        {
+            [DataMember]
+            public bool bonk;
+        }
+
+        #region XmlSerializer support
+
+        public bool ShouldSerializeBonk()
+        {
+            return __isset.bonk;
+        }
+
+        #endregion XmlSerializer support
+
+        public ListBonks()
+        {
+        }
+
+        public async Task ReadAsync(TProtocol iprot, CancellationToken cancellationToken)
+        {
+            iprot.IncrementRecursionDepth();
+            try
+            {
+                TField field;
+                await iprot.ReadStructBeginAsync(cancellationToken);
+                while (true)
+                {
+                    field = await iprot.ReadFieldBeginAsync(cancellationToken);
+                    if (field.Type == TType.Stop)
+                    {
+                        break;
+                    }
+
+                    switch (field.ID)
+                    {
+                        case 1:
+                            if (field.Type == TType.List)
+                            {
+                                {
+                                    Bonk = new List<Bonk>();
+                                    TList _list128 = await iprot.ReadListBeginAsync(cancellationToken);
+                                    for(int _i129 = 0; _i129 < _list128.Count; ++_i129)
+                                    {
+                                        Bonk _elem130;
+                                        _elem130 = new Bonk();
+                                        await _elem130.ReadAsync(iprot, cancellationToken);
+                                        Bonk.Add(_elem130);
+                                    }
+                                    await iprot.ReadListEndAsync(cancellationToken);
+                                }
+                            }
+                            else
+                            {
+                                await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            }
+                            break;
+                        default: 
+                            await TProtocolUtil.SkipAsync(iprot, field.Type, cancellationToken);
+                            break;
+                    }
+
+                    await iprot.ReadFieldEndAsync(cancellationToken);
+                }
+
+                await iprot.ReadStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                iprot.DecrementRecursionDepth();
+            }
+        }
+
+        public async Task WriteAsync(TProtocol oprot, CancellationToken cancellationToken)
+        {
+            oprot.IncrementRecursionDepth();
+            try
+            {
+                var struc = new TStruct("ListBonks");
+                await oprot.WriteStructBeginAsync(struc, cancellationToken);
+                var field = new TField();
+                if (Bonk != null && __isset.bonk)
+                {
+                    field.Name = "bonk";
+                    field.Type = TType.List;
+                    field.ID = 1;
+                    await oprot.WriteFieldBeginAsync(field, cancellationToken);
+                    {
+                        await oprot.WriteListBeginAsync(new TList(TType.Struct, Bonk.Count), cancellationToken);
+                        foreach (Bonk _iter131 in Bonk)
+                        {
+                            await _iter131.WriteAsync(oprot, cancellationToken);
+                        }
+                        await oprot.WriteListEndAsync(cancellationToken);
+                    }
+                    await oprot.WriteFieldEndAsync(cancellationToken);
+                }
+                await oprot.WriteFieldStopAsync(cancellationToken);
+                await oprot.WriteStructEndAsync(cancellationToken);
+            }
+            finally
+            {
+                oprot.DecrementRecursionDepth();
+            }
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder("ListBonks(");
+            bool __first = true;
+            if (Bonk != null && __isset.bonk)
+            {
+                if(!__first) { sb.Append(", "); }
+                __first = false;
+                sb.Append("Bonk: ");
+                sb.Append(Bonk);
+            }
+            sb.Append(")");
+            return sb.ToString();
+        }
+    }
 
 }

@@ -7,16 +7,16 @@
 
 namespace Facebook.FB303.Test
 {
-  /// <summary>
-  /// Common status reporting mechanism across all services
-  /// </summary>
-  public enum fb_status
-  {
-    DEAD = 0,
-    STARTING = 1,
-    ALIVE = 2,
-    STOPPING = 3,
-    STOPPED = 4,
-    WARNING = 5,
-  }
+    /// <summary>
+    /// Common status reporting mechanism across all services
+    /// </summary>
+    public enum fb_status
+    {
+        DEAD = 0,
+        STARTING = 1,
+        ALIVE = 2,
+        STOPPING = 3,
+        STOPPED = 4,
+        WARNING = 5,
+    }
 }
