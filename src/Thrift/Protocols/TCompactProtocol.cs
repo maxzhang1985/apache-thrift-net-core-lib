@@ -82,6 +82,14 @@ namespace Thrift.Protocols
             TTypeToCompactType[(int) TType.Struct] = Types.Struct;
         }
 
+        public class Factory : ITProtocolFactory
+        {
+            public TProtocol GetProtocol(TClientTransport trans)
+            {
+                return new TCompactProtocol(trans);
+            }
+        }
+
         public void Reset()
         {
             _lastField.Clear();
@@ -725,14 +733,6 @@ namespace Thrift.Protocols
             if (cancellationToken.IsCancellationRequested)
             {
                 await Task.FromCanceled(cancellationToken);
-            }
-        }
-
-        public class Factory : TProtocolFactory
-        {
-            public TProtocol GetProtocol(TClientTransport trans)
-            {
-                return new TCompactProtocol(trans);
             }
         }
 

@@ -26,7 +26,7 @@ using Thrift.Transports;
 namespace Thrift.Protocols
 {
     // ReSharper disable once InconsistentNaming
-    public interface TProtocolFactory
+    public interface ITProtocolFactory
     {
         TProtocol GetProtocol(TClientTransport trans);
     }

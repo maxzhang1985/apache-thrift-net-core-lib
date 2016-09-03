@@ -24,6 +24,8 @@ using System.Threading.Tasks;
 
 namespace Thrift.Transports.Client
 {
+    //TODO: check for correct implementation 
+
     // ReSharper disable once InconsistentNaming
     public class TFramedClientTransport : TClientTransport
     {
@@ -36,6 +38,8 @@ namespace Thrift.Transports.Client
 
         public TFramedClientTransport(TClientTransport transport)
         {
+            throw new NotImplementedException("TFramedClientTransport is not fully ready for usage");
+
             if (transport == null)
             {
                 throw new ArgumentNullException(nameof(transport));
@@ -130,9 +134,10 @@ namespace Thrift.Transports.Client
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            ArraySegment<byte> bufSegment;
-            _writeBuffer.TryGetBuffer(out bufSegment);
-            var buf = bufSegment.Array;
+            //ArraySegment<byte> bufSegment;
+            //_writeBuffer.TryGetBuffer(out bufSegment);
+            //var buf = bufSegment.Array;
+            var buf = _writeBuffer.ToArray();
 
             //var len = (int)_writeBuffer.Length;
             var dataLen = (int)_writeBuffer.Length - HeaderSize;

@@ -40,17 +40,19 @@ namespace Thrift.Server
     {
         private volatile Task _serverTask;
 
-        public AsyncBaseServer(ITAsyncProcessor processor, TServerTransport serverTransport, ILoggerFactory loggerFactory)
+        public AsyncBaseServer(ITAsyncProcessor processor, TServerTransport serverTransport, 
+            ITProtocolFactory inputProtocolFactory, ITProtocolFactory outputProtocolFactory, 
+            ILoggerFactory loggerFactory)
             : this(new SingletonTProcessorFactory(processor), serverTransport,
                 new TTransportFactory(), new TTransportFactory(),
-                new TBinaryProtocol.Factory(), new TBinaryProtocol.Factory(),
+                inputProtocolFactory, outputProtocolFactory,
                 loggerFactory.CreateLogger(nameof(AsyncBaseServer)))
         {
         }
 
         public AsyncBaseServer(ITProcessorFactory itProcessorFactory, TServerTransport serverTransport, 
             TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory,
-            TProtocolFactory inputProtocolFactory, TProtocolFactory outputProtocolFactory,
+            ITProtocolFactory inputProtocolFactory, ITProtocolFactory outputProtocolFactory,
             ILogger logger)
             : base(itProcessorFactory, serverTransport, inputTransportFactory, outputTransportFactory,
                 inputProtocolFactory, outputProtocolFactory, logger)

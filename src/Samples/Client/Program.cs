@@ -29,28 +29,42 @@ namespace Client
             Tcp,
             NamedPipe,
             Http,
+            Buffered,
+            Framed,
             TcpTls
+        }
+
+        private enum Protocol
+        {
+            Binary,
+            Compact,
+            Json,
         }
 
         private static void DisplayHelp()
         {
             Console.WriteLine(@"
 Usage: 
-    Client.exe 
+    Client.exe -h
         will diplay help information 
 
-    Client.exe -t:<transport>
-        will run client with specified arguments
+    Client.exe -t:<transport> -p:<protocol>
+        will run client with specified arguments (tcp transport and binary protocol by default)
 
 Options:
     -t (transport): 
-        tcp - tcp transport will be used (host - ""localhost"", port - 9090)
-        tcptls - tcp transport with tls will be used (host - ""localhost"", port - 9090)
+        tcp - (default) tcp transport will be used (host - ""localhost"", port - 9090)
         namedpipe - namedpipe transport will be used (pipe address - "".test"")
         http - http transport will be used (address - ""http://localhost:9090"")
+        buffered - buffered transport over tcp will be used (host - ""localhost"", port - 9090)
+
+    -p (protocol): 
+        binary - (default) binary protocol will be used
+        compact - compact protocol will be used
+        json - json protocol will be used
 
 Sample:
-    Client.exe -t:tcp
+    Client.exe -t:tcp -p:binary
 ");
         }
 
@@ -64,50 +78,78 @@ Sample:
 
         private static async Task RunAsync(string[] args, CancellationToken cancellationToken)
         {
-            if (args == null || !args.Any(x => x.ToLowerInvariant().Contains("-t:")))
+            args = args ?? new string[0];
+
+            if (args.Any(x => x.StartsWith("-h", StringComparison.OrdinalIgnoreCase)))
             {
                 DisplayHelp();
                 return;
             }
 
-            TClientTransport clientTransport = null;
+            var clientTransport = GetTransport(args);
 
-            var transport = args.First(x => x.StartsWith("-t")).Split(':')[1];
+            Logger.Information($"Selected client transport: {clientTransport}");
+
+            var clientProtocol = GetProtocol(args, clientTransport);
+
+            Logger.Information($"Selected client protocol: {clientProtocol}");
+
+            await RunClientAsync(clientProtocol, cancellationToken);
+        }
+
+        private static TClientTransport GetTransport(string[] args)
+        {
+            var transport = args.FirstOrDefault(x => x.StartsWith("-t"))?.Split(':')?[1];
+
             Transport selectedTransport;
             if (Enum.TryParse(transport, true, out selectedTransport))
             {
                 switch (selectedTransport)
                 {
                     case Transport.Tcp:
-                        clientTransport = new TSocketClientTransport(IPAddress.Loopback, 9090);
-                        break;
+                        return new TSocketClientTransport(IPAddress.Loopback, 9090);
                     case Transport.NamedPipe:
-                        clientTransport = new TNamedPipeClientTransport(".test");
-                        break;
+                        return new TNamedPipeClientTransport(".test");
                     case Transport.Http:
-                        clientTransport = new THttpClientTransport(new Uri("http://localhost:9090"));
-                        break;
+                        return new THttpClientTransport(new Uri("http://localhost:9090"));
+                    case Transport.Buffered:
+                        return new TBufferedClientTransport(new TSocketClientTransport(IPAddress.Loopback, 9090));
+                    case Transport.Framed:
+                        throw new NotSupportedException("Framed is not ready for samples");
                     case Transport.TcpTls:
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new NotSupportedException("TcpTls is not ready for samples");
                 }
+            }
 
-                var protocol = new TBinaryProtocol(clientTransport);
-                await RunClientAsync(protocol, cancellationToken);
-            }
-            else
+            return new TSocketClientTransport(IPAddress.Loopback, 9090);
+        }
+
+        private static TProtocol GetProtocol(string[] args, TClientTransport transport)
+        {
+            var protocol = args.FirstOrDefault(x => x.StartsWith("-p"))?.Split(':')?[1];
+
+            Protocol selectedProtocol;
+            if (Enum.TryParse(protocol, true, out selectedProtocol))
             {
-                DisplayHelp();
+                switch (selectedProtocol)
+                {
+                    case Protocol.Binary:
+                        return new TBinaryProtocol(transport);
+                    case Protocol.Compact:
+                        return new TCompactProtocol(transport);
+                    case Protocol.Json:
+                        return new TJsonProtocol(transport);
+                }
             }
+
+            return new TBinaryProtocol(transport);
         }
 
         private static async Task RunClientAsync(TProtocol protocol, CancellationToken cancellationToken)
         {
-            
             try
             {
                 var client = new Calculator.Client(protocol);
-
                 await client.OpenTransportAsync(cancellationToken);
 
                 try
@@ -120,7 +162,7 @@ Sample:
                     Logger.Information("AddAsync(1,1)");
                     var sum = await client.AddAsync(1, 1, cancellationToken);
                     Logger.Information($"AddAsync(1,1)={sum}");
-                    
+
                     var work = new Work
                     {
                         Op = Operation.Divide,
@@ -161,6 +203,10 @@ Sample:
                     Logger.Information("ZipAsync() with delay 100mc on server side");
                     await client.ZipAsync(cancellationToken);
 
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error");
                 }
                 finally
                 {

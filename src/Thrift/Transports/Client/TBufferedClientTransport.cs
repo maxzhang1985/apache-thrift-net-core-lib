@@ -78,6 +78,7 @@ namespace Thrift.Transports.Client
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
+            //TODO: investigate how it should work correctly
             CheckNotDisposed();
 
             ValidateBufferArgs(buffer, offset, length);
@@ -104,6 +105,7 @@ namespace Thrift.Transports.Client
             ArraySegment<byte> bufSegment;
             _inputBuffer.TryGetBuffer(out bufSegment);
 
+            // investigate
             var filled = await _transport.ReadAsync(bufSegment.Array, 0, (int)_inputBuffer.Length, cancellationToken);
             _inputBuffer.SetLength(filled);
 
@@ -137,9 +139,11 @@ namespace Thrift.Transports.Client
                 writtenCount += writeSize;
                 if (writeSize == capa)
                 {
-                    ArraySegment<byte> bufSegment;
-                    _outputBuffer.TryGetBuffer(out bufSegment);
-                    await _transport.WriteAsync(bufSegment.Array, cancellationToken);
+                    //ArraySegment<byte> bufSegment;
+                    //_outputBuffer.TryGetBuffer(out bufSegment);
+                    var data = _outputBuffer.ToArray();
+                    //await _transport.WriteAsync(bufSegment.Array, cancellationToken);
+                    await _transport.WriteAsync(data, cancellationToken);
                     _outputBuffer.SetLength(0);
                 }
             }
@@ -172,10 +176,10 @@ namespace Thrift.Transports.Client
 
             if (_outputBuffer.Length > 0)
             {
-                ArraySegment<byte> bufSegment;
-                _outputBuffer.TryGetBuffer(out bufSegment);
+                //ArraySegment<byte> bufSegment;
+                var data = _outputBuffer.ToArray(); // TryGetBuffer(out bufSegment);
 
-                await _transport.WriteAsync(bufSegment.Array, cancellationToken);
+                await _transport.WriteAsync(data /*bufSegment.Array*/, cancellationToken);
                 _outputBuffer.SetLength(0);
             }
 

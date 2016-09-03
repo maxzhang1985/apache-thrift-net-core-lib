@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
 using Thrift;
+using Thrift.Protocols;
 using Thrift.Samples;
 using Thrift.Server;
 using Thrift.Transports;
@@ -37,6 +38,13 @@ namespace Server
             TcpTls
         }
 
+        private enum Protocol
+        {
+            Binary,
+            Compact,
+            Json,
+        }
+
         public static void Main(string[] args)
         {
             using (var source = new CancellationTokenSource())
@@ -54,18 +62,23 @@ namespace Server
         {
             Console.WriteLine(@"
 Usage: 
-    Server.exe 
+    Server.exe -h
         will diplay help information 
 
-    Server.exe -t:<transport>
-        will run server with specified arguments
+    Server.exe -t:<transport> -p:<protocol>
+        will run server with specified arguments (tcp transport and binary protocol by default)
 
 Options:
     -t (transport): 
-        tcp - tcp transport will be used (host - ""localhost"", port - 9090)
+        tcp - (default) tcp transport will be used (host - ""localhost"", port - 9090)
         namedpipe - namedpipe transport will be used (pipe address - "".test"")
         http - http transport will be used (http address - ""localhost:9090"")
-        
+
+    -p (protocol): 
+        binary - (default) binary protocol will be used
+        compact - compact protocol will be used
+        json - json protocol will be used
+
 Sample:
     Server.exe -t:tcp 
 ");
@@ -73,43 +86,55 @@ Sample:
 
         private static async Task RunAsync(string[] args, CancellationToken cancellationToken)
         {
-            if (args == null || !args.Any(x => x.ToLowerInvariant().Contains("-t:")))
+            args = args ?? new string[0];
+
+            if (args.Any(x => x.StartsWith("-h", StringComparison.OrdinalIgnoreCase)))
             {
                 DisplayHelp();
                 return;
             }
 
-            var transport = args.First(x => x.StartsWith("-t")).Split(':')[1];
-            Transport selectedTransport;
-            if (Enum.TryParse(transport, true, out selectedTransport))
+            var selectedTransport = GetTransport(args);
+            var selectedProtocol = GetProtocol(args);
+
+            if (selectedTransport == Transport.Http)
             {
-                switch (selectedTransport)
-                {
-                    case Transport.Tcp:
-                    case Transport.NamedPipe:
-                    case Transport.TcpTls:
-                        await RunSelectedConfigurationAsync(selectedTransport, cancellationToken);
-                        break;
-                    case Transport.Http:
-                        new HttpServerSample().Run(cancellationToken);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                new HttpServerSample().Run(cancellationToken);
             }
             else
             {
-                DisplayHelp();
+                await RunSelectedConfigurationAsync(selectedTransport, selectedProtocol, cancellationToken);
             }
         }
 
-        private static async Task RunSelectedConfigurationAsync(Transport transport, CancellationToken cancellationToken)
+        private static Protocol GetProtocol(string[] args)
         {
-            Logger.Information($"Selected TAsyncServer with {transport} transport");
+            var transport = args.FirstOrDefault(x => x.StartsWith("-p"))?.Split(':')?[1];
+            Protocol selectedProtocol;
+
+            Enum.TryParse(transport, true, out selectedProtocol);
+
+            return selectedProtocol;
+        }
+
+        private static Transport GetTransport(string[] args)
+        {
+            var transport = args.FirstOrDefault(x => x.StartsWith("-t"))?.Split(':')?[1];
+            Transport selectedTransport;
+
+            Enum.TryParse(transport, true, out selectedTransport);
+
+            return selectedTransport;
+        }
+
+        private static async Task RunSelectedConfigurationAsync(Transport transport, Protocol protocol, CancellationToken cancellationToken)
+        {
+            Logger.Information($"Selected TAsyncServer with {transport} transport and {protocol} protocol");
 
             var fabric = new LoggerFactory().AddSerilog(Logger);
             var handler = new CalculatorAsyncHandler();
             var processor = new Calculator.AsyncProcessor(handler);
+
             TServerTransport serverTransport = null;
             
             switch (transport)
@@ -120,13 +145,38 @@ Sample:
                 case Transport.NamedPipe:
                     serverTransport = new TNamedPipeServerTransport(".test");
                     break;
+            }
+
+            ITProtocolFactory inputProtocolFactory;
+            ITProtocolFactory outputProtocolFactory;
+
+            switch (protocol)
+            {
+                case Protocol.Binary:
+                {
+                        inputProtocolFactory = new TBinaryProtocol.Factory();
+                        outputProtocolFactory = new TBinaryProtocol.Factory();
+                    }
+                    break;
+                case Protocol.Compact:
+                {
+                        inputProtocolFactory = new TCompactProtocol.Factory();
+                        outputProtocolFactory = new TCompactProtocol.Factory();
+                    }
+                    break;
+                case Protocol.Json:
+                {
+                        inputProtocolFactory = new TJsonProtocol.Factory();
+                        outputProtocolFactory = new TJsonProtocol.Factory();
+                    }
+                    break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(transport), transport, null);
+                    throw new ArgumentOutOfRangeException(nameof(protocol), protocol, null);
             }
 
             try
             {
-                var server = new AsyncBaseServer(processor, serverTransport, fabric);
+                var server = new AsyncBaseServer(processor, serverTransport, inputProtocolFactory, outputProtocolFactory, fabric);
 
                 Logger.Information("Starting the server...");
                 await server.ServeAsync(cancellationToken);

@@ -43,7 +43,7 @@ namespace Thrift.Protocols
         protected bool StrictRead;
         protected bool StrictWrite;
 
-        public class Factory : TProtocolFactory
+        public class Factory : ITProtocolFactory
         {
             protected bool StrictRead;
             protected bool StrictWrite;
@@ -327,7 +327,7 @@ namespace Thrift.Protocols
                 return;
             }
 
-            await WriteI32Async(b.Length, CancellationToken.None);
+            await WriteI32Async(b.Length, cancellationToken);
             await Trans.WriteAsync(b, 0, b.Length, cancellationToken);
         }
 

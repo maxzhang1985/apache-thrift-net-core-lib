@@ -48,7 +48,7 @@ namespace Thrift.Protocols
         /// <summary>
         /// Factory for JSON protocol objects
         /// </summary>
-        public class Factory : TProtocolFactory
+        public class Factory : ITProtocolFactory
         {
             public TProtocol GetProtocol(TClientTransport trans)
             {
@@ -402,6 +402,8 @@ namespace Thrift.Protocols
         public TJsonProtocol(TClientTransport trans)
             : base(trans)
         {
+            //throw new NotImplementedException("TJsonProtocol is not fully ready for usage");
+
             Context = new JsonBaseContext(this);
             Reader = new LookaheadReader(this);
         }

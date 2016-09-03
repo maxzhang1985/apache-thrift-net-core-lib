@@ -38,8 +38,8 @@ namespace Thrift.Transports.Server
 
         protected ITAsyncProcessor Processor;
 
-        protected TProtocolFactory InputProtocolFactory;
-        protected TProtocolFactory OutputProtocolFactory;
+        protected ITProtocolFactory InputProtocolFactory;
+        protected ITProtocolFactory OutputProtocolFactory;
 
         protected const string ContentType = "application/x-thrift";
         protected Encoding Encoding = Encoding.UTF8;
@@ -49,13 +49,13 @@ namespace Thrift.Transports.Server
         {
         }
 
-        public THttpServerTransport(ITAsyncProcessor processor, TProtocolFactory protocolFactory, RequestDelegate next, ILoggerFactory loggerFactory)
+        public THttpServerTransport(ITAsyncProcessor processor, ITProtocolFactory protocolFactory, RequestDelegate next, ILoggerFactory loggerFactory)
             : this(processor, protocolFactory, protocolFactory, next, loggerFactory)
         {
         }
 
-        public THttpServerTransport(ITAsyncProcessor processor, TProtocolFactory inputProtocolFactory,
-            TProtocolFactory outputProtocolFactory, RequestDelegate next, ILoggerFactory loggerFactory)
+        public THttpServerTransport(ITAsyncProcessor processor, ITProtocolFactory inputProtocolFactory,
+            ITProtocolFactory outputProtocolFactory, RequestDelegate next, ILoggerFactory loggerFactory)
         {
             if (processor == null)
             {

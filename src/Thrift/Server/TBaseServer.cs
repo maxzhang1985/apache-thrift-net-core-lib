@@ -37,8 +37,8 @@ namespace Thrift.Server
         protected TServerTransport ServerTransport;
         protected TTransportFactory InputTransportFactory;
         protected TTransportFactory OutputTransportFactory;
-        protected TProtocolFactory InputProtocolFactory;
-        protected TProtocolFactory OutputProtocolFactory;
+        protected ITProtocolFactory InputProtocolFactory;
+        protected ITProtocolFactory OutputProtocolFactory;
         protected readonly ILogger Logger;
 
         protected TServerEventHandler ServerEventHandler;
@@ -55,7 +55,7 @@ namespace Thrift.Server
 
         protected TBaseServer(ITProcessorFactory itProcessorFactory, TServerTransport serverTransport,
             TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory, 
-            TProtocolFactory inputProtocolFactory, TProtocolFactory outputProtocolFactory, 
+            ITProtocolFactory inputProtocolFactory, ITProtocolFactory outputProtocolFactory, 
             ILogger logger)
         {
             if (itProcessorFactory == null) throw new ArgumentNullException(nameof(itProcessorFactory));
