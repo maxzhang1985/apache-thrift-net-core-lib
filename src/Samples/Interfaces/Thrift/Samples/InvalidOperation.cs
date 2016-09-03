@@ -16,8 +16,12 @@ using Thrift.Collections;
 using System.ServiceModel;
 using System.Runtime.Serialization;
 
-using Thrift.Protocol;
-using Thrift.Transport;
+using Thrift.Protocols;
+using Thrift.Protocols.Entities;
+using Thrift.Protocols.Utilities;
+using Thrift.Transports;
+using Thrift.Transports.Client;
+using Thrift.Transports.Server;
 
 
 namespace Thrift.Samples

@@ -491,8 +491,12 @@ string t_netcore_generator::netcore_type_usings() const
 string t_netcore_generator::netcore_thrift_usings() const
 {
     string namespaces =
-        "using Thrift.Protocol;\n"
-        "using Thrift.Transport;\n";
+        "using Thrift.Protocols;\n"
+        "using Thrift.Protocols.Entities;\n"
+        "using Thrift.Protocols.Utilities;\n"
+        "using Thrift.Transports;\n"
+        "using Thrift.Transports.Client;\n"
+        "using Thrift.Transports.Server;\n";
 
     return namespaces + endl;
 }
@@ -1921,7 +1925,7 @@ void t_netcore_generator::generate_service_server(ofstream& out, t_service* tser
         extends_processor = extends + ".AsyncProcessor, ";
     }
 
-    out << indent() << "public class AsyncProcessor : " << extends_processor << "TAsyncProcessor" << endl
+    out << indent() << "public class AsyncProcessor : " << extends_processor << "ITAsyncProcessor" << endl
         << indent() << "{" << endl;
 
     indent_up();

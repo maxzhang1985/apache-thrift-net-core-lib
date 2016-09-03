@@ -23,7 +23,8 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Thrift.Protocol;
+using Thrift.Protocols;
+using Thrift.Protocols.Entities;
 
 namespace Thrift
 {

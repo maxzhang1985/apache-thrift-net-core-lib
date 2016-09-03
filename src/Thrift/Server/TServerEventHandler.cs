@@ -23,8 +23,8 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Thrift.Protocol;
-using Thrift.Transport;
+using Thrift.Protocols;
+using Thrift.Transports;
 
 namespace Thrift.Server
 {
@@ -54,6 +54,6 @@ namespace Thrift.Server
         /// <summary>
         /// Called when a client is about to call the processor */
         /// </summary>
-        Task ProcessContextAsync(object serverContext, TTransport transport, CancellationToken cancellationToken);
+        Task ProcessContextAsync(object serverContext, TClientTransport transport, CancellationToken cancellationToken);
     }
 }
