@@ -85,8 +85,11 @@ Remarks:
 
 Remarks:
 
-	Samples of client and server code belkow use correct methods (operations) 
+	Samples of client and server code below use correct methods (operations) 
 	and fields (properties) according to generated contracts from *.thrift files
+	At Windows 10 add record **127.0.0.1 testserver** to **C:\Windows\System32\drivers\etc\hosts** file
+	for correct work of python server
+
 
 **Python Client:**
 	
