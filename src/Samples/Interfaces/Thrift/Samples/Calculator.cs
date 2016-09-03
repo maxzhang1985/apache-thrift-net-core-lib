@@ -68,10 +68,8 @@ namespace Thrift.Samples
             {
             }
 
-            public Client(TProtocol inputProtocol, TProtocol outputProtocol) : base(inputProtocol, outputProtocol)
-            {
+            public Client(TProtocol inputProtocol, TProtocol outputProtocol) : base(inputProtocol, outputProtocol)            {
             }
-
             public async Task PingAsync(CancellationToken cancellationToken)
             {
                 await OutputProtocol.WriteMessageBeginAsync(new TMessage("Ping", TMessageType.Call, SeqId), cancellationToken);
@@ -187,6 +185,11 @@ namespace Thrift.Samples
                 processMap_["Zip"] = Zip_ProcessAsync;
             }
 
+
+            public new async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+            {
+                return await ProcessAsync(iprot, oprot, CancellationToken.None);
+            }
 
             public new async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
             {

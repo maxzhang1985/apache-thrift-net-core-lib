@@ -158,18 +158,26 @@ namespace Thrift.Transport
                 {
                     var httpClient = CreateClient();
 
+                    if (_outputStream.CanSeek)
+                    {
+                        _outputStream.Seek(0, SeekOrigin.Begin);
+                    }
+
                     using (var outStream = new StreamContent(_outputStream))
                     {
                         var msg = await httpClient.PostAsync(_uri, outStream, cancellationToken);
+
                         msg.EnsureSuccessStatusCode();
 
-                        _inputStream.Dispose();
-                        _inputStream = null;
+                        if (_inputStream != null)
+                        {
+                            _inputStream.Dispose();
+                            _inputStream = null;
+                        }
 
                         _inputStream = await msg.Content.ReadAsStreamAsync();
-
                         if (_inputStream.CanSeek)
-                        {
+                        { 
                             _inputStream.Seek(0, SeekOrigin.Begin);
                         }
                     }

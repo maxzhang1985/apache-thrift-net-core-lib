@@ -121,68 +121,14 @@ namespace Facebook.FB303.Test
         /// <summary>
         /// Standard base service
         /// </summary>
-        public class Client : IDisposable, IAsync
+        public class Client : TBaseClient, IDisposable, IAsync
         {
             public Client(TProtocol protocol) : this(protocol, protocol)
             {
             }
 
-            public Client(TProtocol inputProtocol, TProtocol outputProtocol)
-            {
-                if (inputProtocol == null) throw new ArgumentNullException(nameof(inputProtocol));
-                if (outputProtocol == null) throw new ArgumentNullException(nameof(outputProtocol));
-
-                _inputProtocol = inputProtocol;
-                _outputProtocol = outputProtocol;
+            public Client(TProtocol inputProtocol, TProtocol outputProtocol) : base(inputProtocol, outputProtocol)            {
             }
-
-
-            private TProtocol _inputProtocol;
-            private TProtocol _outputProtocol;
-            private int _seqId;
-
-            public TProtocol InputProtocol
-            {
-                get { return _inputProtocol; }
-            }
-
-            public TProtocol OutputProtocol
-            {
-                get { return _outputProtocol; }
-            }
-
-            public int SeqId
-            {
-                get { return _seqId; }
-            }
-
-            private bool _isDisposed;
-
-            public void Dispose()
-            {
-                Dispose(true);
-            }
-            
-            protected virtual void Dispose(bool disposing)
-            {
-                if (!_isDisposed)
-                {
-                    if (disposing)
-                    {
-                        if (_inputProtocol != null)
-                        {
-                            ((IDisposable)_inputProtocol).Dispose();
-                        }
-                        if (_outputProtocol != null)
-                        {
-                            ((IDisposable)_outputProtocol).Dispose();
-                        }
-                    }
-                }
-
-                _isDisposed = true;
-            }
-
             public async Task<string> getNameAsync(CancellationToken cancellationToken)
             {
                 await OutputProtocol.WriteMessageBeginAsync(new TMessage("getName", TMessageType.Call, SeqId), cancellationToken);
@@ -540,6 +486,11 @@ namespace Facebook.FB303.Test
 
             protected delegate Task ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken);
             protected Dictionary<string, ProcessFunction> processMap_ = new Dictionary<string, ProcessFunction>();
+
+            public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
+            {
+                return await ProcessAsync(iprot, oprot, CancellationToken.None);
+            }
 
             public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
             {

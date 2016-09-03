@@ -1748,7 +1748,7 @@ void t_netcore_generator::generate_service_client(ofstream& out, t_service* tser
     }
     else
     {
-        extends_client = "IDisposable, ";
+        extends_client = "TBaseClient, IDisposable, ";
     }
 
     out << endl;
@@ -1763,97 +1763,9 @@ void t_netcore_generator::generate_service_client(ofstream& out, t_service* tser
         << indent() << "{" << endl
         << indent() << "}" << endl
         << endl
-        << indent() << "public Client(TProtocol inputProtocol, TProtocol outputProtocol)";
-
-    if (!extends.empty())
-    {
-        out << " : base(inputProtocol, outputProtocol)";
-    }
-
-    out << endl
-        << indent() << "{" << endl;
-    indent_up();
-    
-    if (extends.empty())
-    {
-        out << indent() << "if (inputProtocol == null) throw new ArgumentNullException(nameof(inputProtocol));" << endl
-            << indent() << "if (outputProtocol == null) throw new ArgumentNullException(nameof(outputProtocol));" << endl
-            << endl
-            << indent() << "_inputProtocol = inputProtocol;" << endl
-            << indent() << "_outputProtocol = outputProtocol;" << endl;
-    }
-
-    indent_down();
-    out << indent() << "}" << endl << endl;
-
-    if (extends.empty())
-    {
-        out << endl
-            << indent() << "private TProtocol _inputProtocol;" << endl
-            << indent() << "private TProtocol _outputProtocol;" << endl
-            << indent() << "private int _seqId;" << endl
-            << endl
-            << indent() << "public TProtocol InputProtocol" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "get { return _inputProtocol; }" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << endl
-            << indent() << "public TProtocol OutputProtocol" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "get { return _outputProtocol; }" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << endl
-            << indent() << "public int SeqId" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "get { return _seqId; }" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << endl
-            << indent() << "private bool _isDisposed;" << endl 
-            << endl
-            << indent() << "public void Dispose()" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "Dispose(true);" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << indent() << endl 
-            << indent() << "protected virtual void Dispose(bool disposing)" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "if (!_isDisposed)" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "if (disposing)" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "if (_inputProtocol != null)" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "((IDisposable)_inputProtocol).Dispose();" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << indent() << "if (_outputProtocol != null)" << endl
-            << indent() << "{" << endl;
-        indent_up();
-        out << indent() << "((IDisposable)_outputProtocol).Dispose();" << endl;
-        indent_down();
-        out << indent() << "}" << endl;
-        indent_down();
-        out << indent() << "}" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << endl
-            << indent() << "_isDisposed = true;" << endl;
-        indent_down();
-        out << indent() << "}" << endl
-            << endl;
-    }
+        << indent() << "public Client(TProtocol inputProtocol, TProtocol outputProtocol) : base(inputProtocol, outputProtocol)"
+        << indent() << "{" << endl
+        << indent() << "}" << endl;
 
     vector<t_function*> functions = tservice->get_functions();
     vector<t_function*>::const_iterator functions_iterator;
@@ -2055,10 +1967,24 @@ void t_netcore_generator::generate_service_server(ofstream& out, t_service* tser
 
     if (extends.empty())
     {
+        out << indent() << "public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)" << endl
+            << indent() << "{" << endl;
+        indent_up();
+        out << indent() << "return await ProcessAsync(iprot, oprot, CancellationToken.None);" << endl;
+        indent_down();
+        out << indent() << "}" << endl << endl;
+
         out << indent() << "public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)" << endl;
     }
     else
     {
+        out << indent() << "public new async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)" << endl
+            << indent() << "{" << endl;
+        indent_up();
+        out << indent() << "return await ProcessAsync(iprot, oprot, CancellationToken.None);" << endl;
+        indent_down();
+        out << indent() << "}" << endl << endl;
+
         out << indent() << "public new async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)" << endl;
     }
 
@@ -3187,7 +3113,7 @@ string t_netcore_generator::type_to_enum(t_type* type)
 
 void t_netcore_generator::generate_netcore_docstring_comment(ofstream& out, string contents)
 {
-	docstring_comment(out, "/// <summary>" + endl, "/// ", contents, "/// </summary>" + endl);
+    docstring_comment(out, "/// <summary>" + endl, "/// ", contents, "/// </summary>" + endl);
 }
 
 void t_netcore_generator::generate_netcore_doc(ofstream& out, t_field* field)

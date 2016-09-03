@@ -5,8 +5,6 @@ using Thrift;
 using Thrift.Protocol;
 using Thrift.Samples;
 
-// TODO: Asp.net core sample
-
 namespace Client
 {
     public class HttpClientSample
@@ -15,11 +13,13 @@ namespace Client
         {
             try
             {
-                TTransport transport = new THttpClient(new Uri("http://localhost:9090"));
-                TProtocol protocol = new TBinaryProtocol(transport);
+
+                var transport = new THttpClient(new Uri("http://localhost:9090"));
+                var protocol = new TBinaryProtocol(transport);
                 var client = new Calculator.Client(protocol);
 
-                transport.OpenAsync().GetAwaiter().GetResult();
+                client.OpenTransportAsync().GetAwaiter().GetResult();
+
                 try
                 {
                     // Async version

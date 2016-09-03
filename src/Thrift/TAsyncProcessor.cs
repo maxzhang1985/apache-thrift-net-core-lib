@@ -23,19 +23,9 @@ using Thrift.Protocol;
 
 namespace Thrift
 {
-    /// <summary>
-    /// Processes a message asynchronously.
-    /// </summary>
-    // ReSharper disable once InconsistentNaming
     public interface TAsyncProcessor
     {
-        /// <summary>
-        /// Processes the next part of the message.
-        /// </summary>
-        /// <param name="iprot">The input protocol.</param>
-        /// <param name="oprot">The output protocol.</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>true if there's more to process, false otherwise.</returns>
+        Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot);
         Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken);
     }
 }

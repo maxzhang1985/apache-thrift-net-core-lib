@@ -84,12 +84,12 @@ namespace Thrift.Transport
 
         public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            if (InputStream == null)
+            if (OutputStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot read from null inputstream");
             }
 
-            await InputStream.WriteAsync(buffer, offset, length, cancellationToken);
+            await OutputStream.WriteAsync(buffer, offset, length, cancellationToken);
         }
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
