@@ -26,6 +26,6 @@ install:
   - sudo apt-get install dotnet-dev-1.0.0-preview2-003121
 script:    # the following commands are just examples, use whatever your build process requires
   - ./build.sh
-  # - grep "Build Results" build.log
+  - grep "Build Results" dotnetbuild.log
 #  - ./test.sh
   
