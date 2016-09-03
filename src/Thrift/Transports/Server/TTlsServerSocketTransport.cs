@@ -37,30 +37,23 @@ namespace Thrift.Transports.Server
         private readonly int _port;
         private readonly int _clientTimeout = 0;
         private readonly bool _useBufferedSockets;
-        private readonly X509Certificate _serverCertificate;
+        private readonly X509Certificate2 _serverCertificate;
         private readonly RemoteCertificateValidationCallback _clientCertValidator;
         private readonly LocalCertificateSelectionCallback _localCertificateSelectionCallback;
         private readonly SslProtocols _sslProtocols;
 
         public TTlsServerSocketTransport(int port, X509Certificate2 certificate)
-            : this(port, 0, certificate)
-        {
-        }
-
-        public TTlsServerSocketTransport(int port, int clientTimeout, X509Certificate2 certificate)
-            : this(port, clientTimeout, false, certificate)
+            : this(port, false, certificate)
         {
         }
 
         public TTlsServerSocketTransport(
             int port,
-            int clientTimeout,
             bool useBufferedSockets,
             X509Certificate2 certificate,
             RemoteCertificateValidationCallback clientCertValidator = null,
             LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            // TODO: Enable Tls1 and Tls2 (TLS 1.1 and 1.2) by default once we start using .NET 4.5+.
-            SslProtocols sslProtocols = SslProtocols.Tls)
+            SslProtocols sslProtocols = SslProtocols.Tls12)
         {
             if (!certificate.HasPrivateKey)
             {
@@ -83,7 +76,7 @@ namespace Thrift.Transports.Server
             catch (Exception)
             {
                 _server = null;
-                throw new TTransportException("Could not create ServerSocket on port " + port + ".");
+                throw new TTransportException($"Could not create ServerSocket on port {port}.");
             }
         }
 
@@ -98,14 +91,14 @@ namespace Thrift.Transports.Server
                 }
                 catch (SocketException sx)
                 {
-                    throw new TTransportException("Could not accept on listening socket: " + sx.Message);
+                    throw new TTransportException($"Could not accept on listening socket: {sx.Message}");
                 }
             }
         }
 
         public override bool IsClientPending()
         {
-            throw new NotImplementedException();
+            return _server.Pending();
         }
 
         protected override async Task<TClientTransport> AcceptImplementationAsync(CancellationToken cancellationToken)
@@ -154,7 +147,7 @@ namespace Thrift.Transports.Server
                 }
                 catch (Exception ex)
                 {
-                    throw new TTransportException("WARNING: Could not close server socket: " + ex);
+                    throw new TTransportException($"WARNING: Could not close server socket: {ex}");
                 }
 
                 _server = null;

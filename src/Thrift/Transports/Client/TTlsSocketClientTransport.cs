@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -29,68 +30,24 @@ namespace Thrift.Transports.Client
 {
     //TODO: check for correct work
 
-    /// <summary>
-    /// SSL Socket Wrapper class
-    /// </summary>
     // ReSharper disable once InconsistentNaming
     public class TTlsSocketClientTransport : TStreamClientTransport
     {
-        /// <summary>
-        /// Internal TCP Client
-        /// </summary>
         private TcpClient _client;
-
-        /// <summary>
-        /// The host
-        /// </summary>
-        private readonly string _host;
-
-        /// <summary>
-        /// The port
-        /// </summary>
+        private readonly IPAddress _host;
         private readonly int _port;
-
-        /// <summary>
-        /// The timeout for the connection
-        /// </summary>
         private int _timeout;
-
-        /// <summary>
-        /// Internal SSL Stream for IO
-        /// </summary>
         private SslStream _secureStream;
-
-        /// <summary>
-        /// Defines wheter or not this socket is a server socket<br/>
-        /// This is used for the TLS-authentication
-        /// </summary>
         private readonly bool _isServer;
-
-        /// <summary>
-        /// The certificate
-        /// </summary>
-        private readonly X509Certificate _certificate;
-
-        /// <summary>
-        /// User defined certificate validator.
-        /// </summary>
+        private readonly X509Certificate2 _certificate;
         private readonly RemoteCertificateValidationCallback _certValidator;
-
-        /// <summary>
-        /// The function to determine which certificate to use.
-        /// </summary>
         private readonly LocalCertificateSelectionCallback _localCertificateSelectionCallback;
-
-        /// <summary>
-        /// The SslProtocols value that represents the protocol used for authentication.SSL protocols to be used.
-        /// </summary>
         private readonly SslProtocols _sslProtocols;
 
-        public TTlsSocketClientTransport(TcpClient client, X509Certificate certificate, bool isServer = false,
+        public TTlsSocketClientTransport(TcpClient client, X509Certificate2 certificate, bool isServer = false,
             RemoteCertificateValidationCallback certValidator = null,
             LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            // TODO: Enable Tls11 and Tls12 (TLS 1.1 and 1.2) by default once we start using .NET 4.5+.
-            SslProtocols sslProtocols = SslProtocols.Tls)
+            SslProtocols sslProtocols = SslProtocols.Tls12)
         {
             _client = client;
             _certificate = certificate;
@@ -98,6 +55,7 @@ namespace Thrift.Transports.Client
             _localCertificateSelectionCallback = localCertificateSelectionCallback;
             _sslProtocols = sslProtocols;
             _isServer = isServer;
+
             if (isServer && certificate == null)
             {
                 throw new ArgumentException("TTlsSocketClientTransport needs certificate to be used for server", "certificate");
@@ -110,28 +68,36 @@ namespace Thrift.Transports.Client
             }
         }
 
-        public TTlsSocketClientTransport(string host, int port, string certificatePath,
+        public TTlsSocketClientTransport(IPAddress host, int port, string certificatePath, 
             RemoteCertificateValidationCallback certValidator = null,
-            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls)
-            : this(
-                host, port, 0, new X509Certificate(certificatePath), certValidator, localCertificateSelectionCallback,
-                sslProtocols)
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null, 
+            SslProtocols sslProtocols = SslProtocols.Tls12)
+            : this(host, port, 0, 
+                  new X509Certificate2(certificatePath), 
+                  certValidator, 
+                  localCertificateSelectionCallback, 
+                  sslProtocols)
         {
         }
 
-        public TTlsSocketClientTransport(string host, int port, X509Certificate certificate = null,
+        public TTlsSocketClientTransport(IPAddress host, int port, 
+            X509Certificate2 certificate = null,
             RemoteCertificateValidationCallback certValidator = null,
             LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls)
-            : this(host, port, 0, certificate, certValidator, localCertificateSelectionCallback, sslProtocols)
+            SslProtocols sslProtocols = SslProtocols.Tls12)
+            : this(host, port, 0, 
+                  certificate, 
+                  certValidator, 
+                  localCertificateSelectionCallback, 
+                  sslProtocols)
         {
         }
 
-        public TTlsSocketClientTransport(string host, int port, int timeout, X509Certificate certificate,
+        public TTlsSocketClientTransport(IPAddress host, int port, int timeout, 
+            X509Certificate2 certificate,
             RemoteCertificateValidationCallback certValidator = null,
             LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
-            SslProtocols sslProtocols = SslProtocols.Tls)
+            SslProtocols sslProtocols = SslProtocols.Tls12)
         {
             _host = host;
             _port = port;
@@ -151,32 +117,17 @@ namespace Thrift.Transports.Client
             _client.Client.NoDelay = true;
         }
 
-        /// <summary>
-        /// Sets Send / Recv Timeout for IO
-        /// </summary>
         public int Timeout
         {
             set { _client.ReceiveTimeout = _client.SendTimeout = _timeout = value; }
         }
 
-        /// <summary>
-        /// Gets the TCP client.
-        /// </summary>
         public TcpClient TcpClient => _client;
 
-        /// <summary>
-        /// Gets the host.
-        /// </summary>
-        public string Host => _host;
+        public IPAddress Host => _host;
 
-        /// <summary>
-        /// Gets the port.
-        /// </summary>
         public int Port => _port;
 
-        /// <summary>
-        /// Gets a value indicating whether TCP Client is Cpen
-        /// </summary>
         public override bool IsOpen
         {
             get
@@ -190,8 +141,7 @@ namespace Thrift.Transports.Client
             }
         }
 
-        private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain,
-            SslPolicyErrors sslValidationErrors)
+        private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslValidationErrors)
         {
             return sslValidationErrors == SslPolicyErrors.None;
         }
@@ -203,7 +153,7 @@ namespace Thrift.Transports.Client
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
             }
 
-            if (string.IsNullOrEmpty(_host))
+            if (_host == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open null host");
             }
@@ -218,11 +168,9 @@ namespace Thrift.Transports.Client
                 InitSocket();
             }
 
-            //TODO: check logic
             if (_client != null)
             {
                 await _client.ConnectAsync(_host, _port);
-
                 await SetupTlsAsync();
             }
         }
@@ -245,18 +193,14 @@ namespace Thrift.Transports.Client
                 if (_isServer)
                 {
                     // Server authentication
-                    await
-                        _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols,
-                            true);
+                    await _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols, true);
                 }
                 else
                 {
                     // Client authentication
-                    var certs = _certificate != null
-                        ? new X509CertificateCollection {_certificate}
-                        : new X509CertificateCollection();
+                    var certs = _certificate != null ? new X509CertificateCollection {_certificate} : new X509CertificateCollection();
 
-                    await _secureStream.AuthenticateAsClientAsync(_host, certs, _sslProtocols, true);
+                    await _secureStream.AuthenticateAsClientAsync(_host.ToString(), certs, _sslProtocols, true);
                 }
             }
             catch (Exception)
@@ -269,9 +213,6 @@ namespace Thrift.Transports.Client
             OutputStream = _secureStream;
         }
 
-        /// <summary>
-        /// Closes the SSL Socket
-        /// </summary>
         public override void Close()
         {
             base.Close();

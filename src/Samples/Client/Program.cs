@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -29,7 +32,7 @@ namespace Client
             Tcp,
             NamedPipe,
             Http,
-            Buffered,
+            TcpBuffered,
             Framed,
             TcpTls
         }
@@ -54,9 +57,10 @@ Usage:
 Options:
     -t (transport): 
         tcp - (default) tcp transport will be used (host - ""localhost"", port - 9090)
+        tcpbuffered - buffered transport over tcp will be used (host - ""localhost"", port - 9090)
         namedpipe - namedpipe transport will be used (pipe address - "".test"")
-        http - http transport will be used (address - ""http://localhost:9090"")
-        buffered - buffered transport over tcp will be used (host - ""localhost"", port - 9090)
+        http - http transport will be used (address - ""http://localhost:9090"")        
+        tcptls - tcp tls transport will be used (host - ""localhost"", port - 9090)
 
     -p (protocol): 
         binary - (default) binary protocol will be used
@@ -70,14 +74,6 @@ Sample:
 
         public static void Main(string[] args)
         {
-            using (var source = new CancellationTokenSource())
-            {
-                RunAsync(args, source.Token).GetAwaiter().GetResult();
-            }
-        }
-
-        private static async Task RunAsync(string[] args, CancellationToken cancellationToken)
-        {
             args = args ?? new string[0];
 
             if (args.Any(x => x.StartsWith("-h", StringComparison.OrdinalIgnoreCase)))
@@ -86,6 +82,15 @@ Sample:
                 return;
             }
 
+
+            using (var source = new CancellationTokenSource())
+            {
+                RunAsync(args, source.Token).GetAwaiter().GetResult();
+            }
+        }
+
+        private static async Task RunAsync(string[] args, CancellationToken cancellationToken)
+        {
             var clientTransport = GetTransport(args);
 
             Logger.Information($"Selected client transport: {clientTransport}");
@@ -112,16 +117,47 @@ Sample:
                         return new TNamedPipeClientTransport(".test");
                     case Transport.Http:
                         return new THttpClientTransport(new Uri("http://localhost:9090"));
-                    case Transport.Buffered:
+                    case Transport.TcpBuffered:
                         return new TBufferedClientTransport(new TSocketClientTransport(IPAddress.Loopback, 9090));
+                    case Transport.TcpTls:
+                        return new TTlsSocketClientTransport(IPAddress.Loopback, 9090, GetCertificate(), CertValidator, LocalCertificateSelectionCallback);
                     case Transport.Framed:
                         throw new NotSupportedException("Framed is not ready for samples");
-                    case Transport.TcpTls:
-                        throw new NotSupportedException("TcpTls is not ready for samples");
+                    
                 }
             }
 
             return new TSocketClientTransport(IPAddress.Loopback, 9090);
+        }
+
+        private static X509Certificate2 GetCertificate()
+        {
+            // due to files location in net core better to take certs from top folder
+            var certFile = GetCertPath(Directory.GetParent(Directory.GetCurrentDirectory()));
+            return new X509Certificate2(certFile, "ThriftTest");
+        }
+
+        private static string GetCertPath(DirectoryInfo di, int maxCount = 6)
+        {
+            var topDir = di;
+            var certFile = topDir.EnumerateFiles("ThriftTest.pfx", SearchOption.AllDirectories).FirstOrDefault();
+            if (certFile == null)
+            {
+                if (maxCount == 0) throw new FileNotFoundException("Cannot find file in directories");
+                return GetCertPath(di.Parent, maxCount - 1);
+            }
+
+            return certFile.FullName;
+        }
+
+        private static X509Certificate LocalCertificateSelectionCallback(object sender, string targetHost, X509CertificateCollection localCertificates, X509Certificate remoteCertificate, string[] acceptableIssuers)
+        {
+            return GetCertificate();
+        }
+
+        private static bool CertValidator(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
         }
 
         private static TProtocol GetProtocol(string[] args, TClientTransport transport)
