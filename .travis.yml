@@ -1,6 +1,6 @@
 language: csharp
 script:    # the following commands are just examples, use whatever your build process requires
   - ./build.sh
-  - grep "Build Results" build.log
+  # - grep "Build Results" build.log
 #  - ./test.sh
   
