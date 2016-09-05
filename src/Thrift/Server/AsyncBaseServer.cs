@@ -39,24 +39,26 @@ namespace Thrift.Server
     public class AsyncBaseServer : TBaseServer
     {
         private volatile Task _serverTask;
+        private readonly int _clientWaitingDelay;
 
         public AsyncBaseServer(ITAsyncProcessor processor, TServerTransport serverTransport, 
             ITProtocolFactory inputProtocolFactory, ITProtocolFactory outputProtocolFactory, 
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory, int clientWaitingDelay = 10)
             : this(new SingletonTProcessorFactory(processor), serverTransport,
                 new TTransportFactory(), new TTransportFactory(),
                 inputProtocolFactory, outputProtocolFactory,
-                loggerFactory.CreateLogger(nameof(AsyncBaseServer)))
+                loggerFactory.CreateLogger(nameof(AsyncBaseServer)), clientWaitingDelay)
         {
         }
 
         public AsyncBaseServer(ITProcessorFactory itProcessorFactory, TServerTransport serverTransport, 
             TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory,
             ITProtocolFactory inputProtocolFactory, ITProtocolFactory outputProtocolFactory,
-            ILogger logger)
+            ILogger logger, int clientWaitingDelay = 10)
             : base(itProcessorFactory, serverTransport, inputTransportFactory, outputTransportFactory,
                 inputProtocolFactory, outputProtocolFactory, logger)
         {
+            _clientWaitingDelay = clientWaitingDelay;
         }
 
         public override async Task ServeAsync(CancellationToken cancellationToken)
@@ -107,7 +109,7 @@ namespace Thrift.Server
                 }
                 else
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+                    await Task.Delay(TimeSpan.FromMilliseconds(_clientWaitingDelay), cancellationToken);
                 }
             }
 

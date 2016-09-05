@@ -5,7 +5,7 @@
 
 dotnet --info
 
-dotnet restore **/*/project.json
+dotnet restore
 
 # dotnet test ./test/TEST_PROJECT_NAME -c Release -f netcoreapp1.0
 
