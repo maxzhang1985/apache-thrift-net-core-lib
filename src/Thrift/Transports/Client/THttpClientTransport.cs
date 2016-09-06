@@ -40,27 +40,32 @@ namespace Thrift.Transports.Client
         private readonly X509Certificate[] _certificates;
         private Stream _inputStream;
         private MemoryStream _outputStream = new MemoryStream();
+        public IDictionary<string, string> CustomHeaders { get; }
+        private HttpClient _httpClient;
 
         // Timeouts in milliseconds
         private int _connectTimeout = 30000;
 
-        public THttpClientTransport(Uri u)
-            : this(u, Enumerable.Empty<X509Certificate>())
+        public THttpClientTransport(Uri u, IDictionary<string, string> customHeaders)
+            : this(u, Enumerable.Empty<X509Certificate>(), customHeaders)
         {
         }
 
-        public THttpClientTransport(Uri u, IEnumerable<X509Certificate> certificates)
+        public THttpClientTransport(Uri u, IEnumerable<X509Certificate> certificates, IDictionary<string, string> customHeaders)
         {
             _uri = u;
             _certificates = (certificates ?? Enumerable.Empty<X509Certificate>()).ToArray();
+            CustomHeaders = customHeaders;
+
+            // due to current bug with performance of Dispose in netcore https://github.com/dotnet/corefx/issues/8809
+            // this can be switched to default way (create client->use->dispose per flush) later
+            _httpClient = CreateClient(); 
         }
 
         public int ConnectTimeout
         {
             set { _connectTimeout = value; }
         }
-
-        public IDictionary<string, string> CustomHeaders { get; } = new ConcurrentDictionary<string, string>();
 
         public override bool IsOpen => true;
 
@@ -79,10 +84,17 @@ namespace Thrift.Transports.Client
                 _inputStream.Dispose();
                 _inputStream = null;
             }
+
             if (_outputStream != null)
             {
                 _outputStream.Dispose();
                 _outputStream = null;
+            }
+
+            if (_httpClient != null)
+            {
+                _httpClient.Dispose();
+                _httpClient = null;
             }
         }
 
@@ -137,13 +149,11 @@ namespace Thrift.Transports.Client
                 httpClient.Timeout = TimeSpan.FromSeconds(_connectTimeout);
             }
 
-            //TODO: check for existing
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-thrift"));
             httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("THttpClientTransport", "1.0.0"));
 
             foreach (var item in CustomHeaders)
             {
-                //TODO: check for existing
                 httpClient.DefaultRequestHeaders.Add(item.Key, item.Value);
             }
 
@@ -156,8 +166,6 @@ namespace Thrift.Transports.Client
             {
                 try
                 {
-                    var httpClient = CreateClient();
-
                     if (_outputStream.CanSeek)
                     {
                         _outputStream.Seek(0, SeekOrigin.Begin);
@@ -165,7 +173,7 @@ namespace Thrift.Transports.Client
 
                     using (var outStream = new StreamContent(_outputStream))
                     {
-                        var msg = await httpClient.PostAsync(_uri, outStream, cancellationToken);
+                        var msg = await _httpClient.PostAsync(_uri, outStream, cancellationToken);
 
                         msg.EnsureSuccessStatusCode();
 
@@ -208,6 +216,7 @@ namespace Thrift.Transports.Client
                 {
                     _inputStream?.Dispose();
                     _outputStream?.Dispose();
+                    _httpClient?.Dispose();
                 }
             }
             _isDisposed = true;
