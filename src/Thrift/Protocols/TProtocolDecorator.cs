@@ -1,25 +1,19 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- * Contains some contributions under the Thrift Software License.
- * Please see doc/old-thrift-license.txt in the Thrift distribution for
- * details.
- */
+// Licensed to the Apache Software Foundation(ASF) under one
+// or more contributor license agreements.See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License. You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 using System;
 using System.Threading;
@@ -29,11 +23,11 @@ using Thrift.Protocols.Entities;
 namespace Thrift.Protocols
 {
     // ReSharper disable once InconsistentNaming
-    ///<summary>
-    /// TProtocolDecorator forwards all requests to an enclosed TProtocol instance,
-    /// providing a way to author concise concrete decorator subclasses.While it has
-    /// no abstract methods, it is marked abstract as a reminder that by itself,
-    /// it does not modify the behaviour of the enclosed TProtocol.
+    /// <summary>
+    ///     TProtocolDecorator forwards all requests to an enclosed TProtocol instance,
+    ///     providing a way to author concise concrete decorator subclasses.While it has
+    ///     no abstract methods, it is marked abstract as a reminder that by itself,
+    ///     it does not modify the behaviour of the enclosed TProtocol.
     /// </summary>
     public abstract class TProtocolDecorator : TProtocol
     {
@@ -50,7 +44,8 @@ namespace Thrift.Protocols
             _wrappedProtocol = protocol;
         }
 
-        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
+        public override async Task WriteMessageBeginAsync(TMessage message,
+            CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteMessageBeginAsync(message, cancellationToken);
         }
@@ -60,7 +55,8 @@ namespace Thrift.Protocols
             await _wrappedProtocol.WriteMessageEndAsync(cancellationToken);
         }
 
-        public override async Task WriteStructBeginAsync(TStruct struc, CancellationToken cancellationToken)
+        public override async Task WriteStructBeginAsync(TStruct struc,
+            CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteStructBeginAsync(struc, cancellationToken);
         }
@@ -70,7 +66,8 @@ namespace Thrift.Protocols
             await _wrappedProtocol.WriteStructEndAsync(cancellationToken);
         }
 
-        public override async Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken)
+        public override async Task WriteFieldBeginAsync(TField field,
+            CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteFieldBeginAsync(field, cancellationToken);
         }
@@ -95,7 +92,8 @@ namespace Thrift.Protocols
             await _wrappedProtocol.WriteMapEndAsync(cancellationToken);
         }
 
-        public override async Task WriteListBeginAsync(TList list, CancellationToken cancellationToken)
+        public override async Task WriteListBeginAsync(TList list,
+            CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteListBeginAsync(list, cancellationToken);
         }
@@ -155,7 +153,8 @@ namespace Thrift.Protocols
             await _wrappedProtocol.WriteBinaryAsync(b, cancellationToken);
         }
 
-        public override async Task<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
+        public override async Task<TMessage> ReadMessageBeginAsync(
+            CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadMessageBeginAsync(cancellationToken);
         }
