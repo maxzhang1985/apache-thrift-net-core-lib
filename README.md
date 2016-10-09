@@ -4,7 +4,7 @@
 
 Non official fork of Apache Thrift .Net lib (https://www.nuget.org/packages/ApacheThrift/1.0.0-dev) partially ported to .Net Core. 
 
-Notes: Removed support of Silverlight, commented client and server related to usage of NamedPipeServerStream  
+# All changes moved to pull request into oof Thrift repository
 
 # How to build
 * Download the latest version of dotnet from https://www.microsoft.com/net/core (it can be https://go.microsoft.com/fwlink/?LinkID=809122 in case of VS Code)
